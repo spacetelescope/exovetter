@@ -1,5 +1,9 @@
 name: CI
 
+on:
+  push:
+  pull_request:
+
 jobs:
   pep_and_audit:
     runs-on: ubuntu-16.04

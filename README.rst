@@ -1,6 +1,13 @@
 exovetter: Exoplanet Vetting
 ----------------------------
 
+.. image:: https://readthedocs.org/projects/exovetter/badge/?version=latest
+    :target: https://exovetter.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. image:: https://github.com/spacetelescope/exovetter/workflows/CI/badge.svg
+    :alt: Github Actions CI Status
+
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
