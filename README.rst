@@ -5,6 +5,7 @@ exovetter: Exoplanet Vetting
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
+This is a Python package for exoplanet vetting.
 
 License
 -------
