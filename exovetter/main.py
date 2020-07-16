@@ -37,7 +37,8 @@ def main(config):
     tceTable = pd.read_csv('tcelist.csv')
     sectorList = np.arange(25)
 
-    #Initialise vetters
+    #Initialise vetters. The list of vetters can be hardcoded, or
+    #maybe loaded from a file.
     vetterList = []
     for v in [Lpp, OddEven]:
         vetterList.append( v(**config) )
