@@ -39,7 +39,7 @@ def main(config):
 
     #Initialise vetters
     vetterList = []
-    for v in [LppVetter, OddEvenVetter]:
+    for v in [Lpp, OddEven]:
         vetterList.append( v(**config) )
 
     output = []
