@@ -11,7 +11,10 @@ class Vetter():
         """
         pass
 
-    def apply(self, tce, lightcurve):
+    def __call__(self, tce, lightcurve):
+        return self.run(tce, lightcurve)
+
+    def run(self, tce, lightcurve):
         """Actually run the test. Returns a dictionary of metric values"""
         pass
 
@@ -22,40 +25,33 @@ class Vetter():
 
 #The LPP vetter is an example of a Vetter class.
 class Lpp(Vetter):
-    ...
+    def __init__(self, **kwargs):
+        pass
 
-    def apply(self, tce, lightcurve):
+    def run(self, tce, lightcurve):
         #Actual implementation of LPP is called here
         ...
 
 #The odd even test. We can have many such tests
 class OddEven(Vetter):
-    pass
+    def __init__(self, **kwargs):
+        pass
+
+    def run(self, tce, lightcurve):
+        #Actual implementation of LPP is called here
+        ...
 
 
-def main(config):
-    tceTable = pd.read_csv('tcelist.csv')
-    sectorList = np.arange(25)
+def vetTce(tce, vetterList):
+    """Vet a single TCE with a list of vetters"""
 
-    #Initialise vetters. The list of vetters can be hardcoded, or
-    #maybe loaded from a file.
-    vetterList = []
-    for v in [Lpp, OddEven]:
-        vetterList.append( v(**config) )
+    #Load lightcurve data, possibly using lightKurve package
+    lightcurve = loadLightCurve(tce.ticId, sectorList)
 
-    output = []
-    for i, tce in tceTable.iterrows():
-        #Load lightcurve data, possibly using lightKurve package
-        lightcurve = loadLightCurve(tce.ticId, sectorList)
+    metrics = dict()
+    for v in vetterList:
+        resDict = v.apply(tce, lightcurve)
+        metrics.update(resDict)
+    return metrics
 
-        metrics = dict()
-        for v in vetterList:
-            resDict = v.apply(tce, lightcurve)
-            metrics.update(resDict)
 
-        #metrics is a dictionary of all metrics for a single TCE from all tests
-        #output is a list of such dictionaries.
-        output.append(metrics)
-
-    df = makeDataFrameFromListOfDicts(output)
-    return df
