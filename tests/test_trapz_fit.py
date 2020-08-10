@@ -10,14 +10,14 @@ def test_dave_trapz_fit():
     # Make some fake data
     dataSpan = 80.0  # in Days
     exposureLength = 1.0 / 48.0  # in Days simulating 48 cadences per day
-    nData = dataSpan / exposureLength
+    nData = int(dataSpan / exposureLength)
     noiseLevel = 40.0  # noise per observation in ppm
     signalDepth = 300.0  # signal depth in ppm
     signalDuration = 5.0 / 24.0  # in Days
     signalDurationHours = signalDuration * 24.0
     signalPeriod = 10.4203  # in Days
     signalEpoch = 5.1  # in Days
-    timeSeries = np.linspace(0.0, dataSpan, nData)
+    timeSeries = np.linspace(0, int(dataSpan), nData)
     dataSeries = 1.0 + np.random.randn(nData) / 1.0e6 * noiseLevel
     errorSeries = np.full_like(dataSeries, noiseLevel / 1.0e6)
     # Instantiate trp_ioblk class and fill in values

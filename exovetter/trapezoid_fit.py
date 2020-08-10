@@ -247,11 +247,18 @@ class TrapezoidFit:
 
     # TODO: let user pass in stuff in init?
     def __init__(self, trp_parameters=None, trp_originalestimates=None,
-                 trp_planetestimates=None):
+                 trp_planetestimates=None, logger=None):
+        if logger is None:
+            import logging
+            self.logger = logging.getLogger('TrapezoidFit')
+        else:
+            self.logger = logger
+
         if trp_parameters:
             self.parm = trp_parameters
         else:
-            self.parm = TrapezoidFitParameters()
+            # TODO: This is Kepler cadence, fix me.
+            self.parm = TrapezoidFitParameters(29.424/60.0/24.0)
 
         if trp_originalestimates:
             self.origests = trp_originalestimates
@@ -409,7 +416,7 @@ class TrapezoidFit:
         ioblk.trp_setup()
         # update the tratio
         ioblk.physvals[3] = little_t / big_t
-        ioblk.set_boundedvals(ioblk)
+        ioblk.set_boundedvals()
 
         ioblk.physvalsavs = ioblk.physvals
         ioblk.boundedvalsavs = ioblk.boundedvals
@@ -489,7 +496,7 @@ class TrapezoidFit:
             lctmp_highres = trapezoid_vectors(
                 ztmp_highres, depth, big_t, little_t)
             nN = ztmp_highres.size
-            lctmp = lctmp_highres.reshape([oN, nN/oN]).mean(1)
+            lctmp = lctmp_highres.reshape([oN, int(nN/oN)]).mean(1)
             lc[idx] = lctmp
 
         self.modellc = lc
@@ -517,7 +524,7 @@ class TrapezoidFit:
         if (np.any(np.less(self.normlc, 0.0))):
             raise ValueError("TrapFit: Negative Flux in light curve")
 
-    def trp_likehood(self, pars, do_plot=False):
+    def trp_likehood(self, pars):
         """Return a residual time series of data minus model
            trp_setup(ioblk) should be called before this function is called
            INPUT:
@@ -544,29 +551,28 @@ class TrapezoidFit:
         # Return scalar summed residuals
         residuals = np.sum(residuals**2)
 
-        # Do plotting
-        if do_plot:
-            # TODO: Make this its own method?
-            import matplotlib.pyplot as plt
-
-            if self.likecount == 1:  # Setup  figures for first time
-                self.fighandle = plt.figure(figsize=(3, 2), dpi=300,
-                                            facecolor='white')
-                self.axhandle = plt.gca()
-                self.axhandle.set_position([0.125, 0.125, 0.825, 0.825])
-                self.axhandle.set_axis_bgcolor('white')
-            if (np.mod(self.likecount, self.parm.likehoodmoddisplay) == 0
-                    or self.likecount == 1):
-                plt.figure(self.fighandle.number)
-                plt.cla()
-                period = self.origests.period
-                tzero = self.physvals[0]
-                ts = self.normts
-                phi = phase_data(ts, period, tzero)
-                plt.plot(phi, self.normlc, '.', markersize=0.6)
-                plt.plot(phi, self.modellc, '.r', markersize=0.6)
-
         return residuals
+
+    # TODO: Not sure what this was for but plotting should be optional,
+    # so this was taken out of the function being passed into scipy optimize.
+    # Fix as needed.
+    def plot_likehood(self):
+        """Plot results from :meth:`trp_likehood`."""
+        import matplotlib.pyplot as plt
+
+        fig = plt.figure(figsize=(3, 2), dpi=300, facecolor='white')
+        ax = fig.subplots()
+        ax.set_position([0.125, 0.125, 0.825, 0.825])
+        ax.set_facecolor('white')
+
+        period = self.origests.period
+        tzero = self.physvals[0]
+        ts = self.normts
+        phi = phase_data(ts, period, tzero)
+
+        ax.plot(phi, self.normlc, '.', markersize=0.6)
+        ax.plot(phi, self.modellc, '.r', markersize=0.6)
+        plt.draw()
 
     def trp_iterate_solution(self, nIter):
         """Peform multiple iterations starting from random initial conditions
@@ -600,17 +606,14 @@ class TrapezoidFit:
 
             # TODO: Need to see how opt works
             allOutput = opt.minimize(self.trp_likehood, startParameters,
-                                     args=(self, ),
                                      method=usemethod, options=useoptions)
             self.boundedvals[freeidx] = allOutput['x']
             self.boundedvals = np.where(self.fixed == 1, self.boundedvalsavs,
                                         self.boundedvals)
             self.set_physvals()
             chi2min = allOutput['fun']
-            if self.parm.debugLevel > 0:
-                strout = "%s %d %s %f" % ("It: ", i, " Chi2: ", chi2min)
-                print(strout)
-                print(self.physvals)
+            self.logger.debug(f"It: {i}  Chi2: {chi2min}")
+            self.logger.debug(f"{self.physvals}")
             if np.isfinite(self.physvals).all():
                 gdFits[i] = True
                 bestChi2s[i] = chi2min
@@ -623,10 +626,8 @@ class TrapezoidFit:
         self.physvals = self.bestphysvals
         self.set_boundedvals()
         self.bestboundedvals = self.boundedvals
-        if self.parm.debugLevel > 0:
-            strout = "%s %f" % ("Overall Best Chi2 Min: ", self.chi2min)
-            print(strout)
-            print(self.physvals)
+        self.logger.debug(f"Overall Best Chi2 Min: {self.chi2min}")
+        self.logger.debug(f"{self.physvals}")
         self.minimized = True
 
     def trp_estimate_planet(self):
@@ -635,9 +636,8 @@ class TrapezoidFit:
            This fills out values in trp_planetestimates class
         """
         if not self.minimized:
-            strout = "Warning getting planet estimates for non converged \
-                      trapezoid fit.  Do not trust results"
-            print(strout)
+            raise ValueError("Getting planet estimates for non-converged"
+                             "trapezoid fit is not allowed")
         self.planetests.period = self.origests.period
         self.planetests.epoch = self.timezpt + self.bestphysvals[0]
         self.planetests.big_t = self.bestphysvals[2]

@@ -31,6 +31,7 @@ jobs:
         python -m pip install --upgrade bandit
         bandit -r . -c .bandit.yaml
 
+  # Python 3.7 + Numpy 1.19 resulted in NaN results, so we downgrade Numpy.
   initial_tests:
     runs-on: ubuntu-16.04
     steps:
@@ -46,13 +47,13 @@ jobs:
       run: |
         sudo apt-get install libxml2-utils
         python -m pip install --upgrade pip setuptools
+        python -m pip install 'numpy<1.19'
         python -m pip install -e .[test]
     - name: Test without optional deps
       run: pytest --open-files
 
   dev_deps_tests:
     runs-on: ubuntu-latest
-    needs: [pep_and_audit, initial_tests]
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
