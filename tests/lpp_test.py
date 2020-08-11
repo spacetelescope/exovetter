@@ -31,7 +31,7 @@ def test_one_lpp():
     #Generic  function that runs lightkurve and returns a lightkurve object.
     lc = exo.fetch_TESS_lightcurve(target_name, mission=mission, sector = sector)
     
-    lpp = exo.Lpp(ddir = "/path/to/file/")
+    lpp = exo.Lpp(ddir = "/path/to/file/", lc = "DETRENDED")
     
     result = lpp.apply(tce,lc)
     
@@ -44,18 +44,24 @@ def test_run_many_tces():
     
     #Each element of vet_list needs to contain the TCE info
     #and info to create the ligth curve (filename, or lightkurve call)
+    #In this case we likely will have already created the light curves and
+    #saved them some place. So this is just a list of filenames.
     vet_list = exo.load_vet_list('filename_tce.csv')
     
-    Lpp = exo.lpp('path/to/file')
-    Mod = exo.modsift(model = "trap")
+    Lpp = exo.lpp('path/to/file', lc = "DETRENDED")
+    sap_Mod = exo.modshift(model = "trap", lc = "SAP_FLUX")
+    pdc_Mod = exo.modshift(model = "trap", lc = "PDC_FLUX")
     Snr = exo.snr()
     
-    vetter_list = [Lpp, Mod, Snr]
+    vetter_list = [Lpp, sap_Mod, pdc_Mod, Snr]
     
+    #Clearly all this below could also be a method some day.
     results = list()
     
     for vet in tce_list:
         #Details of input are hidden here.
+        #Likely the lc information points to a filename (s3 buckeet) to load data
+        #And put data into the proper format
         tce, lc = exo.load_tce_and_lightcurve(vet)
         
         tce_results = dict()
@@ -70,20 +76,8 @@ def test_run_many_tces():
     
     assert len(results) == len(vet_list)
     
-def test_run_many_tces_option2():
-    tce_list = exo.load_tce_list('filename_tce.csv')
-    lc_list = exo.retrieve_lk('filename_lc.csv')
-    
-    Lpp = exo.lpp('path/to/file')
-    Mod = exo.modsift(model = "trap")
-    Snr = exo.snr()
-    
-    vetter_list = [Lpp, Mod, Snr]
-    
-    results = exo.run_vetters(tce_list, lc_list, vetter_list)
-    
         
-
+#----
 def test_fergal_approach():
     
     tcelist = load_tce_list(filename)
