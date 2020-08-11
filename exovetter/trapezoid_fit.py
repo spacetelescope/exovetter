@@ -714,7 +714,8 @@ class TrapezoidFit:
             ax.legend()
         plt.draw()
 
-    def trp_iterate_solution(self, n_iter=20, method='Powell', options=None):
+    def trp_iterate_solution(self, n_iter=20, method='Powell', options=None,
+                             seed=None):
         """Perform multiple iterations starting from random initial conditions.
         Attributes are updated in-place with the best solution in a chi-squared
         sense among the iterations.
@@ -731,12 +732,23 @@ class TrapezoidFit:
             See :func:`scipy.optimize.minimize`.
             If not given, some pre-defined defaults are used.
 
+        seed : int or `None`
+            Seed for Numpy random generator.
+            Usually used in testing for reproducibility.
+
         """
         import scipy.optimize as opt
+        from astropy.utils.compat.context import nullcontext
+        from astropy.utils.misc import NumpyRNGContext
 
         if options is None:
             options = {'xtol': 1e-5, 'ftol': 1e-5, 'maxiter': 2000,
                        'maxfev': 2000}
+
+        if seed is None:
+            rand_ctx = nullcontext()
+        else:
+            rand_ctx = NumpyRNGContext(seed)
 
         best_chi2s = np.zeros(n_iter)
         best_pars = np.zeros((self.physvals.size, n_iter))
@@ -744,34 +756,35 @@ class TrapezoidFit:
         depth_half = self.origests.depth * 0.5 / 1.0e6
         depth_half_abs = np.abs(depth_half)
 
-        for i in range(n_iter):
-            self.physvals = (self.physval_mins +
-                             np.random.rand(self.physvals.size) *
-                             (self.physval_maxs - self.physval_mins))
-            # Force depth parameter to start at minimum half the depth
-            if self.physvals[1] < depth_half_abs:
-                self.physvals[1] = depth_half
+        with rand_ctx:
+            for i in range(n_iter):
+                self.physvals = (self.physval_mins +
+                                 np.random.rand(self.physvals.size) *
+                                 (self.physval_maxs - self.physval_mins))
+                # Force depth parameter to start at minimum half the depth
+                if self.physvals[1] < depth_half_abs:
+                    self.physvals[1] = depth_half
 
-            # Replace random starts with parameters values that are fixed
-            self.physvals = np.where(self.fixed == 1, self.physvalsavs,
-                                     self.physvals)
-            self.set_boundedvals()
-            freeidx = np.where(self.fixed == 0)[0]
-            start_pars = self.boundedvals[freeidx]
+                # Replace random starts with parameters values that are fixed
+                self.physvals = np.where(self.fixed == 1, self.physvalsavs,
+                                         self.physvals)
+                self.set_boundedvals()
+                freeidx = np.where(self.fixed == 0)[0]
+                start_pars = self.boundedvals[freeidx]
 
-            all_output = opt.minimize(self.trp_likehood, start_pars,
-                                      method=method, options=options)
-            self.boundedvals[freeidx] = all_output['x']
-            self.boundedvals = np.where(self.fixed == 1, self.boundedvalsavs,
-                                        self.boundedvals)
-            self.set_physvals()
-            chi2min = all_output['fun']
-            self.logger.debug(f'It: {i}  Chi2: {chi2min}\n{self.physvals}')
+                all_output = opt.minimize(self.trp_likehood, start_pars,
+                                          method=method, options=options)
+                self.boundedvals[freeidx] = all_output['x']
+                self.boundedvals = np.where(
+                    self.fixed == 1, self.boundedvalsavs, self.boundedvals)
+                self.set_physvals()
+                chi2min = all_output['fun']
+                self.logger.debug(f'It: {i}  Chi2: {chi2min}\n{self.physvals}')
 
-            if np.isfinite(self.physvals).all():
-                gd_fits[i] = True
-                best_chi2s[i] = chi2min
-                best_pars[:, i] = self.physvals
+                if np.isfinite(self.physvals).all():
+                    gd_fits[i] = True
+                    best_chi2s[i] = chi2min
+                    best_pars[:, i] = self.physvals
 
         # Done with iterations find the best one by chi2min
         best_masked_idx = np.argmin(best_chi2s[gd_fits])
@@ -829,7 +842,7 @@ class TrapezoidFit:
     def trapezoid_fit(cls, time_series, data_series, error_series,
                       signal_period, signal_epoch, signal_duration,
                       signal_depth, fit_trial_n=13, fit_region=4.0,
-                      error_scale=1.0, sample_n=15):
+                      error_scale=1.0, sample_n=15, seed=None):
         """Perform a trapezoid fit to a normalized flux time series.
         Assumes all data has the same cadence duration.
         Period is fixed during the trapezoid fitting.
@@ -874,6 +887,10 @@ class TrapezoidFit:
         sample_n : int
             Subsample each cadence by this factor.
 
+        seed : int or `None`
+            Seed for Numpy random generator.
+            Usually used in testing for reproducibility.
+
         Returns
         -------
         ioblk : `TrapezoidFit`
@@ -894,7 +911,7 @@ class TrapezoidFit:
             error_scale=error_scale)
 
         # Find solution by trying random initial conditions
-        ioblk.trp_iterate_solution(n_iter=fit_trial_n)
+        ioblk.trp_iterate_solution(n_iter=fit_trial_n, seed=seed)
 
         # Convert the trapezoid fit solution into a pseudo planet model
         # parameters
