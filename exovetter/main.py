@@ -24,8 +24,6 @@ class Vetter():
 
 
 import lpp
-import loadLppData as lppload
-from lpp import lpp_data
 #The LPP vetter is an example of a Vetter class.
 #Init requires
 class Lpp(Vetter):
