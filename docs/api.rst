@@ -2,4 +2,5 @@
 Reference/API
 =============
 
-.. automodapi:: exovetter
+.. automodapi:: exovetter.trapezoid_fit
+    :no-inheritance-diagram:

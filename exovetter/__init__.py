@@ -5,4 +5,4 @@ try:
 except ImportError:
     __version__ = ''
 
-__all__ = []
+from . import trapezoid_fit  # noqa
