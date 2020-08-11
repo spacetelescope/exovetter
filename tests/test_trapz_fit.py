@@ -1,6 +1,7 @@
 """Test trapezoid fit."""
 
 import numpy as np
+from numpy.testing import assert_allclose
 
 from exovetter.trapezoid_fit import (
     TrapezoidFitParameters, TrapezoidOriginalEstimates, TrapezoidFit)
@@ -42,27 +43,58 @@ class TestDAVE:
         ioblk.trapezoid_model()
 
         # Insert signal
-        data_series = data_series * ioblk.modellc
+        data_series *= ioblk.modellc
 
         # Test fitting
+        # NOTE: Some results are non-deterministic when pytest run repeatedly?
         ioblk = TrapezoidFit.trapezoid_fit(
             self.time_series, data_series, error_series,
             self.signal_period, self.signal_epoch + 0.001,
             self.signal_duration_hours * 0.9, self.signal_depth * 1.1,
             fit_trial_n=2, fit_region=4.0, error_scale=1.0, sample_n=15)
 
-        # TODO: Some asserts?
+        assert ioblk.minimized
+        assert ioblk.chi2min > 400
+
+        # To, Depth, BigT, TRatio
+        assert_allclose(ioblk.bestphysvals, ioblk.physvals)
+        assert_allclose(ioblk.bestboundedvals, ioblk.boundedvals)
+
+        planet = ioblk.planetests
+        assert_allclose(planet.u1, 0.4)
+        assert_allclose(planet.u2, 0.27)
+        assert_allclose(planet.period, 10.4203)
+        assert_allclose(planet.radius_ratio, 0.017237, rtol=0.05)
+        assert planet.semi_axis_ratio > 1
+        assert planet.surface_brightness > 0.5
+        assert planet.equiv_radius_ratio > 0
+        assert planet.min_depth > 250
+        assert_allclose(planet.epoch, 36.36210120066754, rtol=1e-4)
+        assert planet.big_t > 0.2
+        assert planet.little_t > 0
+        assert planet.depth > 0.0002
 
     def test_model_gen(self):
         """Test generating model."""
+
         newioblk = TrapezoidFit.trapezoid_model_onemodel(
             self.time_series, self.signal_period,
             self.signal_epoch, self.signal_depth, self.signal_duration_hours,
             self.signal_duration_hours * 0.1, 15)
 
-        newioblk = newioblk.trapezoid_model_raw(
+        newioblk2 = newioblk.trapezoid_model_raw(
             self.signal_epoch + 0.05, self.signal_depth * 1.5,
             self.signal_duration_hours * 2.0,
             self.signal_duration_hours * 2.0 * 0.2)
 
-        # TODO: Some asserts?
+        assert len(newioblk.modellc) == 3840
+        assert_allclose(newioblk.parm.cadlen, 0.020838760093774056)
+        assert_allclose(newioblk.physvals, [0, 0.0003, 0.20833333, 0.1])
+        assert_allclose(newioblk.boundedvals,
+                        [-0, -1.38963326, -0.69314718, -2.19722458])
+
+        assert len(newioblk2.modellc) == 3840
+        assert_allclose(newioblk2.parm.cadlen, 0.020838760093774056)
+        assert_allclose(newioblk2.physvals, [0.05, 0.00045, 0.41666667, 0.2])
+        assert_allclose(newioblk2.boundedvals,
+                        [0.32277339, -0.84952256, 0.69314718, -1.38629436])

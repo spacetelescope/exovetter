@@ -558,7 +558,7 @@ class TrapezoidFit:
         trp_parm = TrapezoidFitParameters(cadlen, samplen=subsamplen)
         trp_origests = TrapezoidOriginalEstimates(
             period=period, epoch=epoch, duration=big_t, depth=depth)
-        ioblk = cls(dummy, dummy, ts, trp_parameters=trp_parm,
+        ioblk = cls(ts, dummy, dummy, trp_parameters=trp_parm,
                     trp_originalestimates=trp_origests,
                     t_ratio=(little_t / big_t))
         ioblk.trapezoid_model()
@@ -695,14 +695,13 @@ class TrapezoidFit:
     # TODO: Not sure what this was for but plotting should be optional,
     # so this was taken out of the function being passed into scipy optimize.
     # Fix as needed.
-    def plot_likehood(self):
+    def plot_likehood(self, show_legend=False):
         """Plot results from :meth:`trp_likehood`."""
         import matplotlib.pyplot as plt
 
-        fig = plt.figure(figsize=(3, 2), dpi=300, facecolor='white')
+        fig = plt.figure(figsize=(3, 2), dpi=300)
         ax = fig.subplots()
         ax.set_position([0.125, 0.125, 0.825, 0.825])
-        ax.set_facecolor('white')
 
         period = self.origests.period
         tzero = self.physvals[0]
@@ -711,7 +710,8 @@ class TrapezoidFit:
 
         ax.plot(phi, self.normlc, '.', markersize=0.6, label='input')
         ax.plot(phi, self.modellc, '.r', markersize=0.6, label='model')
-        ax.legend()
+        if show_legend:
+            ax.legend()
         plt.draw()
 
     def trp_iterate_solution(self, n_iter=20, method='Powell', options=None):
