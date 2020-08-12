@@ -37,7 +37,7 @@ class Lpp(Vetter):
             map_filename = "mapQ1Q17DR24-DVMed6084.mat"
             
         self.map_info = lpp.Loadmap(map_filename)
-        
+        self.lc_name = lc_name
 
     def run(self, tce, lightcurve):
         #Actual implementation of LPP is called here

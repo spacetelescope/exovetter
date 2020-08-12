@@ -1,3 +1,4 @@
+#https://github.com/jakevdp/lpproj
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from lpproj import LocalityPreservingProjection
@@ -127,24 +128,29 @@ def computeRawLPPTransitMetric(binFlux,mapInfo):
     Do the knn test to get a raw LPP transit metric number.
     """
     
-    Yorig=mapInfo.YmapMapped
-    lpp=LocalityPreservingProjection(n_components=mapInfo.n_dim)
-    lpp.projection_=mapInfo.YmapM
+    Yorig = mapInfo.YmapMapped
+    lpp = LocalityPreservingProjection(n_components=mapInfo.n_dim)
+    lpp.projection_ = mapInfo.YmapM
     
     #To equate to Matlab LPP methods, we need to remove mean of transform.
-    normBinFlux=binFlux-mapInfo.YmapMean
+    #Check if this is correct, YmapMean is an array that is transit shapped
+    normBinFlux = binFlux - mapInfo.YmapMean
+    
+    #normBinFlux = binFlux - np.mean(binFlux)
+    #print(mapInfo.YmapMean)
+    #print(normBinFlux)
     
     inputY=lpp.transform(normBinFlux.reshape(1,-1))
     
     knownTransitsY=Yorig[mapInfo.knnGood,:]
     
-    dist,ind = knnDistance_fromKnown(knownTransitsY,inputY,mapInfo.knn)
+    dist, ind = knnDistance_fromKnown(knownTransitsY,inputY,mapInfo.knn)
     
     rawLppTrMetric=np.mean(dist)
     
-    return rawLppTrMetric,inputY
+    return rawLppTrMetric, binFlux
     
-def knnDistance_fromKnown(knownTransits,new,knn):
+def knnDistance_fromKnown(knownTransits, new, knn):
     """
     For a group of known transits and a new one.
     Use knn to determine how close the new one is to the known transits
@@ -152,7 +158,7 @@ def knnDistance_fromKnown(knownTransits,new,knn):
     Using scipy signal to do this.
     """
     #p=3 sets a minkowski distance of 3. #Check that you really used 3 for matlab.
-    nbrs=NearestNeighbors(n_neighbors=int(knn), algorithm='kd_tree', p=2)
+    nbrs = NearestNeighbors(n_neighbors=int(knn), algorithm='kd_tree', p=2)
     nbrs.fit(knownTransits)
     
     distances,indices = nbrs.kneighbors(new)
@@ -262,7 +268,7 @@ class Lppdata():
         #Expecting a lightkurve object
         #Needs a check lightcurve function
         
-        check_tce(tce)
+        self.check_tce(tce)
         
         self.tzero = tce['tzero']
         self.dur = tce['duration']
