@@ -7,4 +7,4 @@ def test__load_mat(mat_url):  # noqa: F811
     from exovetter.utils import load_mat
 
     mat_data = load_mat(mat_url)
-    assert mat_data['map'].__class__ is numpy.ndarray
+    assert isinstance(mat_data['map'], np.ndarray)
