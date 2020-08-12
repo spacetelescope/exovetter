@@ -27,7 +27,7 @@ import lpp
 #The LPP vetter is an example of a Vetter class.
 #Init requires
 class Lpp(Vetter):
-    def __init__(self, map_filename, lc_name = "detrended", **kwargs):
+    def __init__(self, map_filename, lc_name = "flux", **kwargs):
         
         #At Init we need some way of retrieving the LPP MAP file.
         #Or people can provide their own location to the map file.
@@ -36,7 +36,7 @@ class Lpp(Vetter):
         if map_filename =="":
             map_filename = "mapQ1Q17DR24-DVMed6084.mat"
             
-        self.map_info = lpp.load_map(map_filename)
+        self.map_info = lpp.Loadmap(map_filename)
         
 
     def run(self, tce, lightcurve):
@@ -44,9 +44,9 @@ class Lpp(Vetter):
         #data needs to contain time, tzero, dur, period, mes and flux 
         #My understanding is that comes from 
         
-        data = lpp.lpp_data(tce, lightcurve, self.lc_name )
+        lpp_data = lpp.Lppdata(tce, lightcurve, self.lc_name )
         
-        norm_lpp, raw_lpp, transit_lpp = lpp.computeLPPTransitMetric(data, self.map_info)
+        norm_lpp, raw_lpp, transit_lpp = lpp.computeLPPTransitMetric(lpp_data, self.map_info)
         
         result = dict()
         result['raw_lpp'] = raw_lpp
@@ -66,17 +66,5 @@ class OddEven(Vetter):
         #Actual implementation of LPP is called here
         ...
 
-
-def vetTce(tce, vetterList):
-    """Vet a single TCE with a list of vetters"""
-
-    #Load lightcurve data, possibly using lightKurve package
-    lightcurve = loadLightCurve(tce.ticId, sectorList)
-
-    metrics = dict()
-    for v in vetterList:
-        resDict = v.apply(tce, lightcurve)
-        metrics.update(resDict)
-    return metrics
 
 
