@@ -28,10 +28,17 @@ import lpp
 #Init requires
 class Lpp(Vetter):
     def __init__(self, map_filename, lc_name = "flux", **kwargs):
+        """
+        Initializes the LPP Vetter Function and loads the LPP Map.
         
-        #At Init we need some way of retrieving the LPP MAP file.
-        #Or people can provide their own location to the map file.
-        #map location
+        Parameters:
+            map_filename (string): location of the lpp .mat file
+            lc_name (string): name of the flux array in the lightkurve object. 
+                              default is 'flux'
+        
+        Returns:
+            Lpp Vetter Object
+        """
         #https://sourceforge.net/p/lpptransitlikemetric/code/HEAD/tree/data/maps/mapQ1Q17DR24-DVMed6084.mat
         if map_filename =="":
             map_filename = "mapQ1Q17DR24-DVMed6084.mat"
@@ -40,6 +47,21 @@ class Lpp(Vetter):
         self.lc_name = lc_name
 
     def run(self, tce, lightcurve):
+        """
+        Runs the LPP Vetter on the specified TCE and lightcurve.
+        
+        Parameters:
+            tce (dict): Contains period in days, tzero in units of lc time
+                        duration in hours, snr estimate
+            
+            lc (lc object): Contains the detrended light curve time and flux.
+        
+        Returns:
+            raw_lpp (float) : Raw LPP Value
+            norm_lpp (float) : Lpp Value normalized by period and snr
+            transit_lpp (array): The folded, binned transit prior to the 
+                                 LPP transformation.
+        """
         #Actual implementation of LPP is called here
         #data needs to contain time, tzero, dur, period, mes and flux 
         #My understanding is that comes from 
