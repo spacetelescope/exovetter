@@ -31,12 +31,15 @@ class Lpp(Vetter):
         """
         Initializes the LPP Vetter Function and loads the LPP Map.
         
-        Parameters:
-            map_filename (string): location of the lpp .mat file
-            lc_name (string): name of the flux array in the lightkurve object. 
-                              default is 'flux'
+        Parameters
+        -----------
+            map_filename : string
+                location of the lpp .mat file
+            lc_name : string
+                name of the flux array in the lightkurve object. 
+                default is 'flux'
         
-        Returns:
+        Returns: object
             Lpp Vetter Object
         """
         #https://sourceforge.net/p/lpptransitlikemetric/code/HEAD/tree/data/maps/mapQ1Q17DR24-DVMed6084.mat
@@ -48,24 +51,29 @@ class Lpp(Vetter):
 
     def run(self, tce, lightcurve):
         """
-        Runs the LPP Vetter on the specified TCE and lightcurve.
+        Runs the LPP Vetter on the specified TCE and lightcurve
+        and returns the value of the metric.
         
-        Parameters:
-            tce (dict): Contains period in days, tzero in units of lc time
-                        duration in hours, snr estimate
+        Parameters
+        ----------
+            tce : dict 
+                  Contains period in days, tzero in units of lc time
+                  duration in hours, snr estimate
             
-            lc (lc object): Contains the detrended light curve time and flux.
+            lc : lightkurve objects
+                 Contains the detrended light curve's time and flux arrays.
         
-        Returns:
-            raw_lpp (float) : Raw LPP Value
-            norm_lpp (float) : Lpp Value normalized by period and snr
-            transit_lpp (array): The folded, binned transit prior to the 
-                                 LPP transformation.
+        Returns
+        --------
+            raw_lpp : float
+                    Raw LPP value
+            norm_lpp  : float
+                    Lpp value normalized by period and snr
+            transit_lpp : array 
+                    The folded, binned transit prior to the 
+                    LPP transformation.
         """
-        #Actual implementation of LPP is called here
-        #data needs to contain time, tzero, dur, period, mes and flux 
-        #My understanding is that comes from 
-        
+                
         lpp_data = lpp.Lppdata(tce, lightcurve, self.lc_name )
         
         norm_lpp, raw_lpp, transit_lpp = lpp.computeLPPTransitMetric(lpp_data, self.map_info)
