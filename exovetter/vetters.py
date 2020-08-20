@@ -1,5 +1,4 @@
 
-#A sketch of an architecture. For discussion
 
 #Each vetting test is wrapped in a class that follows this
 #structure.
@@ -48,6 +47,9 @@ class Lpp(Vetter):
             
         self.map_info = lpp.Loadmap(map_filename)
         self.lc_name = lc_name
+        self.tce = None
+        self.lc = None
+        self.plot_data = None
 
     def run(self, tce, lightcurve):
         """
@@ -60,7 +62,7 @@ class Lpp(Vetter):
                   Contains period in days, tzero in units of lc time
                   duration in hours, snr estimate
             
-            lc : lightkurve objects
+            lightcurve : lightkurve object
                  Contains the detrended light curve's time and flux arrays.
         
         Returns
@@ -69,21 +71,32 @@ class Lpp(Vetter):
                     Raw LPP value
             norm_lpp  : float
                     Lpp value normalized by period and snr
-            transit_lpp : array 
+            plot_data : dictionary 
                     The folded, binned transit prior to the 
                     LPP transformation.
         """
-                
-        lpp_data = lpp.Lppdata(tce, lightcurve, self.lc_name )
+         
+        self.tce = tce
+        self.lc = lightcurve
+        self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
         
-        norm_lpp, raw_lpp, transit_lpp = lpp.computeLPPTransitMetric(lpp_data, self.map_info)
+        self.norm_lpp, self.raw_lpp, self.plot_data = \
+                    lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)
         
         result = dict()
-        result['raw_lpp'] = raw_lpp
-        result['norm_lpp'] = norm_lpp
-        result['transit_lpp'] = transit_lpp
+        result['raw_lpp'] = self.raw_lpp
+        result['norm_lpp'] = self.norm_lpp
+        result['plot_data'] = self.plot_data
         
         return(result)
+    
+    def plot(self):
+        if self.plot_data is not None:
+            target = self.tce['target']
+            lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
+        else:
+            raise Exception('LPP Plot data is empty. Run lpp.run first.')
+        
                                                                        
         
 

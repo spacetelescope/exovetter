@@ -1,10 +1,13 @@
-#https://github.com/jakevdp/lpproj
+
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
-from lpproj import LocalityPreservingProjection
+from lpproj import LocalityPreservingProjection #https://github.com/jakevdp/lpproj
 import copy
+import scipy.io as spio
+import matplotlib.pyplot as plt
+import warnings
 
-def computeLPPTransitMetric(data, mapInfo):
+def compute_lpp_Transitmetric(data, mapInfo):
     """
     This function takes a data class with light curve info
     and the mapInfo with information about the mapping to use.
@@ -13,19 +16,21 @@ def computeLPPTransitMetric(data, mapInfo):
     
     binFlux, binPhase=foldBinLightCurve(data, mapInfo.ntrfr, mapInfo.npts)
     
-    #plt.figure()
-    #plt.plot(binPhase,binFlux,'.--')
+    plot_data = dict()
+    plot_data['bin_flux'] = binFlux
+    plot_data['bin_phase'] = binPhase
     
     
     #Dimensionality Reduction and knn parts
-    rawTLpp, transformedTransit = computeRawLPPTransitMetric(binFlux,mapInfo)
+    rawTLpp, transformedTransit = computeRawLPPTransitMetric(binFlux, mapInfo)
     
     #Normalize by Period Dependence
     normTLpp=periodNormalLPPTransitMetric(rawTLpp,np.array([data.period, data.mes]), mapInfo)
     
-    return normTLpp,rawTLpp,transformedTransit
+    plot_data['lpp_transform'] = transformedTransit
     
-    
+    return normTLpp, rawTLpp, plot_data
+        
 
 def runningMedian(t,y,dt,runt):
     """
@@ -65,10 +70,11 @@ def foldBinLightCurve (data, ntrfr, npts):
     
     """
 
-    #Create phase light curve
+    #Create a phased light curve
     phaselc =np.mod((data.time-(data.tzero-0.5*data.period))/data.period,1)
     flux=data.flux
     mes=data.mes
+    
     #Determine the fraction of the time the planet transits the star.
     #Insist that ntrfr * transit fraction
     if ~np.isnan(data.dur) & (data.dur >0):
@@ -88,16 +94,16 @@ def foldBinLightCurve (data, ntrfr, npts):
     endfr = .03
     midfr= .11
     a = np.concatenate((np.arange(endfr,.5-midfr,1/npts) , \
-                        np.arange((0.5+midfr),(1-endfr),1/npts)), axis=None)
+                        np.arange((0.5+midfr), (1-endfr),1/npts)), axis=None)
     ovsamp=4.0
     #bstep=(ovsamp*ntrfr*transit_fr)/npts
     b_num=41
-    b =np.linspace((0.5-ntrfr*transit_fr),(0.5+ntrfr*transit_fr),b_num)
+    b =np.linspace((0.5-ntrfr*transit_fr), (0.5+ntrfr*transit_fr),b_num)
 
     #print "length a: %u " % len(a)
     #print "length b: %u" % len(b)
-    [runta,runya] = runningMedian(phaselc,flux,binover/npts,a)
-    [runtb,runyb] = runningMedian(phaselc,flux,\
+    [runta,runya] = runningMedian(phaselc, flux,binover/npts,a)
+    [runtb,runyb] = runningMedian(phaselc, flux, \
                     (binover*ovsamp*ntrfr*transit_fr)/npts,b)
 
     #Combine the two sets of bins
@@ -116,13 +122,13 @@ def foldBinLightCurve (data, ntrfr, npts):
     else:
         scaledFlux=runy
     
-    binnedFlux=scaledFlux
-    phasebins=runt
+    binnedFlux = scaledFlux
+    phasebins = runt
     
-    return binnedFlux,phasebins
+    return binnedFlux, phasebins
 
 
-def computeRawLPPTransitMetric(binFlux,mapInfo):
+def computeRawLPPTransitMetric(binFlux, mapInfo):
     """
     Perform the matrix transformation with LPP
     Do the knn test to get a raw LPP transit metric number.
@@ -135,10 +141,6 @@ def computeRawLPPTransitMetric(binFlux,mapInfo):
     #To equate to Matlab LPP methods, we need to remove mean of transform.
     #Check if this is correct, YmapMean is an array that is transit shapped
     normBinFlux = binFlux - mapInfo.YmapMean
-    
-    #normBinFlux = binFlux - np.mean(binFlux)
-    #print(mapInfo.YmapMean)
-    #print(normBinFlux)
     
     inputY=lpp.transform(normBinFlux.reshape(1,-1))
     
@@ -164,9 +166,7 @@ def knnDistance_fromKnown(knownTransits, new, knn):
     distances,indices = nbrs.kneighbors(new)
     
     
-    return distances, indices
-    
-      
+    return distances, indices 
     
 def periodNormalLPPTransitMetric(rawTLpp, newPerMes, mapInfo):
     """
@@ -202,8 +202,6 @@ def periodNormalLPPTransitMetric(rawTLpp, newPerMes, mapInfo):
     
     return NormLppTransitMetric
     
-    
-
 def lpp_onetransit(tcedata, mapInfo, ntransit):
     """
     Chop down the full time series to one orbital period.
@@ -260,8 +258,45 @@ def lpp_averageIndivTransit(tcedata, mapInfo):
     return lppNorms,lppMed, lppStd, ntransits
 
 
+def plot_lpp_diagnostic(data, target, norm_lpp):
+    """
+
+    Parameters
+    ----------
+    data : dictionary
+        Contains bin_flux and bin_phase for plotting.
+    target : string
+        Containse 'target' for target name on the plot.
+    norm_lpp : float
+        Normalized LPP transit metric value. Used as string on the top of the plot.
+
+
+    Returns
+    -------
+    fig : pyplot figure object
+
+    """
+    phase = data['bin_phase']
+    flux = data['bin_flux']
+    
+    fig = plt.figure()
+    plt.subplot(211)
+    plt.plot(phase, flux, 'b.', ms = 5, label="LPP Bins")
+    plt.xlabel('Phase')
+    plt.ylabel('Normalized Flux')
+    plt.title("LPP Binning for %s" % str(target))
+    plt.legend(loc="best")
+    
+    plt.subplot(212)
+    plt.plot(np.arange(len(flux)), flux, 'k.', ms = 5, label="LPP Norm = %5.3f" % norm_lpp)
+    plt.xlabel('Bin Number')
+    plt.legend()
+    
+    return(fig)
+    
+
 #%----------------
-class Lppdata():
+class Lppdata:
     
     def __init__(self, tce, lc, lc_name = "flux"):
         #Expected a tce object
@@ -275,6 +310,11 @@ class Lppdata():
 
         self.time = lc.time
         self.flux = lc.__dict__[lc_name]
+        
+        #make sure flux is zero norm. 
+        if np.round(np.median(self.flux)) != 0:
+            print("Removing median. The supplied light curve is not normalized to zero.")
+            self.flux = self.flux - np.median(self.flux)
 
 
     def check_tce(self, tce):
@@ -291,10 +331,8 @@ class Lppdata():
             print('Exception: Period required for the TCE to run LPP.')
             
 
-#%---------
-import scipy.io as spio
-
-class Loadmap(object):
+#-------
+class Loadmap:
     
     def __init__(self,filename):
         

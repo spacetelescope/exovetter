@@ -9,7 +9,7 @@ Created on Fri Jul 24 12:12:25 2020
 
 import exovetter as exo
 import lightkurve as lk
-import astropyfrom astropy import units as u
+from astropy import units as u
 from astropy.time import Time
 
 
@@ -31,9 +31,9 @@ def test_one_lpp():
     #Generic  function that runs lightkurve and returns a lightkurve object.
     lc = exo.fetch_TESS_lightcurve(target_name, mission=mission, sector = sector)
     
-    lpp = exo.Lpp(ddir = "/path/to/file/", lc = "DETRENDED")
+    lpp = exo.Lpp(lc = "flux")
     
-    result = lpp.apply(tce,lc)
+    result = lpp.run(tce,lc)
     
     assert result['lpp_lpp'] > 0
     assert result['lpp_normlpp'] > 0
