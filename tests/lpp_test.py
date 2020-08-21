@@ -1,45 +1,43 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 24 12:12:25 2020
 
-@author: smullally
-"""
-
-
-import exovetter as exo
-import lightkurve as lk
+from exovetter.tce import TCE
+import exovetter.vetters as vetters
 from astropy import units as u
-from astropy.time import Time
-
+from lightkurve import search_lightcurvefile
 
 def test_one_lpp():
     #Use Case is get values for one TCE.
-    period = 1.235 * u.d
-    tzero =  24541250.235 * t.jd
-    duration = 5.2 * u.h
-    target_name = "TIC 12345678"
+    period = 3.5224991 * u.day
+    tzero =  54953.6193 + 2400000.5 - 2454833.0
+    duration = 3.1906 * u.hour
+    depth = .009537
+    target_name = "Kepler-8"
+    event_name = "Kepler-8 b"
 
     
-    tce = exo.TCE(period = period, tzero = tzero, duration = duration
-                  target_name = target_name)
+    tce = TCE(period = period, tzero = tzero, duration = duration,  
+              target_name = target_name, depth = depth, event_name =event_name)
     
     #Specify the lightcurve to vet
-    mission = "TESS"
-    sector = 14
+    mission = "Kepler"
+    q = 4
     
-    #Generic  function that runs lightkurve and returns a lightkurve object.
-    lc = exo.fetch_TESS_lightcurve(target_name, mission=mission, sector = sector)
+    #Generic  function that runs lightkurve and returns a lightkurve object
+    lcf = search_lightcurvefile(target_name, quarter = q, mission = mission).download()
+    lc = lcf.SAP_FLUX.remove_nans().remove_outliers()
+    flat = lc.flatten(window_length=81)
     
-    lpp = exo.Lpp(lc = "flux")
+    #Need a http location
+    map_file = "/Users/smullally/Python_Code/exoplanetvetting/original/dave/lpp/newlpp/map/combMapDR25AugustMapDV_6574.mat"
     
-    result = lpp.run(tce,lc)
+    lpp = vetters.Lpp(lc = "flux", map_filename = map_file)
     
-    assert result['lpp_lpp'] > 0
-    assert result['lpp_normlpp'] > 0
-    assert len(result['lpp_binned']) > 10
+    _  = lpp.run(tce.to_dict(), flat)
     
-
+    assert lpp.norm_lpp < 0.5  #Accepted value is 0.266 if data doesn't change
+    
+"""
 def test_run_many_tces():
     
     #Each element of vet_list needs to contain the TCE info
@@ -95,4 +93,4 @@ def run_many_vetters_tes(tce, vetterlist, kwargs):
         metrics.update( v.run(tce, lc))
         
     return metrics
-        
+"""

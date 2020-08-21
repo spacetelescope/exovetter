@@ -321,7 +321,7 @@ class Lppdata:
         
         try:
             self.mes = tce['snr']
-        except AttributeError:
+        except KeyError:
             print('WARNING: LPP requires a MES or SNR value stored as snr in the tce. Using a value of 10.')
             self.mes = 10.0
             pass

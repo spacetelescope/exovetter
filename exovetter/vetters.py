@@ -10,9 +10,6 @@ class Vetter():
         """
         pass
 
-    def __call__(self, tce, lightcurve):
-        return self.run(tce, lightcurve)
-
     def run(self, tce, lightcurve):
         """Actually run the test. Returns a dictionary of metric values"""
         pass
@@ -24,7 +21,6 @@ class Vetter():
 
 import lpp
 #The LPP vetter is an example of a Vetter class.
-#Init requires
 class Lpp(Vetter):
     def __init__(self, map_filename, lc_name = "flux", **kwargs):
         """
