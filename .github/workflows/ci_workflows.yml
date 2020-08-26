@@ -48,9 +48,9 @@ jobs:
         sudo apt-get install libxml2-utils
         python -m pip install --upgrade pip setuptools
         python -m pip install 'numpy<1.19'
-        python -m pip install -e .[test]
+        python -m pip install -e .[test,all]
     - name: Test without optional deps
-      run: pytest --open-files
+      run: pytest --open-files --remote-data
 
   dev_deps_tests:
     runs-on: ubuntu-latest
@@ -68,6 +68,6 @@ jobs:
         sudo apt-get install libxml2-utils
         python -m pip install --upgrade pip setuptools
         python -m pip install git+https://github.com/astropy/astropy.git@master#egg=astropy
-        python -m pip install -e .[test]
+        python -m pip install -e .[test,all]
     - name: Test with dev deps
-      run: pytest --open-files
+      run: pytest --open-files --remote-data
