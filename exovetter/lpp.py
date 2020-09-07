@@ -81,7 +81,6 @@ def foldBinLightCurve(data, ntrfr, npts):
         Number of points in the final binning.
 
     """
-    # FIXME: 'Lppdata' object has no attribute 'period'
     # Create a phased light curve
     phaselc = np.mod((data.time - (data.tzero - 0.5 * data.period)) /
                      data.period, 1)
@@ -347,14 +346,12 @@ class Lppdata:
 
         self.tzero = tce['tzero']
         self.dur = tce['duration']
-        
         self.period = tce['period']
         
         self.mes = default_snr
         if 'snr' in tce.keys():
             self.mes = tce['snr']
         
-
         self.time = lc.time
         self.flux = lc.__dict__[lc_name]  # TODO: Use getattr?
 
