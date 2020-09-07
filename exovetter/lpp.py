@@ -340,13 +340,20 @@ class Lppdata:
         ``lightkurve`` object.
 
     """
-    def __init__(self, tce, lc, lc_name="flux"):
+    def __init__(self, tce, lc, lc_name="flux", default_snr=12.):
         # TODO: Needs a check lightcurve function
 
-        self.check_tce(tce)
+        self.check_tce(tce default_snr)
 
         self.tzero = tce['tzero']
         self.dur = tce['duration']
+        
+        self.period = tce['period']
+        
+        self.mes = default_snr
+        if 'snr' in tce.keys():
+            self.mes = tce['snr']
+        
 
         self.time = lc.time
         self.flux = lc.__dict__[lc_name]  # TODO: Use getattr?
@@ -357,18 +364,15 @@ class Lppdata:
                           "not normalized to zero.")
             self.flux = self.flux - np.median(self.flux)
 
-    def check_tce(self, tce, default_snr=10.):
+    def check_tce(self, tce,, default_snr):
         """Validate TCE."""
+        
         if 'period' not in tce:
             raise KeyError('Period required for the TCE to run LPP.')
 
         if 'snr' not in tce:
             warnings.warn('LPP requires a MES or SNR value stored as snr '
                           f'in the tce. Using a value of {default_snr}.')
-            self.mes = default_snr
-        else:
-            self.mes = tce['snr']
-
 
 class Loadmap:
     """Class to handle map info parsing.
