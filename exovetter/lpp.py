@@ -340,10 +340,10 @@ class Lppdata:
         ``lightkurve`` object.
 
     """
-    def __init__(self, tce, lc, lc_name="flux", default_snr=12.):
+    def __init__(self, tce, lc, lc_name="flux", default_snr=10.):
         # TODO: Needs a check lightcurve function
 
-        self.check_tce(tce default_snr)
+        self.check_tce(tce, default_snr)
 
         self.tzero = tce['tzero']
         self.dur = tce['duration']
@@ -364,13 +364,13 @@ class Lppdata:
                           "not normalized to zero.")
             self.flux = self.flux - np.median(self.flux)
 
-    def check_tce(self, tce,, default_snr):
+    def check_tce(self, tce, default_snr):
         """Validate TCE."""
         
-        if 'period' not in tce:
+        if 'period' not in tce.keys():
             raise KeyError('Period required for the TCE to run LPP.')
 
-        if 'snr' not in tce:
+        if 'snr' not in tce.keys():
             warnings.warn('LPP requires a MES or SNR value stored as snr '
                           f'in the tce. Using a value of {default_snr}.')
 
@@ -406,20 +406,20 @@ class Loadmap:
 
         # Pull out the information we need.
         # FIXME: No mapInfoDV nor commented stuff below in SourceForge version
-        # key = 'mapInfoDV'
-        key = 'map'
+        key = 'mapInfoDV'
+        # key = 'map'
         self.n_dim = mat[key]['nDim'][0][0][0][0]
-        # self.Ymap = mat[key]['Ymap'][0][0][0][0]
-        # self.YmapMapping = self.Ymap['mapping']
-        # self.YmapMean = self.YmapMapping['mean'][0][0][0]
-        # self.YmapM = self.YmapMapping['M'][0][0]
-        # self.YmapMapped = self.Ymap['mapped']
+        self.Ymap = mat[key]['Ymap'][0][0][0][0]
+        self.YmapMapping = self.Ymap['mapping']
+        self.YmapMean = self.YmapMapping['mean'][0][0][0]
+        self.YmapM = self.YmapMapping['M'][0][0]
+        self.YmapMapped = self.Ymap['mapped']
         self.knn = mat[key]['knn'][0][0][0][0]
         self.knnGood = mat[key]['knnGood'][0][0][:, 0]
-        # self.mappedPeriods = mat[key]['periods'][0][0][0]
-        # self.mappedMes = mat[key]['mes'][0][0][0]
-        # self.nPsample = mat[key]['nPsample'][0][0][0][0]  # number to sample  # noqa: E501
-        # self.nPercentil = mat[key]['npercentilTM'][0][0][0][0]
-        # self.dymeans = mat[key]['dymean'][0][0][0]
+        self.mappedPeriods = mat[key]['periods'][0][0][0]
+        self.mappedMes = mat[key]['mes'][0][0][0]
+        self.nPsample = mat[key]['nPsample'][0][0][0][0]  # number to sample  # noqa: E501
+        self.nPercentil = mat[key]['npercentilTM'][0][0][0][0]
+        self.dymeans = mat[key]['dymean'][0][0][0]
         self.ntrfr = 2.0
         self.npts = 80.0
