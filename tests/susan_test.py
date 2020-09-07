@@ -27,12 +27,6 @@ event_name = "Kepler-8 b"
 tce = TCE(period=period, tzero=tzero, duration=duration,
               target_name=target_name, depth=depth, event_name=event_name)
 
-"""tce = dict()
-tce['period'] = 3.5224991 
-tce['tzero'] = 54953.6193 + 2400000.5 - 2454833.0 
-tce['snr'] = 30.4
-tce['duration'] = 3.1906 
-tce['target_name'] = 'KIC 6922244' """
 
 #%%
 #tpf = lk.search_targetpixelfile('KIC 6922244', quarter=4).download()
