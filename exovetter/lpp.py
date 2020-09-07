@@ -384,7 +384,7 @@ class Loadmap:
         If URL is provided, it will be cached using :ref:`astropy:utils-data`
 
     """
-    builtin_mat = 'https://sourceforge.net/p/lpptransitlikemetric/code/HEAD/tree/data/maps/mapQ1Q17DR24-DVMed6084.mat?format=raw'  # noqa: E501
+    builtin_mat = 'https://sourceforge.net/p/lpptransitlikemetric/code/HEAD/tree/data/maps/combMapDR25AugustMapDV_6574.mat?format=raw'  # noqa: E501
 
     def __init__(self, filename=None):
         from astropy.utils.data import download_file, _is_url
