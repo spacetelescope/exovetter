@@ -1,12 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jul 18 21:48:17 2020
+Compute Jeff Coughlin's Modshift metrics.
 
-Convolve data with model
-Id primary, secondary, tertiary, most positive
-Gap primary and secondary, measure sigma
-Convert conv to significance
-Measure sigma pri, sec, ter etc
+This algorithm is adapted from the Modshift code used in the Kepler
+Robovetter and documented on
+https://exoplanetarchive.ipac.caltech.edu/docs/KSCI-19105-002.pdf
+
+(see page 30, and appropriate context)
+
+Jeff uses modshift to refer to both the transit significance tests, as
+well as a suite of other, related, tests. This code only measures the
+metrics for the transit significance measurements.
+
+The algorithm is as follows
+
+o Fold and bin the data
+o Convolve binned data with model
+o Identify the three strongest dips, and the strongest positive excursion
+o Remove some of these events, and measure scatter of the rest of the data
+o Scale the convolved data by the per-point scatter so that each point
+  represents the statistical significance of a transit signal at that phase.
+o Record the statistical significance of the 4 events.
+
 
 @author: fergal
 """
@@ -20,9 +35,51 @@ import exovetter.modshift.names as names
 
 
 def compute_modshift_metrics(time, flux, tce, transitModelFunc):
-    """Top level function"""
+    """Compute Jeff Coughlin's Modshift metrics.
+
+    This algorithm is adapted from the Modshift code used in the Kepler
+    Robovetter and documented on
+    https://exoplanetarchive.ipac.caltech.edu/docs/KSCI-19105-002.pdf
+
+    (see page 30, and appropriate context)
+
+    Jeff uses modshift to refer to both the transit significance tests, as
+    well as a suite of other, related, tests. This code only measures the
+    metrics for the transit significance measurements.
+
+    The algorithm is as follows
+
+    * Fold and bin the data
+    * Convolve binned data with model
+    * Identify the three strongest dips, and the strongest positive excursion
+    * Remove some of these events, and measure scatter of the rest of the data
+    * Scale the convolved data by the per-point scatter so that each point
+      represents the statistical significance of a transit signal at that phase.
+    * Record the statistical significance of the 4 events.
+
+    Inputs
+    ------------
+    time (1d numpy array)
+        times of observations in units of days
+    flux (1d numpy array)
+        flux values at each time. Flux should be in fractional amplitude
+        (with typical out-of-transit values close to zero)
+    tce (dict)
+        A dictionary of tce parameters. Required keys are period, epoch and
+        duration (see the `names` modules for the exact string. The
+        transit_model_func may have additional requirements
+    transit_model_func (function)
+        Function that computes the model transit. The signature is
+        `func(time, tce, offset=0)`
+
+
+    Returns
+    -----------
+    TBD
+    """
     assert np.all(np.isfinite(time))
     assert np.all(np.isfinite(flux))
+    assert len(time) == len(flux)
 
     period_days = tce[names.PERIOD]
     epoch_days = tce[names.EPOCH]
@@ -49,8 +106,8 @@ def compute_modshift_metrics(time, flux, tce, transitModelFunc):
     conv[:, 1] /= sigma
 
     results.update(compute_event_significances(conv, results))
-    key = "false_alarm_threshold"
-    results[key] = compute_false_alarm_threshold(period_days, duration_hrs)
+    results["false_alarm_threshold"] = \
+        compute_false_alarm_threshold(period_days, duration_hrs)
 
     if True:
         plt.clf()
