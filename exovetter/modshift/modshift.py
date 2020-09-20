@@ -28,7 +28,6 @@ o Record the statistical significance of the 4 events.
 """
 
 from ipdb import set_trace as idebug
-import matplotlib.pyplot as plt
 import scipy.special as spspec
 import numpy as np
 
@@ -61,17 +60,17 @@ def compute_modshift_metrics(time, flux, tce, transitModelFunc):
 
     Inputs
     ------------
-    time (1d numpy array)
-        times of observations in units of days
-    flux (1d numpy array)
-        flux values at each time. Flux should be in fractional amplitude
+    time
+        (1d numpy array) times of observations in units of days
+    flux
+        (1d numpy array) flux values at each time. Flux should be in fractional amplitude
         (with typical out-of-transit values close to zero)
-    tce (dict)
-        A dictionary of tce parameters. Required keys are period, epoch and
+    tce
+        (dict) A dictionary of tce parameters. Required keys are period, epoch and
         duration (see the `names` modules for the exact string. The
         transit_model_func may have additional requirements
-    transit_model_func (function)
-        Function that computes the model transit. The signature is
+    transit_model_func
+        (function) Function that computes the model transit. The signature is
         `func(time, tce, offset=0)`
 
 
@@ -83,15 +82,16 @@ def compute_modshift_metrics(time, flux, tce, transitModelFunc):
     assert np.all(np.isfinite(flux))
     assert len(time) == len(flux)
 
+    offset = 0.25  #Primary transit at quarter phase, not zero phase
+    overres = 10 #Number of bins per transit duration
+
     period_days = tce[names.PERIOD]
     epoch_days = tce[names.EPOCH]
     duration_hrs = tce[names.DURATION_HRS]
 
-    overres = 10
     numBins = overres * period_days * 24 / duration_hrs
     numBins = int(numBins)
 
-    offset = 0.25  #Primary transit at quarter phase, not zero phase
     data = fold_and_bin_data(time, flux, period_days, epoch_days, offset, numBins)
     bphase = data[:, 0]
     bflux = data[:, 1]
@@ -132,10 +132,10 @@ def compute_false_alarm_threshold(period_days, duration_hrs):
 
     Inputs
     ---------
-    period_days (float)
-        Orbital period
-    duration_hrs (float)
-        Duration of transit in hours.
+    period_days
+        (float) Orbital period
+    duration_hrs
+        (float) Duration of transit in hours.
 
     Returns
     --------
@@ -160,14 +160,14 @@ def compute_event_significances(conv, results):
 
     Inputs
     --------
-    conv (2d np array)
-        The convolution of the folded lightcurve and the transit model in
+    conv
+        (2d np array)  The convolution of the folded lightcurve and the transit model in
         units of statistical significance. Note that
         `compute_convolution_for_binned_data` does NOT return the convolution
         in these units.
 
-    results (dict)
-        Contains the indices in `conv` of the 4 events. These indices are
+    results
+        (dict) Contains the indices in `conv` of the 4 events. These indices are
         stored in the keys "pri", "sec", "ter", "pos"
 
     Returns
@@ -197,7 +197,8 @@ def find_indices_of_key_locations(conv, period_days, duration_hrs):
 
     Inputs
     ---------
-    conv (2d np array)
+    conv
+        (2d np array)
         See output of `compute_convolution_for_binned_data`
     period_days, duration_hrs
         (floats)
@@ -289,7 +290,7 @@ def estimate_scatter(phi_days, flux, phi_pri_days, phi_sec_days, gap_width_hrs):
     return rms
 
 
-def compute_convolution_for_binned_data(phase, flux, model, offset_period):
+def compute_convolution_for_binned_data(phase, flux, model, offset_frac):
     """Convolve the binned data with the model
 
     Inputs
@@ -300,7 +301,7 @@ def compute_convolution_for_binned_data(phase, flux, model, offset_period):
     model
         (1d np array) Model transit computed at the same
         phase values as the `phase` array
-    offset_period
+    offset_frac
         (float). What fraction of the orbital period is the
         primary offset from zero. See `fold_and_bin_data`
 
@@ -324,25 +325,16 @@ def compute_convolution_for_binned_data(phase, flux, model, offset_period):
     # i1 = len(conv)
     phi = phase[i0:i1]
     conv = conv[i0:i1]
-    phi = np.fmod(phi - offset_period * period, period)
+    #Binned phase, rotated by offset
+    bphase = np.fmod(phi - offset_frac * period, period)
 
     if False:
         #Debugging plots
-        plt.clf()
-        plt.subplot(311)
-        plt.plot(phase, flux, "ko")
-
-        plt.subplot(312)
-        # plt.plot(phi, conv, 'b.-')
-        plt.plot(conv, "b.-")
-
-        plt.subplot(313)
-        plt.plot(phi, conv, "b.-")
-
-        plt.pause(0.1)
+        plotmodshift._plot_convolution(phase, flux, bphase, conv)
         idebug()
-    out = np.vstack([phi, conv]).transpose()
+    out = np.vstack([bphase, conv]).transpose()
     return out
+
 
 
 def box_car(time, tce, offset=0):
@@ -378,22 +370,30 @@ def box_car(time, tce, offset=0):
     return flux
 
 
-def fold_and_bin_data(time, flux, period, epoch, offset, num_bins):
+def fold_and_bin_data(time, flux, period, epoch, num_bins, offset_frac):
     """Fold data, then bin it up.
 
     Inputs
    ------------
-    time (1d numpy array)
-        times of observations
-    flux (1d numpy array)
-        flux values at each time. Flux should be in fractional amplitude
+    time
+        (1d numpy array) times of observations
+    flux
+        (1d numpy array) flux values at each time. Flux should be in fractional amplitude
         (with typical out-of-transit values close to zero)
     period
         (float) Orbital Period of TCE. Should be in same units as *time*
     epoch
         (float) Time of first transit of TCE. Same units as *time*
-    transit_model_func (function)
-        Function that computes the model transit. The signature is
+    num_bins
+        (int) How many bins to use for folded, binned, lightcurve
+    offset_frac
+        (float) Fraction of the orbital period to offset the primary transit
+        from zero. By default, this function puts the centre of the primary
+        transit at phase=0, which makes analysis difficult. Set this to
+        0.25 to put the primary transit at 1/4 of the period, which is easier
+        to look at, and easier to analyse.
+    transit_model_func
+        (function) Function that computes the model transit. The signature is
         `func(time, tce, offset=0)`
 
     Notes
@@ -410,7 +410,7 @@ def fold_and_bin_data(time, flux, period, epoch, offset, num_bins):
     i = np.arange(num_bins)
     bins = i / float(num_bins) * period  # 0..period in numBin steps
 
-    phase = compute_phase(time, period, epoch, offset)
+    phase = compute_phase(time, period, epoch, offset_frac)
     srt = np.argsort(phase)
     phase = phase[srt]
     flux = flux[srt]

@@ -57,3 +57,20 @@ def mark_false_alarm_threshold(results):
         label="False Alarm Threshold",
     )
 
+
+def _plot_convolution(phase, flux, bphase, conv):
+    """Debugging plot for `compute_convolution_for_binned_data
+
+    Private functino"""
+    plt.clf()
+    plt.subplot(311)
+    plt.plot(phase, flux, "ko")
+
+    plt.subplot(312)
+    # plt.plot(phi, conv, 'b.-')
+    plt.plot(conv, "b.-")
+
+    plt.subplot(313)
+    plt.plot(bphase, conv, "b.-")
+
+    plt.pause(0.1)
