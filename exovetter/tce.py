@@ -5,6 +5,81 @@ from astropy import units as u
 
 __all__ = ['TCE']
 
+ppm = u.dimensionless_unscaled * 1e-6
+ppk = u.dimensionless_unscaled * 1e-3
+
+class TimeOffset():
+    ...
+    offset = 0
+    def __init__(self, ttype, offset):
+        pass
+
+    def to(unit):
+        pass
+
+    def __sub__(self, offset):
+        return self.__add__(self, -offset)
+
+    def __add__(self, offset):
+        if isinstance(offset, number): #int, float, etc.
+            return TimeOffset(self.ttype, self.offset-offset)
+        elif isinstance(offset, TimeOffset):
+            pass
+            #check ttypes agree
+            #Compute delta offset
+            #create new TimeOffset object
+
+    #radd and rsub just switch the argument order
+
+
+bjd
+bmjd = bjd - 2_400_000
+bkjd = bjd - 2_454_833
+
+class FergalTce(dict):
+    """A proposed Tce class"""
+    def __init__(self):
+        #Can't set values on initialisation. This stops user
+        #from creating bare values. For example
+        #t = FergalTce(period=5) will cause errors later.
+        pass
+
+    def __get_item__(self, key, unit):
+        return self.get(key, unit)
+
+    def __set_item__(self, key, unit=None):
+        return self.set(key, unit)
+
+    def get(self, key, unit):
+        if key not in self.keys():
+            raise KeyError("%s not found" %(key))
+
+        value = self[key].to(unit).value
+        return value
+
+    def set(self, key, value, unit=None):
+        if unit is None:
+            if not isinstance(value, u.Unit):
+                raise TypeError("Must specify type")
+        else:
+            value *= unit
+        self[key] = value
+
+
+"""
+t = FergalTce()
+t['period'] = 5 #Not allowed
+t['period', u.day] = 5 #Yes
+t['period'] = 5 * u.day #yes
+
+t['depth', ppm] = 145
+
+depth_ppk = t['depth', ppk] #depth_ppk = .145
+
+per = t['period', u.second]  #or
+per = t.get('period', u.second)
+"""
+
 
 class TCE:
     """Class to handle Threshold Crossing Event (TCE).
