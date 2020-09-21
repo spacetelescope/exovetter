@@ -8,4 +8,5 @@ except ImportError:
 from . import lpp  # noqa
 from . import tce  # noqa
 from . import trapezoid_fit  # noqa
+from . import utils  # noqa
 from . import vetters  # noqa
