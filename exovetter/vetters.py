@@ -2,7 +2,9 @@
 
 from abc import ABC, abstractmethod
 
+from exovetter import modshift
 from exovetter import lpp
+import astropy.units as u
 
 __all__ = ['BaseVetter', 'Lpp']
 
@@ -56,6 +58,31 @@ class BaseVetter(ABC):
         """
         pass
 
+
+class ModShift(BaseVetter):
+    def __init__(self, **kwargs):
+        self.metrics = None
+
+    def run(self, tce, lightcurve):
+        """What I want this to look like, but it doesn't work yet
+        """
+        time = lightcurve.time
+        flux = lightcurve.flux
+
+        #TODO. Check time is bkjd, and convert if necessary
+
+        period_days = tce['period', u.day]
+        epoch_bkjd = tce['epoch', u.day]  #What about offset?
+        duration_hrs = tce['duration', u.hour]
+
+        model = tce.model(time)
+        self.metrics = modshift.new_compute_modshift_metrics(\
+                 time, flux, model, period_days, epoch_bkjd, duration_hrs)
+        return self.metrics
+
+    def plot(self):
+        print("No plots implemented for ModShift vetter")
+        pass
 
 class Lpp(BaseVetter):
     """Class to handle LPP Vetter functionality.
@@ -141,10 +168,3 @@ class Lpp(BaseVetter):
         lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 
 
-# TODO: Implement me!
-# NOTE: We can have many such tests.
-class OddEven(BaseVetter):
-    """Odd-even test."""
-
-    # Actual implementation of LPP is called here
-    pass

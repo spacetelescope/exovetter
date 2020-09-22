@@ -35,7 +35,8 @@ import numpy as np
 import exovetter.modshift.plotmodshift as plotmodshift
 import exovetter.modshift.names as names
 
-def compute_modshift_metrics(time, flux, tce, transitModelFunc):
+def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
+                                 duration_hrs):
     """Compute Jeff Coughlin's Modshift metrics.
 
     This algorithm is adapted from the Modshift code used in the Kepler
@@ -65,19 +66,57 @@ def compute_modshift_metrics(time, flux, tce, transitModelFunc):
     flux
         (1d numpy array) flux values at each time. Flux should be in fractional amplitude
         (with typical out-of-transit values close to zero)
-    tce
-        (dict) A dictionary of tce parameters. Required keys are period, epoch and
-        duration (see the `names` modules for the exact string. The
-        transit_model_func may have additional requirements
-    transit_model_func
-        (function) Function that computes the model transit. The signature is
-        `func(time, tce, offset=0)`
-
+    model
+        (1d numpy array) Model transit flux based on the properties of the TCE
+        len(model) == len(time)
+    period_days, epoch_days, duration_hrs
+        (floats) Properties of the transit
 
     Returns
     -----------
     A dictionary
     """
+
+    assert np.all(np.isfinite(time))
+    assert np.all(np.isfinite(flux))
+    assert len(time) == len(flux)
+
+    offset = 0.25  #Primary transit at quarter phase, not zero phase
+    overres = 10 #Number of bins per transit duration
+
+    numBins = overres * period_days * 24 / duration_hrs
+    numBins = int(numBins)
+
+    data = fold_and_bin_data(time, flux, period_days, epoch_days, offset, numBins)
+    bphase = data[:, 0]
+    bflux = data[:, 1]
+
+    #Fold the model here!
+    bModel = fold_and_bin_data(time, model, period_days, epoch_days, offset, numBins)
+    bModel[:,1] /= bModel[:,2]  #Avg flux per bin
+
+    conv = compute_convolution_for_binned_data(bphase, bflux, model, offset)
+    results = find_indices_of_key_locations(conv, period_days, duration_hrs)
+
+    phi_days = compute_phase(time, period_days, epoch_days, offset)
+    sigma = estimate_scatter(
+        phi_days, flux, results["pri"], results["sec"], 2 * duration_hrs
+    )
+    assert sigma > 0
+    conv[:, 1] /= sigma  #conv is now in units of statistical signif
+
+    results.update(compute_event_significances(conv, results))
+    results["false_alarm_threshold"] = \
+        compute_false_alarm_threshold(period_days, duration_hrs)
+
+    if True:
+        plotmodshift.plot_modshift(phi_days, flux, model, conv, results)
+    return results
+
+
+"""
+#Old, backup way.
+def compute_modshift_metrics(time, flux, tce, transitModelFunc):
     assert np.all(np.isfinite(time))
     assert np.all(np.isfinite(flux))
     assert len(time) == len(flux)
@@ -114,7 +153,7 @@ def compute_modshift_metrics(time, flux, tce, transitModelFunc):
     if True:
         plotmodshift.plot_modshift(phi_days, flux, model, conv, results)
     return results
-
+"""
 
 def compute_false_alarm_threshold(period_days, duration_hrs):
     """Compute the stat, significance needed to invalidate the null hypothesis
@@ -418,12 +457,12 @@ def fold_and_bin_data(time, flux, period, epoch, num_bins, offset_frac):
     cts = np.histogram(phase, bins=bins)[0]
     binnedFlux = np.histogram(phase, bins=bins, weights=flux)[0]
     idx = cts > 0
-    binnedFlux = binnedFlux[idx]
 
     numNonZeroBins = np.sum(idx)
     out = np.zeros((numNonZeroBins, 2))
     out[:, 0] = bins[:-1][idx]
-    out[:, 1] = binnedFlux
+    out[:, 1] = binnedFlux[idx]
+    out[:,2] = cts[idx]
     return out
 
 
