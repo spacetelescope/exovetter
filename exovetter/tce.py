@@ -5,37 +5,6 @@ from astropy import units as u
 
 __all__ = ['TCE']
 
-ppm = u.dimensionless_unscaled * 1e-6
-ppk = u.dimensionless_unscaled * 1e-3
-
-class TimeOffset():
-    ...
-    offset = 0
-    def __init__(self, ttype, offset):
-        pass
-
-    def to(unit):
-        pass
-
-    def __sub__(self, offset):
-        return self.__add__(self, -offset)
-
-    def __add__(self, offset):
-        if isinstance(offset, number): #int, float, etc.
-            return TimeOffset(self.ttype, self.offset-offset)
-        elif isinstance(offset, TimeOffset):
-            pass
-            #check ttypes agree
-            #Compute delta offset
-            #create new TimeOffset object
-
-    #radd and rsub just switch the argument order
-
-
-bjd
-bmjd = bjd - 2_400_000
-bkjd = bjd - 2_454_833
-
 class FergalTce(dict):
     """A proposed Tce class"""
     def __init__(self):
@@ -60,7 +29,7 @@ class FergalTce(dict):
     def set(self, key, value, unit=None):
         if unit is None:
             if not isinstance(value, u.Unit):
-                raise TypeError("Must specify type")
+                raise TypeError("Must specify unit")
         else:
             value *= unit
         self[key] = value
