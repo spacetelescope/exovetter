@@ -76,7 +76,6 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     -----------
     A dictionary
     """
-
     assert np.all(np.isfinite(time))
     assert np.all(np.isfinite(flux))
     assert len(time) == len(flux)
@@ -460,8 +459,8 @@ def fold_and_bin_data(time, flux, period, epoch, num_bins, offset_frac):
 
     numNonZeroBins = np.sum(idx)
     out = np.zeros((numNonZeroBins, 2))
-    out[:, 0] = bins[:-1][idx]
-    out[:, 1] = binnedFlux[idx]
+    out[:,0] = bins[:-1][idx]
+    out[:,1] = binnedFlux[idx]
     out[:,2] = cts[idx]
     return out
 
@@ -474,31 +473,3 @@ def compute_phase_for_tce(time, tce, offset=0.25):
 
 def compute_phase(time, period, epoch, offset=0.25):
     return np.fmod(time - epoch + offset * period, period)
-
-
-"""
-    #Jeff's way of doing it. I don't think I want to do it that way
-  for(i=0;i<ndat;i++)  // Perform ndat pertubations
-    {
-    tmpsum2 = 0;
-
-    // Before transit, can look up values for compuatation speed increase
-    for(j=0;j<startti;j++)
-      tmpsum2 += flat[j+i];
-
-    // Compute new values inside transit
-    for(j=startti;j<endti;j++)
-     // Shitfing data, holding model steady. Moving data points backwards,
-     //or model forwards, same thing
-      tmpsum2 += pow(data[j+i].flux - data[j].model,2);
-
-    // After transit, can look up values for computation speed increase
-    for(j=endti;j<ndat;j++)
-      tmpsum2 += flat[j+i];
-
-    rms[i] = sqrt(tmpsum2/ndat);  // RMS of the new residuals
-    if(rms[i] < rmsmin)
-      rmsmin = rms[i];
-    }
-
-"""
