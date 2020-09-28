@@ -38,7 +38,7 @@ def test_one_lpp():
 
     with pytest.warns(UserWarning,
                       match='LPP requires a MES or SNR value stored as snr'):
-        _ = lpp.run(tce.to_dict(), flat)
+        _ = lpp.run(tce, flat)
 
     # Accepted value if data doesn't change
     assert_allclose(lpp.norm_lpp, 0.17, atol=.09)

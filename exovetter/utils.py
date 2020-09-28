@@ -171,15 +171,15 @@ class WqedLSF:
             df[:, i] = self.func(self.x, i, **self.kwargs)
             df[:, i] /= self.s
 
-        A = np.matrix(df.transpose()) * np.matrix(df)
-        covar = A.I  # Inverts
+        A = np.dot(df.T, df)
+        covar = np.linalg.inv(A)
 
-        wy = np.matrix(self.y / self.s)
-        beta = wy * df
-        params = beta * covar
+        wy = self.y / self.s
+        beta = np.dot(wy, df)
+        params = np.dot(beta, covar)
 
         # Store results
-        self._param = np.array(params)[0]  # Convert from matrix
+        self._param = params
         self._cov = covar
 
     def get_best_fit_model(self, x=None):

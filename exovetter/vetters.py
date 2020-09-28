@@ -1,6 +1,7 @@
 """Module to handle exoplanet vetters."""
 
 import os
+import warnings
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -30,7 +31,8 @@ class BaseVetter(ABC):
 
     @abstractmethod
     def run(self, tce, lightcurve):
-        """Run the vetting test.
+        """Run the vetter on the specified Threshold Crossing Event (TCE)
+        and lightcurve to obtain metric.
 
         Parameters
         ----------
@@ -38,7 +40,8 @@ class BaseVetter(ABC):
             TCE.
 
         lightcurve : obj
-             ``lightkurve`` object.
+            ``lightkurve`` object that contains the detrended lightcurve's
+            time and flux arrays.
 
         Returns
         -------
@@ -75,10 +78,21 @@ class Lpp(BaseVetter):
         Input ``lc_name``.
 
     tce, lc
-        Inputs to :meth:`run`.
+        Inputs to :meth:`run`. TCE for this vetter should also
+        contain ``snr`` estimate.
 
-    lpp_data, raw_lpp, norm_lpp, plot_data
-        Results populated by :meth:`run`.
+    lpp_data : `exovetter.lpp.Lppdata`
+        Populated by :meth:`run`.
+
+    raw_lpp : float
+        Raw LPP value, populated by :meth:`run`.
+
+    norm_lpp : float
+        LPP value normalized by period and SNR, populated by :meth:`run`.
+
+    plot_data : dict
+        The folded, binned transit prior to the LPP transformation,
+        populated by :meth:`run`.
 
     """
     def __init__(self, map_filename=None, lc_name="flux"):
@@ -91,30 +105,6 @@ class Lpp(BaseVetter):
         self.plot_data = None
 
     def run(self, tce, lightcurve):
-        """Run the LPP Vetter on the specified Threshold Crossing Event (TCE)
-        and lightcurve to obtain metric.
-
-        Parameters
-        ----------
-        tce : dict
-            Contains ``period`` in days, ``tzero`` in units of lc time,
-            ``duration`` in hours, and ``snr`` estimate.
-
-        lightcurve : obj
-            ``lightkurve`` object that contains the detrended lightcurve's
-            time and flux arrays.
-
-        Returns
-        --------
-        result : dict
-            A dictionary of metric:
-
-            * ``raw_lpp`` (float): Raw LPP value.
-            * ``norm_lpp`` (float): LPP value normalized by period and SNR.
-            * ``plot_data`` (dict): The folded, binned transit prior to the
-              LPP transformation.
-
-        """
         self.tce = tce
         self.lc = lightcurve
         self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
@@ -134,35 +124,38 @@ class Lpp(BaseVetter):
                 'LPP plot data is empty. Execute self.run(...) first.')
 
         # target is populated in TCE, assume it already exists.
-        target = self.tce['target_name']
+        target = self.tce.target_name
         lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 
 
 class Sweet(BaseVetter):
     """Class to handle SWEET Vetter functionality.
 
-    Running :meth:`run` will populate the following attributes:
-
-    * ``self.tce``
-    * ``self.lc``
-    * ``self.result``
-    * ``self.lsf``
-
     Parameters
     ----------
-    epoch_bkjd : float
-        Epoch in Barycentric Kepler Julian Date (BKJD).
-
     threshold_sigma : float
         Threshold for comparing signal to transit period.
 
+    Attributes
+    ----------
+    tce, lc
+        Inputs to :meth:`run`.
+
+    result : dict
+        ``'amp'`` contains the best fit amplitude, its uncertainty, and
+        amplitude-to-uncertainty ratio for half-period, period, and
+        twice the period. ``'msg'`` contains warnings, if applicable.
+        Populated by :meth:`run`.
+
+    lsf : `~exovetter.utils.WqedLSF`
+        Least squares fit object, populated by :meth:`run`.
+
     """
-    def __init__(self, epoch_bkjd, threshold_sigma=3):
+    def __init__(self, threshold_sigma=3):
         self.tce = None
         self.lc = None
         self.result = None
         self.lsf = None
-        self.epoch_bkjd = epoch_bkjd
         self.threshold_sigma = threshold_sigma
 
     def run(self, tce, lightcurve):
@@ -170,7 +163,7 @@ class Sweet(BaseVetter):
         self.lc = lightcurve
         self.result, self.lsf = self._do_fit(
             lightcurve.time, lightcurve.flux,
-            tce['period'], self.epoch_bkjd, tce['duration'])
+            tce.period, tce.tzero, tce.duration)
 
     def plot(self):
         import matplotlib.pyplot as plt
@@ -182,6 +175,7 @@ class Sweet(BaseVetter):
         fig, ax = plt.subplots()
         ax.plot(phase, flux, 'k.')
         ax.plot(phase, best_fit, 'r.')
+        ax.set_title(f'{self.tce.target_name} ({self.tce.event_name})')
         plt.draw()
 
         return fig
@@ -213,14 +207,17 @@ class Sweet(BaseVetter):
 
         msg = []
         if result[0, -1] > threshold_sigma:
-            msg.append(
-                "WARN: SWEET test finds signal at HALF transit period")
+            warn_text = 'SWEET test finds signal at HALF transit period'
+            msg.append(f"WARN: {warn_text}")
+            warnings.warn(warn_text)
         if result[1, -1] > threshold_sigma:
-            msg.append(
-                "WARN: SWEET test finds signal at the transit period")
+            warn_text = "SWEET test finds signal at the transit period"
+            msg.append(f"WARN: {warn_text}")
+            warnings.warn(warn_text)
         if result[2, -1] > threshold_sigma:
-            msg.append(
-                "WARN: SWEET test finds signal at TWICE the transit period")
+            warn_text = "SWEET test finds signal at TWICE the transit period"
+            msg.append(f"WARN: {warn_text}")
+            warnings.warn(warn_text)
         if len(msg) == 0:
             msg = [("OK: SWEET finds no out-of-transit variability at "
                     "transit period")]

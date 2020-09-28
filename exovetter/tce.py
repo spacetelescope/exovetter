@@ -41,15 +41,7 @@ class TCE:
         self.target_name = target_name
         self.event_name = event_name
 
-    def to_dict(self):
-        """Return TCE attributes as a dictionary."""
-
-        return {'period':  self.period,
-                'tzero': self.tzero,
-                'duration': self.duration,
-                'depth': self.depth,
-                'target_name': self.target_name,
-                'event_name': self.event_name}
+        self.check()
 
     def check(self):
         """Validate period against duration."""

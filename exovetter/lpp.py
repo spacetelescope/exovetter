@@ -343,34 +343,25 @@ class Lppdata:
     def __init__(self, tce, lc, lc_name="flux", default_snr=10.):
         # TODO: Needs a check lightcurve function
 
-        self.check_tce(tce, default_snr)
+        self.tzero = tce.tzero
+        self.dur = tce.duration
+        self.period = tce.period
 
-        self.tzero = tce['tzero']
-        self.dur = tce['duration']
-        self.period = tce['period']
-
-        self.mes = default_snr
-        if 'snr' in tce.keys():
-            self.mes = tce['snr']
+        if hasattr(tce, 'snr'):
+            self.mes = tce.snr
+        else:
+            warnings.warn('LPP requires a MES or SNR value stored as snr '
+                          f'in the tce. Using a value of {default_snr}.')
+            self.mes = default_snr
 
         self.time = lc.time
-        self.flux = lc.__dict__[lc_name]  # TODO: Use getattr?
+        self.flux = getattr(lc, lc_name)
 
         # make sure flux is zero norm.
         if np.round(np.median(self.flux)) != 0:
             warnings.warn("Removing median. The supplied light curve is "
                           "not normalized to zero.")
             self.flux = self.flux - np.median(self.flux)
-
-    def check_tce(self, tce, default_snr):
-        """Validate TCE."""
-
-        if 'period' not in tce.keys():
-            raise KeyError('Period required for the TCE to run LPP.')
-
-        if 'snr' not in tce.keys():
-            warnings.warn('LPP requires a MES or SNR value stored as snr '
-                          f'in the tce. Using a value of {default_snr}.')
 
 
 class Loadmap:
