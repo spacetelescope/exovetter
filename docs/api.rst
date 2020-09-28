@@ -14,3 +14,4 @@ Reference/API
     :no-inheritance-diagram:
 
 .. automodapi:: exovetter.utils
+    :no-inheritance-diagram:
