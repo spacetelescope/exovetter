@@ -172,10 +172,13 @@ class Sweet(BaseVetter):
         flux = self.lsf.y
         best_fit = self.lsf.get_best_fit_model()
 
-        fig, ax = plt.subplots()
-        ax.plot(phase, flux, 'k.')
-        ax.plot(phase, best_fit, 'r.')
-        ax.set_title(f'{self.tce.target_name} ({self.tce.event_name})')
+        fig, axes = plt.subplots(2, 1, sharex=True)
+        plt.subplots_adjust(hspace=0.001)
+        axes[0].plot(phase, flux, 'k.')
+        axes[1].plot(phase, best_fit, 'r.')
+        axes[0].set_ylabel('Flux')
+        axes[1].set_xlabel('Phase')
+        axes[0].set_title(f'{self.tce.target_name} ({self.tce.event_name})')
         plt.draw()
 
         return fig
