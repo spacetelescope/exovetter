@@ -5,12 +5,12 @@ Compute Jeff Coughlin's Modshift metrics.
 Jeff uses modshift to refer to both the transit significance tests, as
 well as a suite of other, related, tests. This code only measures the
 metrics for the transit significance measurements. So, for example,
-the Odd Even test is not included in this code.
+the Odd Even test is not included here.
 
 The algorithm is as follows
 
 o Fold and bin the data
-o Convolve binned data with model
+o Convolve binned data with model.
 o Identify the three strongest dips, and the strongest poxsitive excursion
 o Remove some of these events, and measure scatter of the rest of the data
 o Scale the convolved data by the per-point scatter so that each point
@@ -19,15 +19,12 @@ o Record the statistical significance of the 4 events.
 
 """
 
-from ipdb import set_trace as idebug
+
+import exovetter.modshift.plotmodshift as plotmodshift
 import scipy.special as spspec
-import matplotlib.pyplot as plt
 import scipy.integrate as spint
 import numpy as np
 
-
-import exovetter.modshift.plotmodshift as plotmodshift
-import exovetter.modshift.names as names
 
 def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
                                  duration_hrs):
@@ -84,7 +81,7 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     bphase = data[:, 0]
     bflux = data[:, 1]
 
-    #Fold the model here!
+    #Fold the model here
     bModel = fold_and_bin_data(time, model, period_days, epoch_days, numBins)
     bModel = bModel[:,1] / bModel[:,2]  #Avg flux per bin
 
@@ -95,7 +92,6 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     conv = compute_convolution_for_binned_data(bphase, bflux, bModel)
     assert len(conv) == len(bphase)
     results = find_indices_of_key_locations(bphase, conv, duration_hrs)
-    phi_days = compute_phase(time, period_days, epoch_days)
 
     # plt.clf()
     # plt.plot(phi_days, flux, 'ko')
@@ -104,11 +100,12 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     # plt.pause(.1)
     # idebug()
 
+    phi_days = compute_phase(time, period_days, epoch_days)
     sigma = estimate_scatter(
         phi_days, flux, results["pri"], results["sec"], 2 * duration_hrs
     )
-
     results.update(compute_event_significances(conv, sigma, results))
+
     results["false_alarm_threshold"] = \
         compute_false_alarm_threshold(period_days, duration_hrs)
     results['Fred'] = np.nan
@@ -136,16 +133,21 @@ def fold_and_bin_data(time, flux, period, epoch, num_bins):
     num_bins
         (int) How many bins to use for folded, binned, lightcurve
 
+    Returns
+    -----------
+    2d numpy array. columns are phase (running from 0 to period),
+    binned flux, and counts. The binned flux is the sum of all fluxes
+    in that bin, while counts is the number of flux points added to the
+    bin. To plot the binned lightcurve, you will want to find the average
+    flux per bin by dividing binnedFlux / counts. Separating out the
+    two components of average flux makes computing the significance
+    of the transit easier.
+
     Notes
     -----------
     This isn't everything I want it to be. It assumes that every
     element in y, falls entirely in one bin element, which is not
     necessarily true.
-
-    This function does not weight the bins by the number of elements
-    contained. This is by design, and makes the computation of the
-    statstical significance of events easier. But it does not
-    look visually attractive.
     """
     i = np.arange(num_bins + 1)
     bins = i / float(num_bins) * period  # 0..period in numBin steps
@@ -190,7 +192,7 @@ def compute_false_alarm_threshold(period_days, duration_hrs):
 
     Returns
     --------
-    (float) TODO: What exactly is returned. Is this the 1 sigma false
+    (float) TODO  What exactly is returned. Is this the 1 sigma false
     alarm threshold?
     """
     duration_days = duration_hrs / 24.0
@@ -212,10 +214,9 @@ def compute_event_significances(conv, sigma, results):
     Inputs
     --------
     conv
-        (2d np array)  The convolution of the folded lightcurve and the transit model in
-        units of statistical significance. Note that
-        `compute_convolution_for_binned_data` does NOT return the convolution
-        in these units.
+        (2d np array)  The convolution of the folded lightcurve and the
+        transit model As computed by `compute_convolution_for_binned_data`
+    sigma (float) As returned by `estimate_scatter`
 
     results
         (dict) Contains the indices in `conv` of the 4 events. These indices are
@@ -270,14 +271,10 @@ def find_indices_of_key_locations(phase, conv, duration_hrs):
     gap_width = 2 * transit_width
     pos_gap_width = 3 * transit_width
 
-    # plt.clf()
-    # plt.plot(phase, conv, 'ko', ms=12)
-
     i0 = int(np.argmin(conv))
     out["pri"] = i0
     out["phase_pri"] = phase[i0]
 
-    # idebug()
     idx = mark_phase_range(phase, i0, gap_width)
     conv[idx] = 0
     # plt.plot(phase, conv, 'ro', ms=8)
@@ -397,16 +394,8 @@ def compute_convolution_for_binned_data(phase, flux, model):
     flux = np.concatenate([flux, flux])
     conv = np.convolve(flux, -model, mode='valid')  # Ensures modshift values are -ve
 
-    # plt.clf()
-    # plt.plot(conv, 'b.-')
-    # assert False
     return conv[:-1]
 
-
-def compute_phase_for_tce(time, tce, offset=0):
-    period = tce[names.PERIOD]
-    epoch = tce[names.EPOCH]
-    return compute_phase(time, period, epoch, offset)
 
 
 def compute_phase(time, period, epoch, offset=0):
@@ -418,44 +407,3 @@ def compute_phase(time, period, epoch, offset=0):
     return np.fmod(time - epoch + offset * period, period)
 
 
-
-"""
-#Old, backup way.
-def compute_modshift_metrics(time, flux, tce, transitModelFunc):
-    assert np.all(np.isfinite(time))
-    assert np.all(np.isfinite(flux))
-    assert len(time) == len(flux)
-
-    offset = 0.25  #Primary transit at quarter phase, not zero phase
-    overres = 10 #Number of bins per transit duration
-
-    period_days = tce[names.PERIOD]
-    epoch_days = tce[names.EPOCH]
-    duration_hrs = tce[names.DURATION_HRS]
-
-    numBins = overres * period_days * 24 / duration_hrs
-    numBins = int(numBins)
-
-    data = fold_and_bin_data(time, flux, period_days, epoch_days, offset, numBins)
-    bphase = data[:, 0]
-    bflux = data[:, 1]
-    model = transitModelFunc(bphase, tce, offset)
-
-    conv = compute_convolution_for_binned_data(bphase, bflux, model, offset)
-    results = find_indices_of_key_locations(conv, period_days, duration_hrs)
-
-    phi_days = compute_phase(time, period_days, epoch_days, offset)
-    sigma = estimate_scatter(
-        phi_days, flux, results["pri"], results["sec"], 2 * duration_hrs
-    )
-    assert sigma > 0
-    conv[:, 1] /= sigma  #conv is now in units of statistical signif
-
-    results.update(compute_event_significances(conv, results))
-    results["false_alarm_threshold"] = \
-        compute_false_alarm_threshold(period_days, duration_hrs)
-
-    if True:
-        plotmodshift.plot_modshift(phi_days, flux, model, conv, results)
-    return results
-"""
