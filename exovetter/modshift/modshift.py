@@ -21,8 +21,9 @@ o Record the statistical significance of the 4 events.
 
 from ipdb import set_trace as idebug
 import scipy.special as spspec
-import numpy as np
 import matplotlib.pyplot as plt
+import scipy.integrate as spint
+import numpy as np
 
 
 import exovetter.modshift.plotmodshift as plotmodshift
@@ -87,6 +88,9 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     bModel = fold_and_bin_data(time, model, period_days, epoch_days, numBins)
     bModel = bModel[:,1] / bModel[:,2]  #Avg flux per bin
 
+    #Scale model so integral from 0.. period is 1
+    integral = -1 * spint.trapz(bModel, bphase)
+    bModel /= integral
 
     conv = compute_convolution_for_binned_data(bphase, bflux, bModel)
     assert len(conv) == len(bphase)
@@ -97,6 +101,8 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     # plt.plot(phi_days, flux, 'ko')
     # plt.plot(bphase, bflux, 'gs')
     # plt.plot(conv, 'b.-')
+    # plt.pause(.1)
+    # idebug()
 
     sigma = estimate_scatter(
         phi_days, flux, results["pri"], results["sec"], 2 * duration_hrs
@@ -107,7 +113,7 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
         compute_false_alarm_threshold(period_days, duration_hrs)
     results['Fred'] = np.nan
 
-    if False:
+    if True:
         plotmodshift.plot_modshift(phi_days, flux, model, conv, results)
     return results
 
@@ -269,7 +275,7 @@ def find_indices_of_key_locations(phase, conv, duration_hrs):
 
     i0 = int(np.argmin(conv))
     out["pri"] = i0
-    out["phase-pri"] = phase[i0]
+    out["phase_pri"] = phase[i0]
 
     # idebug()
     idx = mark_phase_range(phase, i0, gap_width)
@@ -278,14 +284,14 @@ def find_indices_of_key_locations(phase, conv, duration_hrs):
 
     i1 = int(np.argmin(conv))
     out["sec"] = i1
-    out["phase-sec"] = phase[i1]
+    out["phase_sec"] = phase[i1]
     idx = mark_phase_range(phase, i1, gap_width)
     conv[idx] = 0
     # plt.plot(phase, conv, 'bo', ms=4)
 
     i2 = np.argmin(conv)
     out["ter"] = i2
-    out["phase-ter"] = phase[i2]
+    out["phase_ter"] = phase[i2]
 
     # # Gap out 3 transit durations either side of primary and secondary
     # # before looking for +ve event
@@ -296,10 +302,10 @@ def find_indices_of_key_locations(phase, conv, duration_hrs):
     if np.any(conv):
         i0 = np.argmax(conv)
         out["pos"] = i0
-        out["phase-pos"] = phase[i0]
+        out["phase_pos"] = phase[i0]
     else:
         out['pos'] = np.nan
-        out['phase-pos'] = np.nan
+        out['phase_pos'] = np.nan
 
     return out
 

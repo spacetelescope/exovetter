@@ -15,10 +15,6 @@ def plot_modshift(phase, flux, model, conv, results):
     flux = flux[srt]
     model = model[srt]
 
-    # srt = np.argsort(conv[:,0])
-    # conv = conv[srt, :]
-
-
     plt.clf()
     ax = plt.subplot(211)
     plt.plot(phase, 1e3 * flux, "k.")
