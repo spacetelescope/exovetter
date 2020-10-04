@@ -1,118 +1,80 @@
-"""Module to handle Threshold Crossing Event (TCE)."""
+# -*- coding: utf-8 -*-
 
+import exovetter.const as const
+import astropy.units as u
 import numpy as np
-from astropy import units as u
-
-__all__ = ['TCE']
-
-class FergalTce(dict):
-    """A proposed Tce class"""
-    def __init__(self):
-        #Can't set values on initialisation. This stops user
-        #from creating bare values. For example
-        #t = FergalTce(period=5) will cause errors later.
-        pass
-
-    def __get_item__(self, key, unit):
-        return self.get(key, unit)
-
-    def __set_item__(self, key, unit=None):
-        return self.set(key, unit)
-
-    def get(self, key, unit):
-        if key not in self.keys():
-            raise KeyError("%s not found" %(key))
-
-        value = self[key].to(unit).value
-        return value
-
-    def set(self, key, value, unit=None):
-        if unit is None:
-            if not isinstance(value, u.Unit):
-                raise TypeError("Must specify unit")
-        else:
-            value *= unit
-        self[key] = value
 
 
-"""
-t = FergalTce()
-t['period'] = 5 #Not allowed
-t['period', u.day] = 5 #Yes
-t['period'] = 5 * u.day #yes
 
-t['depth', ppm] = 145
+class Tce(dict):
+    required_quantities = set("period epoch epoch_offset duration depth".split())
+    def __init__(self, **kwargs):
+        dict.__init__(self)
+        for k in kwargs:
+            self.__setitem__(k, kwargs[k])
 
-depth_ppk = t['depth', ppk] #depth_ppk = .145
+    def __setitem__(self, key, value):
+        if key in self.required_quantities:
+            if not isinstance(value, u.Quantity):
+                raise TypeError("Special parameter %s must be an astropy quantity" %(key))
+        self.setdefault(key, value)
 
-per = t['period', u.second]  #or
-per = t.get('period', u.second)
-"""
+    def get_epoch(self, offset):
+        """Returns an astropy.unit.Quantity"""
+        return self['epoch'] - self['epoch_offset'] + offset
+
+    def validate(self):
+        is_ok = True
+
+        for q in self.required_quantities:
+            if q not in self:
+                print("Required quantitiy %s is missing" %(q))
+                is_ok = False
+        return is_ok
+
+    def get_model(self, times, epoch_offset):
+        if not self.validate():
+            raise ValueError("Required quantities missing from TCE")
+
+        if not isinstance(times, u.Quantity):
+            raise ValueError("times is not a Quantity. Please supply units")
+
+        unit = times.unit
+        times = times.to_value()
+
+        period = self['period'].to_value(unit)
+        epoch = self.get_epoch(epoch_offset).to_value(unit)
+        duration = self['duration'].to_value(unit)
+        depth = self['depth']  #Keep units attached
+
+        # Make epoch the start of the transit, not the midpoint
+        epoch -= duration / 2.0
+
+        mnT = np.min(times)
+        mxT = np.max(times)
+
+        e0 = int(np.floor((mnT - epoch) / period))
+        e1 = int(np.floor((mxT - epoch) / period))
+
+        flux = 0.0 * times
+        for i in range(e0, e1 + 1):
+            t0 = period * i + epoch
+            t1 = t0 + duration
+            # print(i, t0, t1)
+
+            idx = (t0 <= times) & (times <= t1)
+            flux[idx] -= depth.to_value()
+
+        return flux * depth.unit
 
 
-class TCE:
-    """Class to handle Threshold Crossing Event (TCE).
+class BoxCarTce(Tce):
+    pass
 
-    Parameters
-    ----------
-    period : `~astropy.units.Quantity`
-        Period of the event.
+class TrapezoidTce(Tce):
+    required_quantities = set("period epoch duration depth ingress_time".split())
 
-    tzero : float
-        Time of the event.
+    def get_model(self, times, epoch_offset):
+        raise NotImplementedError
 
-    duration : `~astropy.units.Quantity`
-        Duration of the event.
 
-    depth : float
-        The relative depth of the event.
-
-    target_name : str
-        Name of the target (star) for plotting.
-
-    event_name : str
-        Name of the TCE or planet for plotting.
-
-    """
-    def __init__(self, period=1 * u.day, tzero=0, duration=1 * u.hour,
-                 depth=1, target_name='target name', event_name="event b"):
-        # TODO: Use Quantity throughout to avoid unit conversion
-        # using magic numbers.
-        self.period = period.to_value(unit=u.day)
-        self.tzero = tzero
-        self.duration = duration.to_value(unit=u.hour)
-        self.depth = depth
-        self.target_name = target_name
-        self.event_name = event_name
-
-    def to_dict(self):
-        """Return TCE attributes as a dictionary."""
-
-        return {'period':  self.period,
-                'tzero': self.tzero,
-                'duration': self.duration,
-                'depth': self.depth,
-                'target_name': self.target_name,
-                'event_name': self.event_name}
-
-    def check(self):
-        """Validate period against duration."""
-        if self.period < self.duration / 24:
-            raise ValueError(f'The period ({self.period}) is shorter than '
-                             f'the duration ({self.duration}).')
-
-    def get_boxmodel(self, times):
-        """Return box model, which is also stored in ``self.model``."""
-        model = np.ones(len(times))
-
-        self.model_times = times
-        self.mmodel_phases = phases = np.mod(
-            (times - (self.tzero - 0.5 * self.period)) / self.period, 1)
-
-        want = ((phases > -1 * 0.5 * self.duration / 24) &
-                (phases < 0.5 * self.duration / 24))
-
-        model[want] = self.depth
-        self.model = model
-
-        return model
