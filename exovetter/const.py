@@ -1,6 +1,10 @@
 
 import astropy.units as u
 
+"""
+Useful constants for exoplanet vetting
+"""
+
 #Time offset constants
 bjd = 0 * u.day
 bkjd = bjd - 2_454_833 * u.day
@@ -12,6 +16,3 @@ ppk = 1e-3 * u.dimensionless_unscaled
 ppm = 1e-3 * ppk
 
 
-planck = 6.4e-34
-avogardo = 6.02e23
-...
