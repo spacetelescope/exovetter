@@ -11,9 +11,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-import astropy.io.fits as pyfits
+import astropy.units as u
 import exovetter.modshift.modshift as modshift
+from exovetter.newtce import Tce
+import exovetter.const as const
+
 """
+import astropy.io.fits as pyfits
 def prep_test_data():
     fn = "/home/fergal/data/kepler/Q6/1026/kplr001026032-2010265121752_llc.fits"
     data, hdr = pyfits.getdata(fn, header=True)
@@ -29,25 +33,34 @@ def prep_test_data():
 
     data = np.vstack([time, flux]).transpose()
     np.savez('modshift_test_data.npz', data=data)
+"""
 
-
-def test_modshift():
+def test_modshift_real_data():
     data = np.load('modshift_test_data.npz')['data']
     time = data[:,0]
     flux = data[:,1]
 
-    tce = dict()
-    tce[modshift.names.PERIOD] = 8.4604378
-    tce[modshift.names.EPOCH] = 54966.77813 - 54832.0
-    tce[modshift.names.DEPTH] = .07 * 1e6
-    tce[modshift.names.DURATION_HRS] = 3
+    period_days = 8.4604378
+    epoch_bkjd = 54966.77813 - 54832.0
+    duration_hrs = 3
+    depth_ppm = .07 * 1e6
+    tce = Tce(period= period_days* u.day,
+              epoch = epoch_bkjd * u.day,
+              epoch_offset = const.bkjd,
+              duration = duration_hrs * u.hour,
+              depth = depth_ppm * const.ppm,
+              event_name = "001026032 Q6"
+              )
 
-    vals = modshift.compute_modshift_metrics(time, flux, tce, modshift.box_car)
+    model = tce.get_model(time * u.day, const.bkjd)
+    vals = modshift.compute_modshift_metrics(time, flux, model,
+                                             period_days, epoch_bkjd,
+                                             duration_hrs
+                                             )
     assert vals['sigma_pri'] < -200
     assert vals['sigma_sec'] < -90
-    assert vals['sigma_ter'] < -1
-    assert vals['sigma_pos'] > 2
-"""
+    # assert vals['sigma_ter'] < -1
+    # assert vals['sigma_pos'] > 2
 
 def test_modshift():
     np.random.seed(1234)
@@ -65,29 +78,85 @@ def test_modshift():
 
     res = modshift.compute_modshift_metrics(x, y, model, period_days, epoch, duration_hrs)
 
-    assert np.isclose(res['pri'], 0, atol=2), res
-    assert np.isclose(res['sec'], 84-44, atol=2), res
-
-    # plt.clf()
-    # plt.plot(x, y, 'k.')
+    assert np.isclose(res['pri'], 0, atol=1) or np.isclose(res['pri'], 99, atol=1), res
+    assert np.isclose(res['sec'], 84-epoch, atol=2), res
     return res
+
+
+def test_single_epoch_sigma():
+    np.random.seed(1234)
+    x = np.arange(200) + .25
+    y = np.random.randn(200)
+    y[40] -= 5  #Primary
+    y[160] -= 3
+    model = np.zeros(len(x))
+
+    model[40] = -5
+    period_days = len(x)
+    epoch = 40
+    duration_hrs = 1*24
+
+    res = modshift.compute_modshift_metrics(x, y, model, period_days, epoch, duration_hrs)
+    assert np.isclose(res['sigma_pri'], -10, atol=2), res['sigma_pri']
+
+def test_multi_epoch_sigma():
+    # np.random.seed(1234)
+    x = np.arange(200) + .25
+    y = np.random.randn(200)
+    y[40] -= 5  #Primary
+    y[90] -= 5  #Primary
+    y[140] -= 5  #Primary
+    y[190] -= 5  #Primary
+    # y[80] -= 3 #secondary
+
+    model = np.zeros(len(x))
+
+    model[40] = -5
+    model[90] = -5
+    model[140] = -5
+    model[190] = -5
+    period_days = len(x) / 4
+    epoch = 40
+    duration_hrs = 1*24
+
+    res = modshift.compute_modshift_metrics(x, y, model, period_days, epoch, duration_hrs)
+    assert np.isclose(res['sigma_pri'], -40 , atol=4), res['sigma_pri']
+
+
+
+#def test_modshift():
+#     np.random.seed(1234)
+#     x = np.arange(100) + .25
+#     y = np.random.randn(100)
+#     y[40:50] -= 5  #Primary
+#     y[80:90] -= 3 #secondary
+
+#     model = np.zeros(len(x))
+#     model[40:48] = -5
+
+#     period_days = len(x)
+#     epoch = 44
+#     duration_hrs = 10*24
+
+#     res = modshift.compute_modshift_metrics(x, y, model, period_days, epoch, duration_hrs)
+
+#     assert np.isclose(res['pri'], 0, atol=2), res
+#     assert np.isclose(res['sec'], 84-44, atol=2), res
+#     return res
 
 
 def test_fold_and_bin_data():
     x = np.arange(100)+ .25
     y = np.random.randn(100)
 
-    data = modshift.fold_and_bin_data(x, y, 100, 0, 500, .25)
+    data = modshift.fold_and_bin_data(x, y, 100, 0, 500)
     assert len(data) == len(x), len(data)
 
-    data = modshift.fold_and_bin_data(x, y, 100, 0, 500, .25)
-    assert len(data) == len(x), len(data)
-
-    data = modshift.fold_and_bin_data(x, y, 100, 44, 500, .25)
+    data = modshift.fold_and_bin_data(x, y, 100, 44, 500)
     assert len(data) == len(x), len(data)
 
     # idebug()
-    data = modshift.fold_and_bin_data(x, y, 100, 44, 100, .25)
+    data = modshift.fold_and_bin_data(x, y, 100, 44, 100)
     assert len(data) == len(x), len(data)
 
 
