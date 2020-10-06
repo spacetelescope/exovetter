@@ -4,7 +4,72 @@ import exovetter.const as const
 import astropy.units as u
 import numpy as np
 
+def foo():
+    """
+    A TCE class stores the measured properties of a proposed transit.
+    Those properties include orbital period, transit depth etc.
 
+    This class tries to reduce the risk of modeling a transit
+    with data in the wrong unit, for example, entering the transit duration in
+    hours, then treating the value as if it is the duration in days.
+
+    A Tce class is a dictionary with a list of reserved keywords. The
+    values of these keys must be astropy.units.Quantities objects. Other
+    keys in the dictionary have no restrictions on their values. By ensuring
+    that certain measured quantities are have included units, we can ensure
+    that, for example, a TCE created with depth measured in parts per million,
+    is used correctly in code that expects depths to be measured in fractional
+    amplitude.
+
+    Transit times represent a wrinkle in this model. Most transit data has
+    times corrected to the barycentre of the solar system, and expressed in
+    units of days since some zero point. However, there is no agreement
+    on the zero point. Some data is given in Julian Date, other missions choose
+    mission specific zero points. For example, t=0 for Kepler data corresponds
+    to a barycentric julian date of 2,454,833.0. Some common offsets are stored
+    in const.py
+
+    The Tce class addresses these zero points by making `epoch_offset` a
+    reserved keyword. When creating a Tce, you must specify the period and
+    epoch of the transit (typically with units of days), but also the time
+    of the zero point of the time system.
+
+    Example
+    ----------
+    ::
+
+        period_days = 5.3
+        epoch_days = 133.4
+        tce = Tce(period=periods_days * u.day,
+                  epoch=epoch_days * u.day,
+                  epoch_offset=const.bkjd)
+
+
+    You can retrive the epoch of the transit with the `get_epoch()` method.::
+
+        # Even though the Tce is created with transit time in BKJD, getting the
+        # Julian date of the transit is easy:
+        epoch_bjd = tce.get_epoch(const.bjd)
+
+    The Tce class also lets you compute a model transit based on the input
+    parameters. Again, you have specify what zero point your required times
+    are at::
+
+        time, flux = load_kepler_data(...)
+
+        assert isinstance(time, np.ndarray)
+        assert dtype(time) == np.float
+
+        # Get the model in the BKJD time system
+        model = tce.get_model(time * u.day, const.bkjd)
+
+        assert isinstance(model, u.Quantity)
+
+
+    The default transit model created by a Tce is a box model where a point
+    is either in, or out, of transit. Subclass the Tce class to create
+    more sophisticated models, such as trapezoids, or limb-darkened models.
+    """
 
 class Tce(dict):
     required_quantities = set("period epoch epoch_offset duration depth".split())
