@@ -5,22 +5,22 @@ from astropy import units as u
 from lightkurve import search_lightcurvefile
 from numpy.testing import assert_allclose
 
+import exovetter.const as const
+from exovetter.tce import Tce
 from exovetter import vetters
-from exovetter.tce import TCE
-
 
 @pytest.mark.remote_data
 def test_one_lpp():
     """"Use case is to get values for one TCE."""
 
     period = 3.5224991 * u.day
-    tzero = 54953.6193 + 2400000.5 - 2454833.0
+    tzero = (54953.6193 + 2400000.5 - 2454833.0) * u.day
     duration = 3.1906 * u.hour
-    depth = .009537
+    depth = .009537 * const.frac_amp
     target_name = "Kepler-8"
     event_name = "Kepler-8 b"
 
-    tce = TCE(period=period, tzero=tzero, duration=duration,
+    tce = Tce(period=period, epoch=tzero, duration=duration,
               target_name=target_name, depth=depth, event_name=event_name)
 
     # Specify the lightcurve to vet

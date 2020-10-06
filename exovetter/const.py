@@ -14,5 +14,5 @@ bet  = bjd - 2_451_544.5 * u.day  #Barycentric Emphemeris time
 #Handy units to express depth
 ppk = 1e-3 * u.dimensionless_unscaled
 ppm = 1e-3 * ppk
-
+frac_amp = u.dimensionless_unscaled
 
