@@ -2,7 +2,7 @@
 
 import numpy as np
 from astropy import units as u
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 __all__ = ['TCE']
 
