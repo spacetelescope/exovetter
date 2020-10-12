@@ -11,8 +11,8 @@ def test_coverage1():
     epoch = 3
     dur_hour = 5
 
-    coverage = transit_coverage.calc_coverage(time, p_day, epoch,
-                                              dur_hour, ndur=2, nbins=10)
+    coverage = transit_coverage.calc_coverage(
+        time, p_day, epoch, dur_hour, ndur=2, nbins=10)
 
     assert coverage == 1.0
 
@@ -23,8 +23,8 @@ def test_coverage2():
     epoch = 3
     dur_hour = 12
 
-    coverage = transit_coverage.calc_coverage(time, p_day, epoch,
-                                              dur_hour, ndur=2, nbins=10)
+    coverage = transit_coverage.calc_coverage(
+        time, p_day, epoch, dur_hour, ndur=2, nbins=10)
 
     assert coverage == 0.1
 
@@ -35,7 +35,8 @@ def test_coverage3():
     epoch = 10.25
     dur_hour = 24
 
-    coverage = transit_coverage.calc_coverage(time, p_day, epoch,
-                                              dur_hour, ndur=2, nbins=10)
+    coverage = transit_coverage.calc_coverage(
+        time, p_day, epoch, dur_hour, ndur=2, nbins=10)
+
     print(coverage)
     assert coverage == 0.2

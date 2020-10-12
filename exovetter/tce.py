@@ -2,6 +2,7 @@
 
 import numpy as np
 from astropy import units as u
+# import matplotlib.pyplot as plt
 
 __all__ = ['TCE']
 
@@ -30,6 +31,7 @@ class TCE:
         Name of the TCE or planet for plotting.
 
     """
+
     def __init__(self, period=1 * u.day, tzero=0, duration=1 * u.hour,
                  depth=1, target_name='target name', event_name="event b"):
         # TODO: Use Quantity throughout to avoid unit conversion
@@ -44,7 +46,7 @@ class TCE:
     def to_dict(self):
         """Return TCE attributes as a dictionary."""
 
-        return {'period':  self.period,
+        return {'period': self.period,
                 'tzero': self.tzero,
                 'duration': self.duration,
                 'depth': self.depth,
@@ -59,16 +61,25 @@ class TCE:
 
     def get_boxmodel(self, times):
         """Return box model, which is also stored in ``self.model``."""
+
+        offset = 0.5  # This offset is not returned to user.
         model = np.ones(len(times))
 
         self.model_times = times
-        self.mmodel_phases = phases = np.mod(
-            (times - (self.tzero - 0.5 * self.period)) / self.period, 1)
+        self.model_phases = np.fmod(
+            times - self.tzero + (offset * self.period), self.period)
 
-        want = ((phases > -1 * 0.5 * self.duration / 24) &
-                (phases < 0.5 * self.duration / 24))
+        phases = self.model_phases
 
-        model[want] = self.depth
+        want = ((phases > offset * self.period - 0.5 * self.duration / 24) &
+                (phases <= offset * self.period + 0.5 * self.duration / 24))
+
+        model[want] = -1 * self.depth
+
+        # plt.figure()
+        # plt.plot(phases, model,'.')
+        # plt.title('tce box model')
+
         self.model = model
 
         return model
