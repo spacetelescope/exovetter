@@ -10,19 +10,18 @@ def test_coverage1():
     p_day = 3
     epoch = 3
     dur_hour = 5
-    
+
     coverage = transit_coverage.calc_coverage(
         time, p_day, epoch, dur_hour, ndur=2, nbins=10)
 
     assert coverage == 1.0
 
-    
+
 def test_coverage2():
     time = np.arange(0, 100, step=1)
     p_day = 3
     epoch = 3
     dur_hour = 12
-
 
     coverage = transit_coverage.calc_coverage(
         time, p_day, epoch, dur_hour, ndur=2, nbins=10)
