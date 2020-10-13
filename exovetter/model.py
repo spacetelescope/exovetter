@@ -14,24 +14,24 @@ import numpy as np
 
 
 def create_box_model_for_tce(tce, times, time_offset):
-        if not tce.validate():
-            raise ValueError("Required quantities missing from TCE")
+    if not tce.validate():
+        raise ValueError("Required quantities missing from TCE")
 
-        if not isinstance(times, u.Quantity):
-            raise ValueError("times is not a Quantity. Please supply units")
+    if not isinstance(times, u.Quantity):
+        raise ValueError("times is not a Quantity. Please supply units")
 
-        if not isinstance(time_offset, u.Quantity):
-            raise ValueError("time_offset is not a Quantity. Please supply units")
+    if not isinstance(time_offset, u.Quantity):
+        raise ValueError("time_offset is not a Quantity. Please supply units")
 
-        unit = times.unit
-        times = times.to_value()
+    unit = times.unit
+    times = times.to_value()
 
-        period = tce['period'].to_value(unit)
-        epoch = tce.get_epoch(time_offset).to_value(unit)
-        duration = tce['duration'].to_value(unit)
-        depth = tce['depth']  # Keep units attached
+    period = tce["period"].to_value(unit)
+    epoch = tce.get_epoch(time_offset).to_value(unit)
+    duration = tce["duration"].to_value(unit)
+    depth = tce["depth"]  # Keep units attached
 
-        return create_box_model(times, period, epoch, duration, depth)
+    return create_box_model(times, period, epoch, duration, depth)
 
 
 def create_box_model(times, period, epoch, duration, depth):

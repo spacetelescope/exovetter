@@ -70,7 +70,7 @@ class Tce(dict):
 
     def get_epoch(self, offset):
         """Returns an astropy.unit.Quantity"""
-        return self['epoch'] - self['epoch_offset'] + offset
+        return self["epoch"] - self["epoch_offset"] + offset
 
     def validate(self):
         is_ok = True
@@ -80,6 +80,3 @@ class Tce(dict):
                 print("Required quantitiy %s is missing" % (q))
                 is_ok = False
         return is_ok
-
-
-
