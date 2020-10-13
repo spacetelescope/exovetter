@@ -46,28 +46,10 @@ You can retrive the epoch of the transit with the `get_epoch()` method.::
     # Julian date of the transit is easy:
     epoch_bjd = tce.get_epoch(const.bjd)
 
-The Tce class also lets you compute a model transit based on the input
-parameters. Again, you have specify what zero point your required times
-are at::
-
-    time, flux = load_kepler_data(...)
-
-    assert isinstance(time, np.ndarray)
-    assert dtype(time) == np.float
-
-    # Get the model in the BKJD time system
-    model = tce.get_model(time * u.day, const.bkjd)
-
-    assert isinstance(model, u.Quantity)
-
-
-The default transit model created by a Tce is a box model where a point
-is either in, or out, of transit. Subclass the Tce class to create
-more sophisticated models, such as trapezoids, or limb-darkened models.
+See model.py for code to create model transits from a Tce object.
 """
 
 import astropy.units as u
-import numpy as np
 
 
 class Tce(dict):
@@ -99,49 +81,5 @@ class Tce(dict):
                 is_ok = False
         return is_ok
 
-    def get_model(self, times, epoch_offset):
-        if not self.validate():
-            raise ValueError("Required quantities missing from TCE")
-
-        if not isinstance(times, u.Quantity):
-            raise ValueError("times is not a Quantity. Please supply units")
-
-        unit = times.unit
-        times = times.to_value()
-
-        period = self['period'].to_value(unit)
-        epoch = self.get_epoch(epoch_offset).to_value(unit)
-        duration = self['duration'].to_value(unit)
-        depth = self['depth']  # Keep units attached
-
-        # Make epoch the start of the transit, not the midpoint
-        epoch -= duration / 2.0
-
-        mnT = np.min(times)
-        mxT = np.max(times)
-
-        e0 = int(np.floor((mnT - epoch) / period))
-        e1 = int(np.floor((mxT - epoch) / period))
-
-        flux = 0.0 * times
-        for i in range(e0, e1 + 1):
-            t0 = period * i + epoch
-            t1 = t0 + duration
-            # print(i, t0, t1)
-
-            idx = (t0 <= times) & (times <= t1)
-            flux[idx] -= depth.to_value()
-
-        return flux * depth.unit
 
 
-class BoxCarTce(Tce):
-    pass
-
-
-class TrapezoidTce(Tce):
-    required_quantities = "period epoch duration depth ingress_time".split()
-    required_quantities = set(required_quantities)
-
-    def get_model(self, times, epoch_offset):
-        raise NotImplementedError
