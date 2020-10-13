@@ -48,7 +48,6 @@ You can retrive the epoch of the transit with the `get_epoch()` method.::
 
 See model.py for code to create model transits from a Tce object.
 """
-
 import astropy.units as u
 
 
@@ -80,6 +79,3 @@ class Tce(dict):
                 print("Required quantitiy %s is missing" % (q))
                 is_ok = False
         return is_ok
-
-
-
