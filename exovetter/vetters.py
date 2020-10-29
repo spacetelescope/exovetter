@@ -120,6 +120,7 @@ class Lpp(BaseVetter):
         """
         self.tce = tce
         self.lc = lightcurve
+
         self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
 
         self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)  # noqa: E501
