@@ -40,7 +40,7 @@ Example
               epoch_offset=const.bkjd)
 
 
-You can retrive the epoch of the transit with the `get_epoch()` method.::
+You can retrieve the epoch of the transit with the `get_epoch()` method.::
 
     # Even though the Tce is created with transit time in BKJD, getting the
     # Julian date of the transit is easy:
@@ -80,8 +80,8 @@ class Tce(dict):
         ---------
         offset
             (Astropy units quantity). The epoch offset you wish to obtain
-            the time of first transit in, eg bkjd. See const.py for some
-            examples.
+            the time of first transit in, eg const.bkjd. See const.py for some
+            more examples.
 
         Returns
         ----------
