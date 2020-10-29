@@ -68,10 +68,29 @@ class Tce(dict):
         self.setdefault(key, value)
 
     def get_epoch(self, offset):
-        """Returns an astropy.unit.Quantity"""
+        """Get the epoch of the transit in your favourite BJD based time system.
+
+        The time of first transit of your TCE is stored as a date offset
+        from BJD=0 by an amount given by epoch_offset (eg BKJD, TJD, etc.).
+        Converting this time of first transit to a time offset from the
+        epoch you need is fiddly, and easy to get a sign wrong. This method
+        takes care of the conversion for you.
+
+        Inputs
+        ---------
+        offset
+            (Astropy units quantity). The epoch offset you wish to obtain
+            the time of first transit in, eg bkjd. See const.py for some
+            examples.
+
+        Returns
+        ----------
+        An astropy.unit.Quantity
+        """
         return self["epoch"] - self["epoch_offset"] + offset
 
     def validate(self):
+        """Check that required quantities are present in the object"""
         is_ok = True
 
         for q in self.required_quantities:
