@@ -3,6 +3,11 @@
 from abc import ABC, abstractmethod
 
 from exovetter import lpp
+from exovetter import odd_even
+from exovetter import transit_coverage
+
+import astropy.units as u
+import exovetter.const as const
 
 __all__ = ['BaseVetter', 'Lpp']
 
@@ -123,7 +128,8 @@ class Lpp(BaseVetter):
 
         self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
 
-        self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)  # noqa: E501
+        self.norm_lpp, self.raw_lpp, self.plot_data = \
+            lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)  # noqa: E501
 
         # TODO: Do we really need to return anything if everything is stored as
         # instance attributes anyway?
@@ -146,6 +152,43 @@ class Lpp(BaseVetter):
 # NOTE: We can have many such tests.
 class OddEven(BaseVetter):
     """Odd-even test."""
+    
+    def __init__(self, lc_name="flux"):
+        self.lc_name = lc_name
+        self.odd_depth = None
+        self.even_depth = None
+        self.sigma  = None
+    
+    def run(self, tce, lightcurve):
+        
+        self.time = lightcurve.time
+        self.flux = lightcurve.__dict__[self.lc_name]  # TODO: Use getattr?
+        self.time_offset_str = lightcurve.time_format
+        self.time_offset_q = const.string_to_offset[time_offset_str]
+        
+        self.period = tce['period'].to_value(u.day)
+        self.duration = tce['duration'].to_value(u.hour)
+        self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+        
+        self.sigma, self.odd_depth, self.even_depth = \
+          odd_even.calc_odd_even(time, flux, period, epoch, duration, ingress=None) # noqa: E501
+        
+    def plot(self):
+        
+        twicephase = odd_even.compute_phases(self.time, \
+                                    2 * self.period, self.epoch, offset=0.25)
+        
+        oddeven.diagnostic_plot(self.time, self.flux, self.period,\
+                                self.epoch, self.duration)
+        
+
+class TransitPhaseCoverage(BaseVetter):
+    """Transit Phase Coverage"""
 
     # Actual implementation of LPP is called here
     pass
+
+
+
+
+
