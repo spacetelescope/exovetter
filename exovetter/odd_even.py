@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
@@ -40,7 +40,8 @@ def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
     # plt.figure()
     # plt.plot(twicephase,flux, '.')
 
-    dur_phase = duration / (2 * period)
+    dur_phase = duration / period
+    print(dur_phase)
 
     odd_depth, even_depth = avg_odd_even(
         twicephase, flux, dur_phase, frac=0.5, event_phase=offset)
@@ -49,6 +50,28 @@ def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
 
     return sigma, odd_depth, even_depth
 
+
+def diagnostic_plot(time, flux, period, epoch, duration, odd_depth, even_depth):
+
+    offset = 0.25
+    twicephase = compute_phases(time, 2 * period, epoch, offset=offset)
+    dur_phase = duration / (2 * period)
+    wf = 3 #plotting width fraction
+
+    plt.figure()
+    ax1=plt.subplot(121)
+    plt.plot(twicephase, flux,'b.', ms=3)
+    plt.hlines(odd_depth[0]+odd_depth[1], 0.25-dur_phase, 0.25+dur_phase, linestyles='dashed', colors='r')
+    plt.hlines(odd_depth[0]-odd_depth[1], 0.25-dur_phase, 0.25+dur_phase, linestyles='dashed', colors='r')
+    plt.xlim(0.25-wf*dur_phase, 0.25+wf*dur_phase)
+    plt.xlabel('odd transit')
+    
+    plt.subplot(122, sharey=ax1)
+    plt.plot(twicephase, flux,'b.', ms=3)
+    plt.hlines(even_depth[0]+even_depth[1], 0.75-dur_phase, 0.75+dur_phase, linestyles='dashed', colors='r')
+    plt.hlines(even_depth[0]-even_depth[1], 0.75-dur_phase, 0.75+dur_phase, linestyles='dashed', colors='r')
+    plt.xlim(0.75-wf*dur_phase, 0.75+wf*dur_phase)
+    plt.xlabel('even transit')
 
 def compute_phases(time, period, epoch, offset=0.25):
 

@@ -163,23 +163,22 @@ class OddEven(BaseVetter):
         
         self.time = lightcurve.time
         self.flux = lightcurve.__dict__[self.lc_name]  # TODO: Use getattr?
-        self.time_offset_str = lightcurve.time_format
-        self.time_offset_q = const.string_to_offset[time_offset_str]
+        time_offset_str = lightcurve.time_format
+        time_offset_q = const.string_to_offset[time_offset_str]
         
         self.period = tce['period'].to_value(u.day)
-        self.duration = tce['duration'].to_value(u.hour)
+        self.duration = tce['duration'].to_value(u.day)
         self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
         
         self.sigma, self.odd_depth, self.even_depth = \
-          odd_even.calc_odd_even(time, flux, period, epoch, duration, ingress=None) # noqa: E501
+          odd_even.calc_odd_even(self.time, self.flux, self.period, \
+                                 self.epoch, self.duration, ingress=None) 
         
     def plot(self):
         
-        twicephase = odd_even.compute_phases(self.time, \
-                                    2 * self.period, self.epoch, offset=0.25)
-        
-        oddeven.diagnostic_plot(self.time, self.flux, self.period,\
-                                self.epoch, self.duration)
+        odd_even.diagnostic_plot(self.time, self.flux, self.period,\
+                                self.epoch, self.duration, \
+                                self.odd_depth, self.even_depth)
         
 
 class TransitPhaseCoverage(BaseVetter):
