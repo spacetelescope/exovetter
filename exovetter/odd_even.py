@@ -65,6 +65,7 @@ def diagnostic_plot(time, flux, period, epoch, duration, odd_depth, even_depth):
     plt.hlines(odd_depth[0]-odd_depth[1], 0.25-dur_phase, 0.25+dur_phase, linestyles='dashed', colors='r')
     plt.xlim(0.25-wf*dur_phase, 0.25+wf*dur_phase)
     plt.xlabel('odd transit')
+    plt.title('Depth:%f +- %f' % (odd_depth[0], odd_depth[1]), fontsize=10)
     
     plt.subplot(122, sharey=ax1)
     plt.plot(twicephase, flux,'b.', ms=3)
@@ -72,6 +73,8 @@ def diagnostic_plot(time, flux, period, epoch, duration, odd_depth, even_depth):
     plt.hlines(even_depth[0]-even_depth[1], 0.75-dur_phase, 0.75+dur_phase, linestyles='dashed', colors='r')
     plt.xlim(0.75-wf*dur_phase, 0.75+wf*dur_phase)
     plt.xlabel('even transit')
+    
+    plt.title('Depth:%f +- %f' % (even_depth[0], even_depth[1]), fontsize=10)
 
 def compute_phases(time, period, epoch, offset=0.25):
 
@@ -121,7 +124,7 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
     event_phase : float
         phase of the odd transit
     frac : float
-        fraction of the intransit points to use.
+        fraction of the intransit points to use centered on the phase
 
     Returns
     -------

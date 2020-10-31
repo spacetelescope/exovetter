@@ -14,3 +14,8 @@ bet = bjd - 2_451_544.5 * u.day  # Barycentric Emphemeris time
 ppk = 1e-3 * u.dimensionless_unscaled
 ppm = 1e-3 * ppk
 frac_amp = u.dimensionless_unscaled
+
+string_to_offset = { 'bkjd' : bkjd, 'kjd' : bkjd,
+                 'btjd' : btjd,
+                 'bjd' : bjd
+                 }
