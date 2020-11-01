@@ -10,6 +10,13 @@ bkjd = bjd - 2_454_833 * u.day
 btjd = bjd - 2_457_000 * u.day
 bet = bjd - 2_451_544.5 * u.day  # Barycentric Emphemeris time
 
+string_to_offset = dict(
+                        bjd=bjd,
+                        bkjd=bkjd,
+                        btjd=btjd,
+                        bet=bet
+                        )
+
 # Handy units to express depth
 ppk = 1e-3 * u.dimensionless_unscaled
 ppm = 1e-3 * ppk
