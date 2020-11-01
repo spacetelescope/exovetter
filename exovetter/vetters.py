@@ -2,11 +2,13 @@
 
 from abc import ABC, abstractmethod
 
+import exovetter.const as const
+import exovetter.model as model
 from exovetter import modshift
 from exovetter import lpp
 import astropy.units as u
 
-__all__ = ['BaseVetter', 'Lpp']
+# __all__ = ['BaseVetter', 'Lpp']
 
 
 class BaseVetter(ABC):
@@ -59,6 +61,7 @@ class BaseVetter(ABC):
         pass
 
 
+import numpy as np
 class ModShift(BaseVetter):
     def __init__(self, **kwargs):
         self.metrics = None
@@ -67,22 +70,30 @@ class ModShift(BaseVetter):
         """What I want this to look like, but it doesn't work yet
         """
         time = lightcurve.time
-        flux = lightcurve.flux
+        flux = lightcurve.PDCSAP_FLUX.flux
+        idx = np.isfinite(time) & np.isfinite(flux)
+        time = time[idx]
+        flux = flux[idx]
+        time_offset_str = lightcurve.PDCSAP_FLUX.time_format
+        time_offset_q = const.string_to_offset[time_offset_str]
 
-        #TODO. Check time is bkjd, and convert if necessary
+        flux /= np.median(flux)
+        flux -= 1
 
-        period_days = tce['period', u.day]
-        epoch_bkjd = tce['epoch', u.day]  #What about offset?
-        duration_hrs = tce['duration', u.hour]
+        #We are content to use the epoch in the user supplied units
+        period_days = tce['period'].to_value(u.day)
+        epoch_days = tce.get_epoch(time_offset_q).to_value(u.day)
+        duration_hrs = tce['duration'].to_value(u.hour)
 
-        model = tce.model(time)
-        self.metrics = modshift.new_compute_modshift_metrics(\
-                 time, flux, model, period_days, epoch_bkjd, duration_hrs)
+        box = model.create_box_model_for_tce(tce, time* u.day, time_offset_q)
+        self.metrics = modshift.compute_modshift_metrics(
+                 time, flux, box, period_days, epoch_days, duration_hrs)
         return self.metrics
 
     def plot(self):
         print("No plots implemented for ModShift vetter")
         pass
+
 
 class Lpp(BaseVetter):
     """Class to handle LPP Vetter functionality.
@@ -167,5 +178,6 @@ class Lpp(BaseVetter):
         # target is populated in TCE, assume it already exists.
         target = self.tce['target_name']
         lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
+
 
 
