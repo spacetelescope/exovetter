@@ -2,13 +2,12 @@
 
 from abc import ABC, abstractmethod
 
+import exovetter.lcutils as lcutils
 import exovetter.const as const
 import exovetter.model as model
 from exovetter import modshift
 from exovetter import lpp
 import astropy.units as u
-
-# __all__ = ['BaseVetter', 'Lpp']
 
 
 class BaseVetter(ABC):
@@ -61,7 +60,6 @@ class BaseVetter(ABC):
         pass
 
 
-import numpy as np
 class ModShift(BaseVetter):
     def __init__(self, **kwargs):
         self.metrics = None
@@ -70,22 +68,18 @@ class ModShift(BaseVetter):
         """What I want this to look like, but it doesn't work yet
         """
         time = lightcurve.time
-        flux = lightcurve.PDCSAP_FLUX.flux
-        idx = np.isfinite(time) & np.isfinite(flux)
-        time = time[idx]
-        flux = flux[idx]
-        time_offset_str = lightcurve.PDCSAP_FLUX.time_format
+        flux = lightcurve.flux
+        time_offset_str = lightcurve.time_format
         time_offset_q = const.string_to_offset[time_offset_str]
 
-        flux /= np.median(flux)
-        flux -= 1
+        flux = lcutils.set_median_flux_to_zero(flux)
 
         #We are content to use the epoch in the user supplied units
         period_days = tce['period'].to_value(u.day)
         epoch_days = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_hrs = tce['duration'].to_value(u.hour)
 
-        box = model.create_box_model_for_tce(tce, time* u.day, time_offset_q)
+        box = model.create_box_model_for_tce(tce, time * u.day, time_offset_q)
         self.metrics = modshift.compute_modshift_metrics(
                  time, flux, box, period_days, epoch_days, duration_hrs)
         return self.metrics

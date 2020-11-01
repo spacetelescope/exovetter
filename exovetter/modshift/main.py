@@ -12,10 +12,18 @@ import exovetter.vetters as vetters
 import exovetter.const as const
 import astropy.units as u
 from pprint import pprint
+import lightkurve as lk
 
+import numpy as np
+
+def load():
+    lkfile = lk.search_lightcurvefile('KIC 1026032', quarter=6).download()
+    data = lkfile.PDCSAP_FLUX
+    return data
 
 
 def mock():
+    #Create a TCE
     tce = Tce()
     tce['period'] = 8.4604378 *  u.day
     tce['epoch'] = 133.778 * u.day
@@ -23,11 +31,13 @@ def mock():
     tce['depth'] = .07 * const.ppm
     tce['duration'] = 3 * u.hour
 
-    import lightkurve as lk
+    data = load()
+    #Condition the data
+    data = data.flatten()
+    idx = np.isfinite(data.time) & np.isfinite(data.flux)
+    data = data[idx]
 
-    data = lk.search_lightcurvefile('KIC 1026032', quarter=6).download()
     vetter = vetters.ModShift()
-
     metrics = vetter.run(tce, data)
     pprint(metrics)
 
