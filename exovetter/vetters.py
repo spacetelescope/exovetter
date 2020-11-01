@@ -8,7 +8,7 @@ import exovetter.model as model
 from exovetter import modshift
 from exovetter import lpp
 import astropy.units as u
-
+import pprint
 
 class BaseVetter(ABC):
     """Base class for vetters.
@@ -23,9 +23,18 @@ class BaseVetter(ABC):
         of the depth difference that causes a TCE to fail.
 
     """
-    @abstractmethod
     def __init__(self, **kwargs):
-        pass
+        self.metrics = None
+
+    def __str__(self):
+        try:
+            if self.metrics is None:
+                return '{}'  # An empty dictionary
+        except AttributeError:
+            # No metrics attribute, fall back on repr
+            return self.__repr__()
+
+        return pprint.pformat(self.metrics)
 
     @abstractmethod
     def run(self, tce, lightcurve):
@@ -47,7 +56,6 @@ class BaseVetter(ABC):
         """
         pass
 
-    @abstractmethod
     def plot(self, tce, lightcurve):
         """Generate a diagnostic plot.
 

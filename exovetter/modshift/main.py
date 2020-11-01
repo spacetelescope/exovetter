@@ -39,5 +39,4 @@ def mock():
 
     vetter = vetters.ModShift()
     metrics = vetter.run(tce, data)
-    pprint(metrics)
-
+    return vetter
