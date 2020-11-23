@@ -99,9 +99,11 @@ class Lpp(BaseVetter):
 
         Parameters
         ----------
-        tce : dict
-            Contains ``period`` in days, ``tzero`` in units of lc time,
-            ``duration`` in hours, and ``snr`` estimate.
+        tce : `~exovetter.tce.Tce`
+            In addition to required quantities, it should also contain
+            ``snr`` estimate. ``tzero`` will be extracted using
+            ``time_format`` of the given lightcurve passed into
+            :meth:`exovetter.tce.Tce.get_epoch`.
 
         lightcurve : obj
             ``lightkurve`` object that contains the detrended lightcurve's

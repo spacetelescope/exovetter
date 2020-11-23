@@ -49,8 +49,10 @@ jobs:
         python -m pip install --upgrade pip setuptools
         python -m pip install 'numpy<1.19'
         python -m pip install -e .[test,all]
-    - name: Test without optional deps
-      run: pytest --open-files --remote-data
+    - name: Test with stable deps and coverage
+      run: pytest --cov=./ --cov-report=xml --open-files --remote-data
+    - name: Coverage report
+      uses: codecov/codecov-action@v1
 
   dev_deps_tests:
     runs-on: ubuntu-latest
