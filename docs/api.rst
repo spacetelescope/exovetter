@@ -10,6 +10,9 @@ Reference/API
 .. automodapi:: exovetter.lpp
     :no-inheritance-diagram:
 
+.. automodapi:: exovetter.odd_even
+    :no-inheritance-diagram:
+
 .. automodapi:: exovetter.trapezoid_fit
     :no-inheritance-diagram:
 
