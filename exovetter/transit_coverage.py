@@ -1,3 +1,4 @@
+"""Module to handle transit coverage calculations."""
 import numpy as np
 
 __all__ = ['calc_coverage', 'compute_phases']
