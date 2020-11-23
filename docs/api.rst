@@ -12,3 +12,6 @@ Reference/API
 
 .. automodapi:: exovetter.trapezoid_fit
     :no-inheritance-diagram:
+
+.. automodapi:: exovetter.transit_coverage
+    :no-inheritance-diagram:
