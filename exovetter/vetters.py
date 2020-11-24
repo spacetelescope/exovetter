@@ -101,9 +101,7 @@ class Lpp(BaseVetter):
         ----------
         tce : `~exovetter.tce.Tce`
             In addition to required quantities, it should also contain
-            ``snr`` estimate. ``tzero`` will be extracted using
-            ``time_format`` of the given lightcurve passed into
-            :meth:`exovetter.tce.Tce.get_epoch`.
+            ``snr`` estimate.
 
         lightcurve : obj
             ``lightkurve`` object that contains the detrended lightcurve's
