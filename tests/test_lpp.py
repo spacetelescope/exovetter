@@ -5,25 +5,25 @@ from astropy import units as u
 from lightkurve import search_lightcurvefile
 from numpy.testing import assert_allclose
 
-import exovetter.const as const
-from exovetter.tce import Tce
+from exovetter import const
 from exovetter import vetters
+from exovetter.tce import Tce
 
 
-# @pytest.mark.remote_data
-@pytest.mark.skip(reason='Fix the test')
+@pytest.mark.remote_data
 def test_one_lpp():
     """"Use case is to get values for one TCE."""
 
     period = 3.5224991 * u.day
     tzero = (54953.6193 + 2400000.5 - 2454833.0) * u.day
     duration = 3.1906 * u.hour
-    depth = .009537 * const.frac_amp
+    depth = 0.009537 * const.frac_amp
     target_name = "Kepler-8"
     event_name = "Kepler-8 b"
 
     tce = Tce(period=period, epoch=tzero, duration=duration,
-              target_name=target_name, depth=depth, event_name=event_name)
+              target_name=target_name, depth=depth, event_name=event_name,
+              epoch_offset=0 * u.day)
 
     # Specify the lightcurve to vet
     mission = "Kepler"
@@ -40,10 +40,10 @@ def test_one_lpp():
 
     with pytest.warns(UserWarning,
                       match='LPP requires a MES or SNR value stored as snr'):
-        _ = lpp.run(tce.to_dict(), flat)
+        _ = lpp.run(tce, flat)
 
     # Accepted value if data doesn't change
-    assert_allclose(lpp.norm_lpp, 0.17, atol=.09)
+    assert_allclose(lpp.norm_lpp, 0.17, atol=0.09)
 
 
 @pytest.mark.skip(reason='Fix the test')

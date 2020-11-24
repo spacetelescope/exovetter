@@ -18,3 +18,10 @@ Reference/API
 
 .. automodapi:: exovetter.transit_coverage
     :no-inheritance-diagram:
+
+.. automodapi:: exovetter.model
+    :no-inheritance-diagram:
+
+.. automodapi:: exovetter.const
+    :no-inheritance-diagram:
+    :include-all-objects:
