@@ -335,7 +335,7 @@ class Lppdata:
 
     Parameters
     ----------
-    tce : `~exovetter.tce.TCE`
+    tce : `~exovetter.tce.Tce`
         TCE object.
 
     lc : obj
@@ -346,8 +346,6 @@ class Lppdata:
     def __init__(self, tce, lc, lc_name="flux", default_snr=10.):
         # TODO: Needs a check lightcurve function
 
-        self.check_tce(tce, default_snr)
-
         # FIXME: This looks more correct but fails the test.
         # from exovetter import const as exo_const
         # self.tzero = tce.get_epoch(
@@ -357,9 +355,12 @@ class Lppdata:
         self.dur = tce['duration'].to_value(u.hr)
         self.period = tce['period'].to_value(u.day)
 
-        self.mes = default_snr
-        if 'snr' in tce.keys():
+        if 'snr' in tce:
             self.mes = tce['snr']
+        else:
+            warnings.warn('LPP requires a MES or SNR value stored as snr '
+                          f'in the tce. Using a value of {default_snr}.')
+            self.mes = default_snr
 
         self.time = lc.time
         self.flux = getattr(lc, lc_name)
@@ -369,16 +370,6 @@ class Lppdata:
             warnings.warn("Removing median. The supplied light curve is "
                           "not normalized to zero.")
             self.flux = self.flux - np.median(self.flux)
-
-    def check_tce(self, tce, default_snr):
-        """Validate TCE."""
-
-        if 'period' not in tce.keys():
-            raise KeyError('Period required for the TCE to run LPP.')
-
-        if 'snr' not in tce.keys():
-            warnings.warn('LPP requires a MES or SNR value stored as snr '
-                          f'in the tce. Using a value of {default_snr}.')
 
 
 class Loadmap:

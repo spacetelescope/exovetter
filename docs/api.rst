@@ -25,3 +25,6 @@ Reference/API
 .. automodapi:: exovetter.const
     :no-inheritance-diagram:
     :include-all-objects:
+
+.. automodapi:: exovetter.utils
+    :no-inheritance-diagram:

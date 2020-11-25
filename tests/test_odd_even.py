@@ -3,6 +3,8 @@ import pytest
 from astropy import units as u
 from numpy.testing import assert_allclose
 
+from exovetter import const as exo_const
+from exovetter.model import create_box_model_for_tce
 from exovetter import odd_even as oe
 from exovetter import tce
 
@@ -36,27 +38,29 @@ def test_odd_even2():
     assert_allclose(sigma, 5.6, atol=1)
 
 
-@pytest.mark.skip('FIXME: Enable after the new TCE class is settled upon')
 @pytest.mark.parametrize(('noise', 'ans_sigma'), [(0.009, 5), (0.1, 3)])
 def test_odd_even_tce(noise, ans_sigma):
-    times = np.arange(0, 400, .033)
-    period = 100
-    duration = 0.5
-    epoch = 0.0
+    times = np.arange(0, 400, 0.033) * u.day
+    period = 100 * u.day
+    duration = 0.5 * u.day
+    epoch = 0.0 * u.day
 
-    atce = tce.TCE(period * u.day, tzero=epoch, duration=duration * u.day,
-                   depth=0.12, target_name='sample', event_name="sample b")
-    flux1 = atce.get_boxmodel(times)
+    atce1 = tce.Tce(period=period, epoch=epoch, epoch_offset=exo_const.bjd,
+                    duration=duration, depth=0.12 * exo_const.frac_amp,
+                    target_name='sample', event_name="sample b")
+    flux1 = create_box_model_for_tce(atce1, times, atce1.get_epoch())
 
-    atce = tce.TCE(period * u.day, tzero=epoch + 0.5 * period,
-                   duration=duration * u.day, depth=0.5, target_name='sample',
-                   event_name="sample b")
-    flux2 = atce.get_boxmodel(times)
+    atce2 = tce.Tce(period=period, epoch=epoch + 0.5 * period,
+                    epoch_offset=exo_const.bjd, duration=duration,
+                    depth=0.5 * exo_const.frac_amp, target_name='sample',
+                    event_name="sample b")
+    flux2 = create_box_model_for_tce(atce2, times, atce2.get_epoch())
 
     rng = np.random.default_rng(seed=1234)
     flux = (flux1 + flux2) * 0.5 + rng.standard_normal(len(flux1)) * noise
     sigma, odd, even = oe.calc_odd_even(
-        times, flux, period * 0.5, epoch, duration)
+        times.to_value(u.day), flux.to_value(), (period * 0.5).to_value(u.day),
+        epoch.to_value(u.day), duration.to_value(u.day))
 
     if noise < 0.01:
         assert sigma > ans_sigma
