@@ -141,8 +141,8 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
     
     outof_transit_upper = event_phase + 0.25 -  duration
     outof_transit_lower = event_phase + 0.25 + duration
-    outof_transit_flux = flux[(phases>outof_transit_lower) & \
-                              (phases<= outof_transit_upper)]
+    outof_transit_flux = flux[(phases > outof_transit_lower) & \
+                              (phases <= outof_transit_upper)]
 
     odd_lower = event_phase - frac * 0.5 * duration
     odd_upper = event_phase + frac * 0.5 * duration
