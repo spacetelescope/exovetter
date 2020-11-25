@@ -1,7 +1,6 @@
 """Module to handle exoplanet vetters."""
 
 import os
-import warnings
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -53,7 +52,7 @@ class BaseVetter(ABC):
         """
         pass
 
-    def plot(self):
+    def plot(self):  # pragma: no cover
         """Generate a diagnostic plot."""
         pass
 
@@ -120,7 +119,7 @@ class Lpp(BaseVetter):
             'norm_lpp': self.norm_lpp,
             'plot_data': self.plot_data}
 
-    def plot(self):
+    def plot(self):  # pragma: no cover
         if self.plot_data is None:
             raise ValueError(
                 'LPP plot data is empty. Execute self.run(...) first.')
@@ -170,7 +169,7 @@ class Sweet(BaseVetter):
             lightcurve.time * u.day, lightcurve.flux_quantity,
             tce['period'], epoch, tce['duration'])
 
-    def plot(self):
+    def plot(self):  # pragma: no cover
         import matplotlib.pyplot as plt
 
         phase = self.lsf.x
@@ -223,17 +222,12 @@ class Sweet(BaseVetter):
 
         msg = []
         if result[0, -1] > threshold_sigma:
-            warn_text = 'SWEET test finds signal at HALF transit period'
-            msg.append(f"WARN: {warn_text}")
-            warnings.warn(warn_text)
+            msg.append("WARN: SWEET test finds signal at HALF transit period")
         if result[1, -1] > threshold_sigma:
-            warn_text = "SWEET test finds signal at the transit period"
-            msg.append(f"WARN: {warn_text}")
-            warnings.warn(warn_text)
+            msg.append("WARN: SWEET test finds signal at the transit period")
         if result[2, -1] > threshold_sigma:
-            warn_text = "SWEET test finds signal at TWICE the transit period"
-            msg.append(f"WARN: {warn_text}")
-            warnings.warn(warn_text)
+            msg.append("WARN: SWEET test finds signal at TWICE the "
+                       "transit period")
         if len(msg) == 0:
             msg = [("OK: SWEET finds no out-of-transit variability at "
                     "transit period")]
