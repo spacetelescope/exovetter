@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def calc_coverage(time, p_day, epoch, dur_hour, ndur=2, nbins=10):
@@ -19,7 +20,7 @@ def calc_coverage(time, p_day, epoch, dur_hour, ndur=2, nbins=10):
 
     n_bins_with_data = np.sum(hist > 0)
 
-    return n_bins_with_data / nbins
+    return n_bins_with_data / nbins, hist, bins
 
 
 def compute_phases(time, period, epoch, offset=0.5):
@@ -27,3 +28,13 @@ def compute_phases(time, period, epoch, offset=0.5):
     phases = np.fmod(time - epoch + (offset * period), period)
 
     return phases / period
+
+def plot_coverage(hist,bins):
+    
+    plt.figure(figsize=(6,6))
+    
+    plt.step(bins[:-1], hist , color='blue', where="post", marker='.')
+    
+    plt.xlabel('Phase From Transit')
+    plt.ylabel('Number of Data Points')
+    plt.title('In Transit Coverage')

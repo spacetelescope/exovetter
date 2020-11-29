@@ -151,7 +151,7 @@ class Lpp(BaseVetter):
 # TODO: Implement me!
 # NOTE: We can have many such tests.
 class OddEven(BaseVetter):
-    """Odd-even test."""
+    """Odd-even Metric"""
     
     def __init__(self, lc_name="flux"):
         self.lc_name = lc_name
@@ -183,11 +183,28 @@ class OddEven(BaseVetter):
 
 class TransitPhaseCoverage(BaseVetter):
     """Transit Phase Coverage"""
+    
+    def __init__(self, lc_name="flux"):
+        self.lc_name = lc_name
 
-    # Actual implementation of LPP is called here
-    pass
-
-
-
-
-
+    
+    def run(self, tce, lightcurve, nbins=10, ndur=2): 
+        
+        
+        time = lightcurve.time
+        self.time = time
+        self.flux = lightcurve.__dict__[self.lc_name]
+        
+        p_day = tce['period'].to_value(u.day)      
+        dur_hour = tce['duration'].to_value(u.hour)
+        time_offset_str = lightcurve.time_format
+        time_offset_q = const.string_to_offset[time_offset_str]
+        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+        self.tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(time, \
+                                    p_day, epoch, dur_hour, ndur=ndur, nbins=nbins)
+    
+        print("Fraction of In-Transit Coverage is: %f" % self.tp_cover)
+    
+    def plot(self):
+        
+        transit_coverage.plot_coverage(self.phase, self.flux,hist,bins)
