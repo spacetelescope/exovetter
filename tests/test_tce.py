@@ -1,35 +1,43 @@
-# -*- coding: utf-8 -*-
-
-import exovetter.const as const
-from exovetter.tce import Tce
-import astropy.units as u
-import numpy as np
 import pytest
+from astropy import units as u
+from astropy.tests.helper import assert_quantity_allclose
+
+from exovetter import const
+from exovetter.tce import Tce
 
 
 def test_required_quantity_missing():
-    tce = Tce(period=25 * u.day)
-    assert tce["period"] == 25 * u.day
+    with pytest.raises(KeyError, match='Missing required quantities'):
+        Tce(period=25 * u.day)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match='Special param period must be an '
+                       'astropy Quantity'):
+        Tce(period=25, epoch=0 * u.day, epoch_offset=0 * u.day,
+            duration=1 * u.hr, depth=1 * const.ppk)
+
+    tce = Tce(period=25 * u.day, epoch=0 * u.day, epoch_offset=0 * u.day,
+              duration=1 * u.hr, depth=1 * const.ppk)
+
+    with pytest.raises(TypeError, match='Special param depth must be an '
+                       'astropy Quantity'):
         tce["depth"] = 1000
-
-    with pytest.raises(TypeError):
-        tce = Tce(period=25)
 
 
 def test_misc_quantity():
-    tce = Tce(kepid=1234)
+    tce = Tce(kepid=1234, period=25 * u.day, epoch=0 * u.day,
+              epoch_offset=0 * u.day, duration=1 * u.hr, depth=1 * const.ppk)
     tce["note"] = "This is a comment"
 
-    tce["period"] = 25 * u.day
-    tce["kepid"]
-    tce["note"]
+    assert_quantity_allclose(tce["period"], 25 * u.day)
+    assert tce["kepid"] == 1234
+    assert tce["note"] == "This is a comment"
 
 
 def test_epoch():
-    tce = Tce(epoch=1000 * u.day, epoch_offset=const.bkjd)
+    tce = Tce(period=25 * u.day, epoch=1000 * u.day, epoch_offset=const.bkjd,
+              duration=1 * u.hr, depth=1 * const.ppk)
 
-    epoch_btjd = tce.get_epoch(const.btjd).to_value(u.day)
-    assert epoch_btjd < 0  # BTJD is after BKJD
-    assert np.isclose(epoch_btjd, 2_454_833 - 2_457_000 + 1000)
+    # BTJD is after BKJD
+    epoch_btjd = tce.get_epoch(const.btjd)
+    assert_quantity_allclose(
+        epoch_btjd, (2_454_833 - 2_457_000 + 1000) * u.day)

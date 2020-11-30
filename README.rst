@@ -1,12 +1,17 @@
 exovetter: Exoplanet Vetting
-----------------------------
+============================
 
 .. image:: https://readthedocs.org/projects/exovetter/badge/?version=latest
     :target: https://exovetter.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
 .. image:: https://github.com/spacetelescope/exovetter/workflows/CI/badge.svg
+    :target: https://github.com/spacetelescope/exovetter/actions
     :alt: Github Actions CI Status
+
+.. image:: https://codecov.io/gh/spacetelescope/exovetter/branch/master/graph/badge.svg?token=H3UC4Q0H6R
+    :target: https://codecov.io/gh/spacetelescope/exovetter
+    :alt: Coverage report
 
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org

@@ -1,12 +1,33 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
+"""Module to handle transit coverage calculations."""
 import numpy as np
 import matplotlib.pyplot as plt
 
+__all__ = ['calc_coverage', 'compute_phases']
 
+
+# TODO: Improve docstring.
 def calc_coverage(time, p_day, epoch, dur_hour, ndur=2, nbins=10):
-    """Calculate the fraction of  the in-transit points that contain data.
+    """Calculate the fraction of the in-transit points that contain data.
+
+    Parameters
+    ----------
+    time, p_day, epoch : float
+        See :func:`compute_phases`.
+
+    dur_hour : float
+        Duration in hours.
+
+    ndur : int
+        Number of duration.
+
+    nbins : int
+        Number of bins.
+
+    Returns
+    -------
+    coverage : float
+        Fraction of the in-transit points that contain data.
+
     """
     phases = compute_phases(time, p_day, epoch, offset=0.5)
 
@@ -23,10 +44,31 @@ def calc_coverage(time, p_day, epoch, dur_hour, ndur=2, nbins=10):
     return n_bins_with_data / nbins, hist, bins
 
 
+# TODO: Improve docstring.
 def compute_phases(time, period, epoch, offset=0.5):
+    """Calculate phases.
 
+    Parameters
+    ----------
+    time : float
+        Time.
+
+    period : float
+        Period in days.
+
+    epoch : float
+        Epoch.
+
+    offset : float
+        Offset.
+
+    Returns
+    -------
+    phases : float
+        Phases.
+
+    """
     phases = np.fmod(time - epoch + (offset * period), period)
-
     return phases / period
 
 def plot_coverage(hist,bins):

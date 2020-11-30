@@ -8,6 +8,9 @@ import copy
 import warnings
 
 import numpy as np
+from astropy import units as u
+from astropy.utils.data import download_file, _is_url
+from scipy import io as spio
 
 __all__ = ['compute_lpp_Transitmetric', 'runningMedian', 'foldBinLightCurve',
            'computeRawLPPTransitMetric', 'knnDistance_fromKnown',
@@ -345,16 +348,21 @@ class Lppdata:
 
         self.check_tce(tce, default_snr)
 
-        self.tzero = tce['tzero']
-        self.dur = tce['duration']
-        self.period = tce['period']
+        # FIXME: This looks more correct but fails the test.
+        # from exovetter import const as exo_const
+        # self.tzero = tce.get_epoch(
+        #     getattr(exo_const, lc.time_format)).to_value(u.day)
+
+        self.tzero = tce['epoch'].to_value(u.day)
+        self.dur = tce['duration'].to_value(u.hr)
+        self.period = tce['period'].to_value(u.day)
 
         self.mes = default_snr
         if 'snr' in tce.keys():
             self.mes = tce['snr']
 
         self.time = lc.time
-        self.flux = lc.__dict__[lc_name]  # TODO: Use getattr?
+        self.flux = getattr(lc, lc_name)
 
         # make sure flux is zero norm.
         if np.round(np.median(self.flux)) != 0:
@@ -387,13 +395,9 @@ class Loadmap:
         If URL is provided, it will be cached using :ref:`astropy:utils-data`
 
     """
-    builtin_mat = 'https://stsci.box.com/s/s2jup12rcjn05qll598h33bwycjeym8x'
-    # builtin_mat = 'https://sourceforge.net/p/lpptransitlikemetric/code/HEAD/tree/data/maps/combMapDR25AugustMapDV_6574.mat?format=raw'  # noqa: E501
+    builtin_mat = 'https://stsci.box.com/shared/static/1ffi1t1fhae82d7xeqexw4ymlhlk0ov4.mat'  # noqa
 
     def __init__(self, filename=None):
-        from astropy.utils.data import download_file, _is_url
-        from scipy import io as spio
-
         if filename is None:
             filename = self.builtin_mat
 
