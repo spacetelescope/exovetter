@@ -207,4 +207,5 @@ class TransitPhaseCoverage(BaseVetter):
     
     def plot(self):
         
-        transit_coverage.plot_coverage(self.phase, self.flux,hist,bins)
+        transit_coverage.plot_coverage(self.phase, self.flux, \
+                                       self.hist, self.bins)
