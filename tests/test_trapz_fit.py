@@ -62,7 +62,7 @@ class TestDAVE:
 
         # To, Depth, BigT, TRatio
         assert_allclose(ioblk.physvals, [-0.00043501, 0.00030478,
-                                         0.20759337,  0.03783464], rtol=5e-6)
+                                         0.20759337, 0.03783464], rtol=5e-6)
         assert_allclose(ioblk.bestphysvals, ioblk.physvals)
         assert_allclose(ioblk.boundedvals, [-3.09340749e-03, -1.48800535,
                                             -5.36273499e-01, -3.23596121])

@@ -89,6 +89,7 @@ class Lpp(BaseVetter):
         Results populated by :meth:`run`.
 
     """
+
     def __init__(self, map_filename=None, lc_name="flux"):
         self.map_info = lpp.Loadmap(filename=map_filename)
         self.lc_name = lc_name
@@ -152,60 +153,58 @@ class Lpp(BaseVetter):
 # NOTE: We can have many such tests.
 class OddEven(BaseVetter):
     """Odd-even Metric"""
-    
+
     def __init__(self, lc_name="flux"):
         self.lc_name = lc_name
         self.odd_depth = None
         self.even_depth = None
-        self.sigma  = None
-    
+        self.sigma = None
+
     def run(self, tce, lightcurve):
-        
+
         self.time = lightcurve.time
         self.flux = lightcurve.__dict__[self.lc_name]  # TODO: Use getattr?
         time_offset_str = lightcurve.time_format
         time_offset_q = const.string_to_offset[time_offset_str]
-        
+
         self.period = tce['period'].to_value(u.day)
         self.duration = tce['duration'].to_value(u.day)
         self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-        
+
         self.sigma, self.odd_depth, self.even_depth = \
-          odd_even.calc_odd_even(self.time, self.flux, self.period, \
-                                 self.epoch, self.duration, ingress=None) 
-        
+            odd_even.calc_odd_even(self.time, self.flux, self.period,
+                                   self.epoch, self.duration, ingress=None)
+
     def plot(self):
-        
-        odd_even.diagnostic_plot(self.time, self.flux, self.period,\
-                                self.epoch, self.duration, \
-                                self.odd_depth, self.even_depth)
-        
+
+        odd_even.diagnostic_plot(self.time, self.flux, self.period,
+                                 self.epoch, self.duration,
+                                 self.odd_depth, self.even_depth)
+
 
 class TransitPhaseCoverage(BaseVetter):
     """Transit Phase Coverage"""
-    
+
     def __init__(self, lc_name="flux"):
         self.lc_name = lc_name
 
-    
-    def run(self, tce, lightcurve, nbins=10, ndur=2): 
-        
-        
+    def run(self, tce, lightcurve, nbins=10, ndur=2):
+
         time = lightcurve.time
         self.time = time
         self.flux = lightcurve.__dict__[self.lc_name]
-        
-        p_day = tce['period'].to_value(u.day)      
+
+        p_day = tce['period'].to_value(u.day)
         dur_hour = tce['duration'].to_value(u.hour)
         time_offset_str = lightcurve.time_format
         time_offset_q = const.string_to_offset[time_offset_str]
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-        self.tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(time, \
-                                    p_day, epoch, dur_hour, ndur=ndur, nbins=nbins)
-    
+        self.tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(time,
+                                                                             p_day, epoch, dur_hour, ndur=ndur, nbins=nbins)
+
         print("Fraction of In-Transit Coverage is: %f" % self.tp_cover)
-    
+
     def plot(self):
-        
-        transit_coverage.plot_coverage(self.phase, self.flux, \
+
+        transit_coverage.plot_coverage(self.phase, self.flux,
                                        self.hist, self.bins)

@@ -6,6 +6,7 @@ from exovetter.transit_coverage import compute_phases
 __all__ = ['calc_odd_even', 'calc_ratio_significance',
            'calc_diff_significance', 'avg_odd_even']
 
+
 def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
     """Simple odd/even vetter.
 
@@ -48,8 +49,7 @@ def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
     # plt.plot(twicephase,flux, '.')
 
     dur_phase = duration / period
-    #print(dur_phase)
-
+    # print(dur_phase)
 
     odd_depth, even_depth = avg_odd_even(
         twicephase, flux, dur_phase, frac=0.5, event_phase=offset)
@@ -58,40 +58,43 @@ def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
 
     return sigma, odd_depth, even_depth
 
-def diagnostic_plot(time, flux, period, epoch, duration, odd_depth, even_depth):
+
+def diagnostic_plot(time, flux, period, epoch,
+                    duration, odd_depth, even_depth):
 
     offset = 0.25
     twicephase = compute_phases(time, 2 * period, epoch, offset=offset)
     dur_phase = duration / (2 * period)
-    wf = 4 #plotting width fraction
+    wf = 4  # plotting width fraction
 
     plt.figure()
-    ax1=plt.subplot(121)
-    plt.plot(twicephase, flux,'b.', ms=3)
-    plt.hlines(odd_depth[0]+odd_depth[1], 0.25-dur_phase, 0.25+dur_phase, \
+    ax1 = plt.subplot(121)
+    plt.plot(twicephase, flux, 'b.', ms=3)
+    plt.hlines(odd_depth[0] + odd_depth[1], 0.25 - dur_phase, 0.25 + dur_phase,
                linestyles='dashed', colors='r', label='1 sigma')
-    plt.hlines(odd_depth[0]-odd_depth[1], 0.25-dur_phase, 0.25+dur_phase, \
+    plt.hlines(odd_depth[0] - odd_depth[1], 0.25 - dur_phase, 0.25 + dur_phase,
                linestyles='dashed', colors='r')
     plt.legend(loc="upper left")
-    plt.xlim(0.25-wf*dur_phase, 0.25+wf*dur_phase)
+    plt.xlim(0.25 - wf * dur_phase, 0.25 + wf * dur_phase)
     plt.xlabel('odd transit')
     plt.title('Depth:%f +- %f' % (odd_depth[0], odd_depth[1]), fontsize=10)
-    
+
     plt.subplot(122, sharey=ax1)
-    plt.plot(twicephase, flux,'b.', ms=3)
-    plt.hlines(even_depth[0]+even_depth[1], 0.75-dur_phase, 0.75+dur_phase, \
+    plt.plot(twicephase, flux, 'b.', ms=3)
+    plt.hlines(even_depth[0] + even_depth[1], 0.75 - dur_phase, 0.75 + dur_phase,
                linestyles='dashed', colors='r', label="1 sigma")
-    plt.hlines(even_depth[0]-even_depth[1], 0.75-dur_phase, 0.75+dur_phase, \
+    plt.hlines(even_depth[0] - even_depth[1], 0.75 - dur_phase, 0.75 + dur_phase,
                linestyles='dashed', colors='r')
     plt.legend(loc="upper left")
-    plt.xlim(0.75-wf*dur_phase, 0.75+wf*dur_phase)
+    plt.xlim(0.75 - wf * dur_phase, 0.75 + wf * dur_phase)
     plt.xlabel('even transit')
-    
+
     plt.title('Depth:%f +- %f' % (even_depth[0], even_depth[1]), fontsize=10)
 
-#def compute_phases(time, period, epoch, offset=0.25):
+# def compute_phases(time, period, epoch, offset=0.25):
 
 #    phases = np.fmod(time - epoch + (offset * period), period)
+
 
 def calc_ratio_significance(odd, even):
     """Calculate ratio significance between odd and even.
@@ -183,10 +186,10 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
         Depth and error of the even transit.
 
     """
-    
-    outof_transit_upper = event_phase + 0.25 -  duration
+
+    outof_transit_upper = event_phase + 0.25 - duration
     outof_transit_lower = event_phase + 0.25 + duration
-    outof_transit_flux = flux[(phases > outof_transit_lower) & \
+    outof_transit_flux = flux[(phases > outof_transit_lower) &
                               (phases <= outof_transit_upper)]
 
     x = frac * 0.5 * duration
@@ -204,7 +207,7 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
 
         avg_even = np.average(even_transit_flux)
         avg_odd = np.average(odd_transit_flux)
-        
+
         if len(outof_transit_flux) > 1:
             err_even = np.std(outof_transit_flux)
             err_odd = err_even
