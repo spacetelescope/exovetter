@@ -7,7 +7,7 @@ from exovetter import odd_even
 from exovetter import transit_coverage
 
 import astropy.units as u
-import exovetter.const as const
+import exovetter.const as exo_const
 
 __all__ = ['BaseVetter', 'Lpp']
 
@@ -130,7 +130,7 @@ class Lpp(BaseVetter):
         self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
 
         self.norm_lpp, self.raw_lpp, self.plot_data = \
-            lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)  # noqa: E501
+            lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)
 
         # TODO: Do we really need to return anything if everything is stored as
         # instance attributes anyway?
@@ -139,7 +139,7 @@ class Lpp(BaseVetter):
             'norm_lpp': self.norm_lpp,
             'plot_data': self.plot_data}
 
-    def plot(self):
+    def plot(self):  # pragma: no cover
         if self.plot_data is None:
             raise ValueError(
                 'LPP plot data is empty. Execute self.run(...) first.')
@@ -161,9 +161,9 @@ class OddEven(BaseVetter):
     def run(self, tce, lightcurve):
 
         self.time = lightcurve.time
-        self.flux = lightcurve.__dict__[self.lc_name]  # TODO: Use getattr?
+        self.flux = getattr(lightcurve, self.lc_name)
         time_offset_str = lightcurve.time_format
-        time_offset_q = const.string_to_offset[time_offset_str]
+        time_offset_q = getattr(exo_const, time_offset_str)
 
         self.period = tce['period'].to_value(u.day)
         self.duration = tce['duration'].to_value(u.day)
@@ -173,7 +173,7 @@ class OddEven(BaseVetter):
             odd_even.calc_odd_even(self.time, self.flux, self.period,
                                    self.epoch, self.duration, ingress=None)
 
-    def plot(self):
+    def plot(self):  # pragma: no cover
 
         odd_even.diagnostic_plot(self.time, self.flux, self.period,
                                  self.epoch, self.duration,
@@ -190,20 +190,19 @@ class TransitPhaseCoverage(BaseVetter):
 
         time = lightcurve.time
         self.time = time
-        self.flux = lightcurve.__dict__[self.lc_name]
+        self.flux = getattr(lightcurve, self.lc_name)
 
         p_day = tce['period'].to_value(u.day)
         dur_hour = tce['duration'].to_value(u.hour)
         time_offset_str = lightcurve.time_format
-        time_offset_q = const.string_to_offset[time_offset_str]
+        time_offset_q = getattr(exo_const, time_offset_str)
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+
         self.tp_cover, self.hist, self.bins = \
             transit_coverage.calc_coverage(time, p_day, epoch, dur_hour,
                                            ndur=ndur, nbins=nbins)
 
-        print("Fraction of In-Transit Coverage is: %f" % self.tp_cover)
-
-    def plot(self):
+    def plot(self):  # pragma: no cover
 
         transit_coverage.plot_coverage(self.phase, self.flux,
                                        self.hist, self.bins)

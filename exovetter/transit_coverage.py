@@ -26,13 +26,13 @@ def calc_coverage(time, p_day, epoch, dur_hour, ndur=2, nbins=10):
     -------
     coverage : float
         Fraction of the in-transit points that contain data.
-        
+
     hist : array
         Histogram of the times of length nbins
-    
+
     bins : array
         corners of the bins for the histogram, length of nbins+1
-        
+
     """
     phases = compute_phases(time, p_day, epoch, offset=0.5)
 

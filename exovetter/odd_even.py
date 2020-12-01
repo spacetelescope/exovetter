@@ -56,7 +56,7 @@ def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
 
 
 def diagnostic_plot(time, flux, period, epoch,
-                    duration, odd_depth, even_depth): # pragma: no cover
+                    duration, odd_depth, even_depth):  # pragma: no cover
     """
     Parameters
     ----------
