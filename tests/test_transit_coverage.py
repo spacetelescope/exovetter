@@ -1,8 +1,7 @@
 import numpy as np
-from exovetter import transit_coverage
-import pytest
 from numpy.testing import assert_allclose
-
+import pytest
+from exovetter import transit_coverage
 
 def test_coverage1():
     time = np.arange(0, 100, step=.01)
@@ -14,19 +13,6 @@ def test_coverage1():
         time, p_day, epoch, dur_hour, ndur=2, nbins=10)
 
     assert coverage == 1.0
-
-
-def test_coverage2():
-    time = np.arange(0, 100, step=1)
-    p_day = 3
-    epoch = 3
-    dur_hour = 12
-
-    coverage, h, b = transit_coverage.calc_coverage(
-        time, p_day, epoch, dur_hour, ndur=2, nbins=10)
-
-    assert coverage == 0.1
-
 
 @pytest.mark.parametrize(
     ('step', 'p_day', 'epoch', 'dur_hour', 'ans'),

@@ -29,6 +29,7 @@ ppm = 1e-3 * ppk
 """PPM"""
 
 frac_amp = u.dimensionless_unscaled
+"""PPM"""
 
 string_to_offset = {'bkjd': bkjd, 'kjd': bkjd,
                     'btjd': btjd,

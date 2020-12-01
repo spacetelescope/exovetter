@@ -1,6 +1,5 @@
 """Module to handle transit coverage calculations."""
 import numpy as np
-import matplotlib.pyplot as plt
 
 __all__ = ['calc_coverage', 'compute_phases']
 
@@ -27,7 +26,13 @@ def calc_coverage(time, p_day, epoch, dur_hour, ndur=2, nbins=10):
     -------
     coverage : float
         Fraction of the in-transit points that contain data.
-
+        
+    hist : array
+        Histogram of the times of length nbins
+    
+    bins : array
+        corners of the bins for the histogram, length of nbins+1
+        
     """
     phases = compute_phases(time, p_day, epoch, offset=0.5)
 
@@ -72,6 +77,7 @@ def compute_phases(time, period, epoch, offset=0.5):
 
 
 def plot_coverage(hist, bins):
+    import matplotlib.pyplot as plt
 
     plt.figure(figsize=(6, 6))
 

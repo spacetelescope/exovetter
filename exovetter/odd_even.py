@@ -1,6 +1,5 @@
 """Simple average-based odd/even vetter."""
 import numpy as np
-import matplotlib.pyplot as plt
 from exovetter.transit_coverage import compute_phases
 
 __all__ = ['calc_odd_even', 'calc_ratio_significance',
@@ -45,11 +44,8 @@ def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
     """
     offset = 0.25
     twicephase = compute_phases(time, 2 * period, epoch, offset=offset)
-    # plt.figure()
-    # plt.plot(twicephase,flux, '.')
 
     dur_phase = duration / period
-    # print(dur_phase)
 
     odd_depth, even_depth = avg_odd_even(
         twicephase, flux, dur_phase, frac=0.5, event_phase=offset)
@@ -60,7 +56,31 @@ def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
 
 
 def diagnostic_plot(time, flux, period, epoch,
-                    duration, odd_depth, even_depth):
+                    duration, odd_depth, even_depth): # pragma: no cover
+    """
+    Parameters
+    ----------
+    time : array
+        Time aray
+    flux : array
+        Array of detrended flux
+    period : float
+        period in units of time
+    epoch : float
+        time of transit in units of time
+    duration : float
+        duration of transit in units of time
+    odd_depth : float
+        odd depth in units of flux
+    even_depth : float
+        even depth in units of flux
+
+    Returns
+    -------
+    None.
+
+    """
+    import matplotlib.pyplot as plt
 
     offset = 0.25
     twicephase = compute_phases(time, 2 * period, epoch, offset=offset)
@@ -77,7 +97,7 @@ def diagnostic_plot(time, flux, period, epoch,
     plt.legend(loc="upper left")
     plt.xlim(0.25 - wf * dur_phase, 0.25 + wf * dur_phase)
     plt.xlabel('odd transit')
-    plt.title('Depth:%f +- %f' % (odd_depth[0], odd_depth[1]), fontsize=10)
+    plt.title(f'Depth:{odd_depth[0]} +- {odd_depth[1]}', fontsize=10)
 
     plt.subplot(122, sharey=ax1)
     plt.plot(twicephase, flux, 'b.', ms=3)
@@ -91,11 +111,7 @@ def diagnostic_plot(time, flux, period, epoch,
     plt.xlim(0.75 - wf * dur_phase, 0.75 + wf * dur_phase)
     plt.xlabel('even transit')
 
-    plt.title('Depth:%f +- %f' % (even_depth[0], even_depth[1]), fontsize=10)
-
-# def compute_phases(time, period, epoch, offset=0.25):
-
-#    phases = np.fmod(time - epoch + (offset * period), period)
+    plt.title(f'Depth:{even_depth[0]} +- {even_depth[1]}', fontsize=10)
 
 
 def calc_ratio_significance(odd, even):
