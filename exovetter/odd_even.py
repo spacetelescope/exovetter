@@ -204,8 +204,13 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
 
         avg_even = np.average(even_transit_flux)
         avg_odd = np.average(odd_transit_flux)
-        err_even = np.std(outof_transit_flux)
-        err_odd = err_even
+        
+        if len(outof_transit_flux) > 1:
+            err_even = np.std(outof_transit_flux)
+            err_odd = err_even
+        else:
+            err_even = np.nan
+            err_odd = np.nan
 
         even_depth = (np.abs(avg_even), err_even)
         odd_depth = (np.abs(avg_odd), err_odd)
