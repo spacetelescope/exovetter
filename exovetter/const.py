@@ -30,7 +30,7 @@ ppm = 1e-3 * ppk
 
 frac_amp = u.dimensionless_unscaled
 
-string_to_offset = { 'bkjd' : bkjd, 'kjd' : bkjd,
-                 'btjd' : btjd,
-                 'bjd' : bjd
-                 }
+string_to_offset = {'bkjd': bkjd, 'kjd': bkjd,
+                    'btjd': btjd,
+                    'bjd': bjd
+                    }
