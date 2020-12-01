@@ -35,3 +35,4 @@ string_to_offset = {'bkjd': bkjd, 'kjd': bkjd,
                     'btjd': btjd,
                     'bjd': bjd
                     }
+"""Supported Time Offset Keywords"""

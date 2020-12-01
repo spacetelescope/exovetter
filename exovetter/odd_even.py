@@ -191,9 +191,7 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
         Phase of the odd transit.
 
     frac : float
-
         Fraction of the in-transit points to use.
-
 
     Returns
     -------
@@ -204,9 +202,10 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
         Depth and error of the even transit.
 
     """
-
-    outof_transit_upper = event_phase + 0.25 - duration
-    outof_transit_lower = event_phase + 0.25 + duration
+    
+    outof_transit_phase = 0.25 #Most likely phase for fully out of transit
+    outof_transit_upper = event_phase + outof_transit_phase - duration
+    outof_transit_lower = event_phase + outof_transit_phase + duration
     outof_transit_flux = flux[(phases > outof_transit_lower) &
                               (phases <= outof_transit_upper)]
 
