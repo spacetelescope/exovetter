@@ -81,9 +81,11 @@ def diagnostic_plot(time, flux, period, epoch,
 
     plt.subplot(122, sharey=ax1)
     plt.plot(twicephase, flux, 'b.', ms=3)
-    plt.hlines(even_depth[0] + even_depth[1], 0.75 - dur_phase, 0.75 + dur_phase,
+    plt.hlines(even_depth[0] + even_depth[1], 0.75 - dur_phase, 
+               0.75 + dur_phase,
                linestyles='dashed', colors='r', label="1 sigma")
-    plt.hlines(even_depth[0] - even_depth[1], 0.75 - dur_phase, 0.75 + dur_phase,
+    plt.hlines(even_depth[0] - even_depth[1], 0.75 - dur_phase, 
+               0.75 + dur_phase,
                linestyles='dashed', colors='r')
     plt.legend(loc="upper left")
     plt.xlim(0.75 - wf * dur_phase, 0.75 + wf * dur_phase)

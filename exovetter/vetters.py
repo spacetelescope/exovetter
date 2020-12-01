@@ -149,8 +149,6 @@ class Lpp(BaseVetter):
         lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 
 
-# TODO: Implement me!
-# NOTE: We can have many such tests.
 class OddEven(BaseVetter):
     """Odd-even Metric"""
 
@@ -199,8 +197,9 @@ class TransitPhaseCoverage(BaseVetter):
         time_offset_str = lightcurve.time_format
         time_offset_q = const.string_to_offset[time_offset_str]
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-        self.tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(time,
-                                                                             p_day, epoch, dur_hour, ndur=ndur, nbins=nbins)
+        self.tp_cover, self.hist, self.bins = \
+            transit_coverage.calc_coverage(time, p_day, epoch, dur_hour,
+                                           ndur=ndur, nbins=nbins)
 
         print("Fraction of In-Transit Coverage is: %f" % self.tp_cover)
 
