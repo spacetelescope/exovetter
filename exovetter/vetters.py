@@ -204,5 +204,4 @@ class TransitPhaseCoverage(BaseVetter):
 
     def plot(self):  # pragma: no cover
 
-        transit_coverage.plot_coverage(self.phase, self.flux,
-                                       self.hist, self.bins)
+        transit_coverage.plot_coverage(self.hist, self.bins)
