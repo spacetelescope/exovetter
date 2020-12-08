@@ -97,6 +97,7 @@ class TrapezoidFitParameters:
         Factor of duration around midpoint for data fitting.
 
     """
+
     def __init__(self, cadlen, samplen=15, fitregion=4.0):
         self.cadlen = cadlen
         self.samplen = samplen
@@ -141,6 +142,7 @@ class TrapezoidOriginalEstimates:
         Initial depth in ppm.
 
     """
+
     def __init__(self, period=1.0, epoch=0.1, duration=3.0, depth=100.0):
         self.period = period
         self.epoch = epoch
@@ -205,6 +207,7 @@ class TrapezoidPlanetEstimates:
         Trapezoid model depth parameter in ppm.
 
     """
+
     def __init__(self, u1=0.4, u2=0.27, period=1.0, radius_ratio=0.0,
                  impact_parameter=0.5, tauzero=0.1, semi_axis_ratio=20.0,
                  surface_brightness=0.5, equiv_radius_ratio=0.0, min_depth=0.0,
@@ -350,6 +353,7 @@ class TrapezoidFit:
         Flag of whether fitting has occured or not.
 
     """
+
     def __init__(self, time_series, data_series, error_series,
                  trp_parameters=None, trp_originalestimates=None,
                  trp_planetestimates=None, t_ratio=0.2, error_scale=1.0,
@@ -364,7 +368,7 @@ class TrapezoidFit:
             self.parm = trp_parameters
         else:
             # FIXME: This is Kepler cadence, use TESS.
-            self.parm = TrapezoidFitParameters(29.424/60.0/24.0)
+            self.parm = TrapezoidFitParameters(29.424 / 60.0 / 24.0)
 
         if trp_originalestimates:
             self.origests = trp_originalestimates

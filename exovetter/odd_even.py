@@ -75,10 +75,6 @@ def diagnostic_plot(time, flux, period, epoch,
     even_depth : float
         even depth in units of flux
 
-    Returns
-    -------
-    None.
-
     """
     import matplotlib.pyplot as plt
 
