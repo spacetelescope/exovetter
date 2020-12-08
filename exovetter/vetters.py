@@ -3,6 +3,11 @@
 from abc import ABC, abstractmethod
 
 from exovetter import lpp
+from exovetter import odd_even
+from exovetter import transit_coverage
+
+import astropy.units as u
+import exovetter.const as exo_const
 
 __all__ = ['BaseVetter', 'Lpp']
 
@@ -84,6 +89,7 @@ class Lpp(BaseVetter):
         Results populated by :meth:`run`.
 
     """
+
     def __init__(self, map_filename=None, lc_name="flux"):
         self.map_info = lpp.Loadmap(filename=map_filename)
         self.lc_name = lc_name
@@ -123,7 +129,8 @@ class Lpp(BaseVetter):
 
         self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
 
-        self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)  # noqa: E501
+        self.norm_lpp, self.raw_lpp, self.plot_data = \
+            lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)
 
         # TODO: Do we really need to return anything if everything is stored as
         # instance attributes anyway?
@@ -132,7 +139,7 @@ class Lpp(BaseVetter):
             'norm_lpp': self.norm_lpp,
             'plot_data': self.plot_data}
 
-    def plot(self):
+    def plot(self):  # pragma: no cover
         if self.plot_data is None:
             raise ValueError(
                 'LPP plot data is empty. Execute self.run(...) first.')
@@ -142,10 +149,60 @@ class Lpp(BaseVetter):
         lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 
 
-# TODO: Implement me!
-# NOTE: We can have many such tests.
 class OddEven(BaseVetter):
-    """Odd-even test."""
+    """Odd-even Metric"""
 
-    # Actual implementation of LPP is called here
-    pass
+    def __init__(self, lc_name="flux"):
+        self.lc_name = lc_name
+        self.odd_depth = None
+        self.even_depth = None
+        self.sigma = None
+
+    def run(self, tce, lightcurve):
+
+        self.time = lightcurve.time
+        self.flux = getattr(lightcurve, self.lc_name)
+        time_offset_str = lightcurve.time_format
+        time_offset_q = getattr(exo_const, time_offset_str)
+
+        self.period = tce['period'].to_value(u.day)
+        self.duration = tce['duration'].to_value(u.day)
+        self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+
+        self.sigma, self.odd_depth, self.even_depth = \
+            odd_even.calc_odd_even(self.time, self.flux, self.period,
+                                   self.epoch, self.duration, ingress=None)
+
+    def plot(self):  # pragma: no cover
+
+        odd_even.diagnostic_plot(self.time, self.flux, self.period,
+                                 self.epoch, self.duration,
+                                 self.odd_depth, self.even_depth)
+
+
+class TransitPhaseCoverage(BaseVetter):
+    """Transit Phase Coverage"""
+
+    def __init__(self, lc_name="flux"):
+        self.lc_name = lc_name
+
+    def run(self, tce, lightcurve, nbins=10, ndur=2):
+
+        time = lightcurve.time
+        self.time = time
+        self.flux = getattr(lightcurve, self.lc_name)
+
+        p_day = tce['period'].to_value(u.day)
+        dur_hour = tce['duration'].to_value(u.hour)
+        time_offset_str = lightcurve.time_format
+        time_offset_q = getattr(exo_const, time_offset_str)
+        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+
+        self.tp_cover, self.hist, self.bins = \
+            transit_coverage.calc_coverage(time, p_day, epoch, dur_hour,
+                                           ndur=ndur, nbins=nbins)
+
+    def plot(self):  # pragma: no cover
+
+        transit_coverage.plot_coverage(self.phase, self.flux,
+                                       self.hist, self.bins)

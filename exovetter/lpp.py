@@ -58,7 +58,7 @@ def runningMedian(t, y, dt, runt):
     for i in range(len(runt)):
         tmp = []
         for j in range(len(newt)):
-            if (newt[j] >= (runt[i]-dt)) and (newt[j] <= (runt[i]+dt)):
+            if (newt[j] >= (runt[i] - dt)) and (newt[j] <= (runt[i] + dt)):
                 tmp.append(newy[j])
 
         if np.isnan(np.nanmedian(np.array(tmp))):
@@ -221,7 +221,7 @@ def periodNormalLPPTransitMetric(rawTLpp, newPerMes, mapInfo):
 
     LppNPercentile = np.percentile(nearPeriodLpp, nPercentil)
 
-    NormLppTransitMetric = rawTLpp/LppNPercentile
+    NormLppTransitMetric = rawTLpp / LppNPercentile
 
     return NormLppTransitMetric
 
@@ -231,10 +231,10 @@ def lpp_onetransit(tcedata, mapInfo, ntransit):
     Then gather the lpp value for that one transit.
 
     """
-    startTime = tcedata.time[0]+ntransit*tcedata.period
+    startTime = tcedata.time[0] + ntransit * tcedata.period
 
     # A few cadences of overlap
-    endTime = tcedata.time[0]+(ntransit+1)*tcedata.period + 3 / 24.0
+    endTime = tcedata.time[0] + (ntransit + 1) * tcedata.period + 3 / 24.0
 
     want = (tcedata.time >= startTime) & (tcedata.time <= endTime)
     newtime = tcedata.time[want]
