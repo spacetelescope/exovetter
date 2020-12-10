@@ -158,10 +158,11 @@ class OddEven(BaseVetter):
         self.even_depth = None
         self.sigma = None
 
-    def run(self, tce, lightcurve):
+    def run(self, tce, lightcurve, dur_frac=0.3):
 
         self.time = lightcurve.time
         self.flux = getattr(lightcurve, self.lc_name)
+        self.dur_frac = dur_frac
         time_offset_str = lightcurve.time_format
         time_offset_q = getattr(exo_const, time_offset_str)
 
@@ -171,12 +172,13 @@ class OddEven(BaseVetter):
 
         self.sigma, self.odd_depth, self.even_depth = \
             odd_even.calc_odd_even(self.time, self.flux, self.period,
-                                   self.epoch, self.duration, ingress=None)
+                                   self.epoch, self.duration, ingress=None,
+                                   dur_frac=self.dur_frac)
 
     def plot(self):  # pragma: no cover
 
         odd_even.diagnostic_plot(self.time, self.flux, self.period,
-                                 self.epoch, self.duration,
+                                 self.epoch, self.duration*self.dur_frac,
                                  self.odd_depth, self.even_depth)
 
 

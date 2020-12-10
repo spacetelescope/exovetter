@@ -4,7 +4,7 @@
 Created on Tue Dec  8 21:16:20 2020
 """
 
-import pytest
+#import pytest
 from numpy.testing import assert_allclose
 from astropy.io import ascii
 from astropy import units as u
@@ -39,7 +39,7 @@ def get_wasp18_lightcurve():
     
     return lc
 
-def test_vet():
+def test_vetters():
     
     tce = get_wasp18_tce()
     lc = get_wasp18_lightcurve()
@@ -56,14 +56,3 @@ def test_vet():
         metrics.update(vetter.__dict__)
                        
     assert_allclose(metrics['norm_lpp'], 7.93119, rtol=1e-3)
-
-    
-    # def run_many_vetters(tce, vetterlist, **kwargs):
-#     import lightkurve
-#     lc = lightkurve.load_lightcurve_tess(tce, **kwargs)
-
-#     metrics = dict()
-#     for v in vetterlist:
-#         metrics.update(v.run(tce, lc))
-
-#     return metrics
