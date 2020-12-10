@@ -178,7 +178,7 @@ class OddEven(BaseVetter):
     def plot(self):  # pragma: no cover
 
         odd_even.diagnostic_plot(self.time, self.flux, self.period,
-                                 self.epoch, self.duration*self.dur_frac,
+                                 self.epoch, self.duration * self.dur_frac,
                                  self.odd_depth, self.even_depth)
 
 

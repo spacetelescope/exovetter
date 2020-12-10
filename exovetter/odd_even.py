@@ -6,7 +6,7 @@ __all__ = ['calc_odd_even', 'calc_ratio_significance',
            'calc_diff_significance', 'avg_odd_even']
 
 
-def calc_odd_even(time, flux, period, epoch, duration, 
+def calc_odd_even(time, flux, period, epoch, duration,
                   ingress=None, dur_frac=0.5):
     """Simple odd/even vetter.
 
@@ -30,7 +30,7 @@ def calc_odd_even(time, flux, period, epoch, duration,
     ingress : float, optional
         Ingress time in the same units as time.
         **This keyword is currently unused.**
-        
+
     dur_frac : float, optional
        Fraction of in-transit duration to use for calculation
 
@@ -86,21 +86,21 @@ def diagnostic_plot(time, flux, period, epoch,
     twicephase = compute_phases(time, 2 * period, epoch, offset=offset)
     dur_phase = duration / (2 * period)
     wf = 4  # plotting width fraction
-    w = 3 #line width
+    w = 3  # line width
 
     if np.isnan(odd_depth[1]):
         odd_depth[1] = 0
     if np.isnan(even_depth[1]):
         even_depth[1] = 0
-    
-    plt.figure(figsize=(8,5))
+
+    plt.figure(figsize=(8, 5))
     ax1 = plt.subplot(121)
     plt.plot(twicephase, flux, 'b.', ms=3)
     plt.hlines(odd_depth[0] + odd_depth[1], 0.25 - dur_phase, 0.25 + dur_phase,
-               linestyles='dashed', colors='r', lw=w,label='1 sigma')
+               linestyles='dashed', colors='r', lw=w, label='1 sigma')
     plt.hlines(odd_depth[0] - odd_depth[1], 0.25 - dur_phase, 0.25 + dur_phase,
                linestyles='dashed', colors='r', lw=w)
-    
+
     plt.legend(loc="upper left")
     plt.xlim(0.25 - wf * dur_phase, 0.25 + wf * dur_phase)
     plt.xlabel('odd transit')
@@ -114,7 +114,7 @@ def diagnostic_plot(time, flux, period, epoch,
     plt.hlines(even_depth[0] - even_depth[1], 0.75 - dur_phase,
                0.75 + dur_phase,
                linestyles='dashed', colors='r', lw=w)
-    
+
     plt.legend(loc="upper left")
     plt.xlim(0.75 - wf * dur_phase, 0.75 + wf * dur_phase)
     plt.xlabel('even transit')
