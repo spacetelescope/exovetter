@@ -40,7 +40,6 @@ def test_vetters():
 
     tce = get_wasp18_tce()
     lc = get_wasp18_lightcurve()
-    print(lc.time)
 
     metrics = dict()
     vetter_list = [vetters.Lpp(),

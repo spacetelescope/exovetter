@@ -19,6 +19,7 @@ def test_odd_even():
 
     assert_allclose(odd[0], 0.5)
     assert_allclose(even[0], 0.5)
+    assert sigma == 0.0
 
 
 def test_odd_even2():
@@ -62,8 +63,6 @@ def test_odd_even_tce(noise, ans_sigma):
     flux = 1 + (flux1 + flux2) * 0.5 + rng.standard_normal(len(flux1)) * noise
     sigma, odd, even = oe.calc_odd_even(
         times, flux, period * 0.5, epoch, duration)
-
-    print(sigma, odd, even)
 
     if noise < 0.01:
         assert sigma > ans_sigma
