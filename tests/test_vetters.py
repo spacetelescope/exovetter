@@ -54,3 +54,4 @@ def test_vetters():
 
     assert_allclose(metrics['norm_lpp'], 7.93119, rtol=1e-3)
     assert_allclose(metrics['tp_cover'], 1.0, rtol=1e-5)
+    assert_allclose(metrics['odd_depth'][0], 0.99, rtol=1e-1)
