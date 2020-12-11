@@ -9,6 +9,7 @@ from exovetter.tce import Tce
 
 from astropy.utils.data import get_pkg_data_filename
 
+
 def get_wasp18_tce():
 
     tce = Tce(period=0.94124 * u.day,
@@ -52,3 +53,4 @@ def test_vetters():
         metrics.update(vetter.__dict__)
 
     assert_allclose(metrics['norm_lpp'], 7.93119, rtol=1e-3)
+    assert_allclose(metrics['tp_cover'], 1.0, rtol=1e-5)
