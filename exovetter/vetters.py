@@ -181,10 +181,3 @@ class Sweet(BaseVetter):
         sweet.run(self.tce, self.lc, plot=True)
 
 
-# TODO: Implement me!
-# NOTE: We can have many such tests.
-class OddEven(BaseVetter):
-    """Odd-even test."""
-
-    # Actual implementation of LPP is called here
-    pass
