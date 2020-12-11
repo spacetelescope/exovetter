@@ -1,15 +1,16 @@
 """Module to handle exoplanet vetters."""
 
+import os
 from abc import ABC, abstractmethod
 
+import numpy as np
+from astropy import units as u
+
+from exovetter import const as exo_const
 from exovetter import lpp
-from exovetter import odd_even
-from exovetter import transit_coverage
+from exovetter.utils import mark_transit_cadences, WqedLSF, estimate_scatter
 
-import astropy.units as u
-import exovetter.const as exo_const
-
-__all__ = ['BaseVetter', 'Lpp']
+__all__ = ['BaseVetter', 'Lpp', 'Sweet']
 
 
 class BaseVetter(ABC):
@@ -31,15 +32,17 @@ class BaseVetter(ABC):
 
     @abstractmethod
     def run(self, tce, lightcurve):
-        """Run the vetting test.
+        """Run the vetter on the specified Threshold Crossing Event (TCE)
+        and lightcurve to obtain metric.
 
         Parameters
         ----------
-        tce : `~exovetter.tce.TCE`
+        tce : `~exovetter.tce.Tce`
             TCE.
 
-        lightcurve : array_like
-            Lightcurve data.
+        lightcurve : obj
+            ``lightkurve`` object that contains the detrended lightcurve's
+            time and flux arrays.
 
         Returns
         -------
@@ -49,16 +52,8 @@ class BaseVetter(ABC):
         """
         pass
 
-    @abstractmethod
-    def plot(self, tce, lightcurve):
-        """Generate a diagnostic plot.
-
-        Parameters
-        ----------
-        tce, lightcurve
-            See :meth:`run`.
-
-        """
+    def plot(self):  # pragma: no cover
+        """Generate a diagnostic plot."""
         pass
 
 
@@ -83,13 +78,23 @@ class Lpp(BaseVetter):
         Input ``lc_name``.
 
     tce, lc
-        Inputs to :meth:`run`.
+        Inputs to :meth:`run`. TCE for this vetter should also
+        contain ``snr`` estimate.
 
-    lpp_data, raw_lpp, norm_lpp, plot_data
-        Results populated by :meth:`run`.
+    lpp_data : `exovetter.lpp.Lppdata`
+        Populated by :meth:`run`.
+
+    raw_lpp : float
+        Raw LPP value, populated by :meth:`run`.
+
+    norm_lpp : float
+        LPP value normalized by period and SNR, populated by :meth:`run`.
+
+    plot_data : dict
+        The folded, binned transit prior to the LPP transformation,
+        populated by :meth:`run`.
 
     """
-
     def __init__(self, map_filename=None, lc_name="flux"):
         self.map_info = lpp.Loadmap(filename=map_filename)
         self.lc_name = lc_name
@@ -100,37 +105,12 @@ class Lpp(BaseVetter):
         self.plot_data = None
 
     def run(self, tce, lightcurve):
-        """Run the LPP Vetter on the specified Threshold Crossing Event (TCE)
-        and lightcurve to obtain metric.
-
-        Parameters
-        ----------
-        tce : `~exovetter.tce.Tce`
-            In addition to required quantities, it should also contain
-            ``snr`` estimate.
-
-        lightcurve : obj
-            ``lightkurve`` object that contains the detrended lightcurve's
-            time and flux arrays.
-
-        Returns
-        --------
-        result : dict
-            A dictionary of metric:
-
-            * ``raw_lpp`` (float): Raw LPP value.
-            * ``norm_lpp`` (float): LPP value normalized by period and SNR.
-            * ``plot_data`` (dict): The folded, binned transit prior to the
-              LPP transformation.
-
-        """
         self.tce = tce
         self.lc = lightcurve
 
         self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
 
-        self.norm_lpp, self.raw_lpp, self.plot_data = \
-            lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)
+        self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)  # noqa: E501
 
         # TODO: Do we really need to return anything if everything is stored as
         # instance attributes anyway?
@@ -145,64 +125,66 @@ class Lpp(BaseVetter):
                 'LPP plot data is empty. Execute self.run(...) first.')
 
         # target is populated in TCE, assume it already exists.
-        target = self.tce['target_name']
+        target = self.tce.get('target_name', 'Target')
         lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 
 
-class OddEven(BaseVetter):
-    """Odd-even Metric"""
+import exovetter.sweet as sweet
+class Sweet(BaseVetter):
+    """Class to handle SWEET Vetter functionality.
 
-    def __init__(self, lc_name="flux"):
-        self.lc_name = lc_name
-        self.odd_depth = None
-        self.even_depth = None
-        self.sigma = None
+    Parameters
+    ----------
+    threshold_sigma : float
+        Threshold for comparing signal to transit period.
 
-    def run(self, tce, lightcurve):
+    Attributes
+    ----------
+    tce, lc
+        Inputs to :meth:`run`.
 
-        self.time = lightcurve.time
-        self.flux = getattr(lightcurve, self.lc_name)
-        time_offset_str = lightcurve.time_format
-        time_offset_q = getattr(exo_const, time_offset_str)
+    result : dict
+        ``'amp'`` contains the best fit amplitude, its uncertainty, and
+        amplitude-to-uncertainty ratio for half-period, period, and
+        twice the period. ``'msg'`` contains warnings, if applicable.
+        Populated by :meth:`run`.
 
-        self.period = tce['period'].to_value(u.day)
-        self.duration = tce['duration'].to_value(u.day)
-        self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+    lsf : `~exovetter.utils.WqedLSF`
+        Least squares fit object, populated by :meth:`run`.
 
-        self.sigma, self.odd_depth, self.even_depth = \
-            odd_even.calc_odd_even(self.time, self.flux, self.period,
-                                   self.epoch, self.duration, ingress=None)
+    """
+    def __init__(self, threshold_sigma=3):
+        self.tce = None
+        self.lc = None
+        self.result = None
+        self.threshold_sigma = threshold_sigma
 
-    def plot(self):  # pragma: no cover
+    def run(self, tce, lightcurve, plot=False):
+        self.tce = tce
+        self.lc = lightcurve
 
-        odd_even.diagnostic_plot(self.time, self.flux, self.period,
-                                 self.epoch, self.duration,
-                                 self.odd_depth, self.even_depth)
-
-
-class TransitPhaseCoverage(BaseVetter):
-    """Transit Phase Coverage"""
-
-    def __init__(self, lc_name="flux"):
-        self.lc_name = lc_name
-
-    def run(self, tce, lightcurve, nbins=10, ndur=2):
-
+        # TODO: Do we want results to have unit? If so, what?
         time = lightcurve.time
-        self.time = time
-        self.flux = getattr(lightcurve, self.lc_name)
+        flux = lightcurve.flux
+        period_days = tce['period'].to_value(u.day)
+        epoch = tce.get_epoch(getattr(exo_const, lightcurve.time_format)).to_value()
+        duration_days = tce['duration'].to_value(u.day)
 
-        p_day = tce['period'].to_value(u.day)
-        dur_hour = tce['duration'].to_value(u.hour)
-        time_offset_str = lightcurve.time_format
-        time_offset_q = getattr(exo_const, time_offset_str)
-        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-
-        self.tp_cover, self.hist, self.bins = \
-            transit_coverage.calc_coverage(time, p_day, epoch, dur_hour,
-                                           ndur=ndur, nbins=nbins)
+        self.result = sweet.sweet(time, flux,
+                              period_days, epoch, duration_days,
+                              plot=True
+                      )
+        self.result = sweet.construct_message(self.result, self.threshold_sigma)
+        return self.result
 
     def plot(self):  # pragma: no cover
+        sweet.run(self.tce, self.lc, plot=True)
 
-        transit_coverage.plot_coverage(self.phase, self.flux,
-                                       self.hist, self.bins)
+
+# TODO: Implement me!
+# NOTE: We can have many such tests.
+class OddEven(BaseVetter):
+    """Odd-even test."""
+
+    # Actual implementation of LPP is called here
+    pass

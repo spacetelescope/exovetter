@@ -11,6 +11,8 @@ __all__ = ['bjd', 'bkjd', 'btjd', 'bet', 'ppk', 'ppm', 'frac_amp']
 bjd = 0 * u.day
 """BJD"""
 
+mbjd = bjd - 2_400_000.5 * u.day
+
 bkjd = bjd - 2_454_833 * u.day
 """BKJD"""
 
@@ -29,10 +31,4 @@ ppm = 1e-3 * ppk
 """PPM"""
 
 frac_amp = u.dimensionless_unscaled
-"""Fractional Amplitude"""
-
-string_to_offset = {'bkjd': bkjd, 'kjd': bkjd,
-                    'btjd': btjd,
-                    'bjd': bjd
-                    }
-"""Supported Time Offset Keywords"""
+"""Frac amp"""
