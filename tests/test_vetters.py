@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Dec  8 21:16:20 2020
-"""
-
-#import pytest
 from numpy.testing import assert_allclose
 from astropy.io import ascii
 from astropy import units as u
@@ -14,6 +7,7 @@ from exovetter import const as exo_const
 from exovetter import vetters
 from exovetter.tce import Tce
 
+from astropy.utils.data import get_pkg_data_filename
 
 def get_wasp18_tce():
 
@@ -31,7 +25,7 @@ def get_wasp18_tce():
 
 def get_wasp18_lightcurve():
 
-    lc_file = "./wasp18b_flat_lightcurve.csv"
+    lc_file = get_pkg_data_filename("data/wasp18b_flat_lightcurve.csv")
 
     lc_table = ascii.read(lc_file, data_start=1)
 

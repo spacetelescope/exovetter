@@ -23,7 +23,7 @@ def test_one_lpp():
 
     tce = Tce(period=period, epoch=tzero, duration=duration,
               target_name=target_name, depth=depth, event_name=event_name,
-              epoch_offset=0 * u.day, snr = 10)
+              epoch_offset=0 * u.day, snr=10)
 
     # Specify the lightcurve to vet
     mission = "Kepler"
@@ -45,10 +45,8 @@ def test_one_lpp():
     assert_allclose(lpp.norm_lpp, 0.17, atol=0.09)
 
 
-
-
-#This is more of an example, not a test. I suggest we remove and put
-#into an example notebook.
+# This is more of an example, not a test. I suggest we remove and put
+# into an example notebook.
 # @pytest.mark.skip(reason='Fix the test')
 # def test_run_many_tces():
 #     exo = None  # FIXME
