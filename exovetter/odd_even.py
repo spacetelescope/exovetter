@@ -85,8 +85,9 @@ def diagnostic_plot(time, flux, period, epoch,
     offset = 0.25
     twicephase = compute_phases(time, 2 * period, epoch, offset=offset)
     dur_phase = duration / (2 * period)
+    half_durphase = dur_phase / 2
     wf = 4  # plotting width fraction
-    w = 3  # line width
+    w = 2  # line width
 
     if np.isnan(odd_depth[1]):
         odd_depth[1] = 0
@@ -96,30 +97,36 @@ def diagnostic_plot(time, flux, period, epoch,
     plt.figure(figsize=(8, 5))
     ax1 = plt.subplot(121)
     plt.plot(twicephase, flux, 'b.', ms=3)
-    plt.hlines(odd_depth[0] + odd_depth[1], 0.25 - dur_phase, 0.25 + dur_phase,
-               linestyles='dashed', colors='r', lw=w, label='1 sigma')
-    plt.hlines(odd_depth[0] - odd_depth[1], 0.25 - dur_phase, 0.25 + dur_phase,
-               linestyles='dashed', colors='r', lw=w)
+    plt.hlines(odd_depth[0] + odd_depth[1], 0.25 - half_durphase,
+               0.25 + half_durphase,
+               linestyles='dashed', colors='r',
+               lw=w, label='1 sigma', zorder=10)
+    plt.hlines(odd_depth[0] - odd_depth[1],
+               0.25 - half_durphase, 0.25 + half_durphase,
+               linestyles='dashed', colors='r', lw=w, zorder=10)
 
     plt.legend(loc="upper left")
     plt.xlim(0.25 - wf * dur_phase, 0.25 + wf * dur_phase)
     plt.xlabel('odd transit')
-    plt.title(f'Depth:{odd_depth[0]} +- {odd_depth[1]}', fontsize=10)
+    plt.title(f'Depth:{odd_depth[0]:.2f} +- {odd_depth[1]:.2f}',
+              fontsize=10)
 
     plt.subplot(122, sharey=ax1)
     plt.plot(twicephase, flux, 'b.', ms=3)
-    plt.hlines(even_depth[0] + even_depth[1], 0.75 - dur_phase,
-               0.75 + dur_phase,
-               linestyles='dashed', colors='r', label="1 sigma", lw=w)
-    plt.hlines(even_depth[0] - even_depth[1], 0.75 - dur_phase,
-               0.75 + dur_phase,
-               linestyles='dashed', colors='r', lw=w)
+    plt.hlines(even_depth[0] + even_depth[1], 0.75 - half_durphase,
+               0.75 + half_durphase,
+               linestyles='dashed', colors='r', label="1 sigma",
+               lw=w, zorder=10)
+    plt.hlines(even_depth[0] - even_depth[1], 0.75 - half_durphase,
+               0.75 + half_durphase,
+               linestyles='dashed', colors='r', lw=w, zorder=10)
 
     plt.legend(loc="upper left")
     plt.xlim(0.75 - wf * dur_phase, 0.75 + wf * dur_phase)
     plt.xlabel('even transit')
 
-    plt.title(f'Depth:{even_depth[0]} +- {even_depth[1]}', fontsize=10)
+    plt.title(f'Depth:{even_depth[0]:.2f} +- {even_depth[1]:.2f}',
+              fontsize=10)
 
 
 def calc_ratio_significance(odd, even):
@@ -187,7 +194,7 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
     Parameters
     ----------
     phases : array
-        Phases when folding at 2x the period.
+        Phases when folding at 2x the period, zeroed at the transit epoch
 
     flux : array
         Relative flux of the light curve.
@@ -211,9 +218,9 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
 
     """
 
-    outof_transit_phase = 0.25  # Most likely phase for fully out of transit
-    outof_transit_upper = event_phase + outof_transit_phase - duration
-    outof_transit_lower = event_phase + outof_transit_phase + duration
+    outof_transit_phase = 0.25  # likely phase for out of transit
+    outof_transit_upper = event_phase + outof_transit_phase + duration * frac
+    outof_transit_lower = event_phase + outof_transit_phase - duration * frac
     outof_transit_flux = flux[(phases > outof_transit_lower) &
                               (phases <= outof_transit_upper)]
 
