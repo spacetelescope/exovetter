@@ -19,7 +19,7 @@ def test_odd_even():
 
     assert_allclose(odd[0], 0.5)
     assert_allclose(even[0], 0.5)
-    assert sigma == 0.0
+    assert_allclose(sigma, 0.0)
 
 
 def test_odd_even2():
