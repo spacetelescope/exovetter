@@ -185,7 +185,8 @@ def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
     if initialClip is None:
         idx = np.zeros(len(y), dtype=bool)
 
-    assert(len(idx) == len(y))
+    if (len(idx) != len(y)):
+        raise AssertionError('length of array y not equal to initialClip')
 
     # x = np.arange(len(y))
     # mp.plot(x, y, 'k.')
