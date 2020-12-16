@@ -180,7 +180,7 @@ def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
     1d numpy array. Where set to True, the corresponding element of y
     is an outlier.
     """
-    #import matplotlib.pyplot as mp
+
     idx = initialClip
     if initialClip is None:
         idx = np.zeros(len(y), dtype=bool)
