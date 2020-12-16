@@ -1,15 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Dec  8 22:12:25 2020
-
-@author: fergal
-"""
-
 import matplotlib.pyplot as plt
 import numpy as np
 
 import exovetter.utils as utils
 import os
+
 
 def sweet(time, flux, period, epoch, duration, plot=False):
     """Perform the SWEET test
@@ -21,15 +15,27 @@ def sweet(time, flux, period, epoch, duration, plot=False):
 
     Inputs
     --------
-    time, flux
-        (1d numpy arrays) Data to fit
-    period, epoch, duration
-        (floats) Parameters of the transit.
+    time : float array
+        time of the observations
+
+    flux : float array
+        relative flux normalized to zero to fit
+
+    period : float
+        period in same units as time
+
+    epoch : float
+        time of event in same units as time
+
+    duration : float
+        transit even duration in units of time
 
     Returns
     -------
-    A 2d numpy array. columns are amplitude, uncertainty and signal-to-noise.
-    The rows are the fits at half the period, at the period, and twice the period.
+    result : 2d numpy array.
+        columns are amplitude, uncertainty and signal-to-noise.
+        The rows are the fits at half the period, at the period,
+        and twice the period.
 
     Note
     ------
@@ -51,7 +57,7 @@ def sweet(time, flux, period, epoch, duration, plot=False):
     flux -= np.mean(flux)
     scatter = utils.estimate_scatter(flux)
 
-    print("scatter is %f" %(scatter))
+    print("scatter is %f" % (scatter))
 
     if plot:
         plt.clf()
@@ -67,10 +73,10 @@ def sweet(time, flux, period, epoch, duration, plot=False):
 
         if plot:
             srt = np.argsort(phase)
-            plt.subplot(3,1,i+1)
+            plt.subplot(3, 1, i + 1)
             plt.plot(phase, flux, 'ko')
             plt.plot(phase[srt], f_obj.get_best_fit_model(phase[srt]), '-')
-            plt.ylabel("P=%g" %(per))
+            plt.ylabel("P=%g" % (per))
 
     result = np.array(out)
 
@@ -85,11 +91,9 @@ def construct_message(result, threshold_sigma):
         msg.append("WARN: SWEET test finds signal at the transit period")
     if result[2, -1] > threshold_sigma:
         msg.append("WARN: SWEET test finds signal at TWICE the "
-                    "transit period")
+                   "transit period")
     if len(msg) == 0:
         msg = [("OK: SWEET finds no out-of-transit variability at "
                 "transit period")]
 
     return {'msg': os.linesep.join(msg), 'amp': result}
-
-
