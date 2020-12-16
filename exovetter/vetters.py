@@ -128,7 +128,65 @@ class Lpp(BaseVetter):
         target = self.tce.get('target_name', 'Target')
         lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 
+class OddEven(BaseVetter):
+    """Odd-even Metric"""
 
+    def __init__(self, lc_name="flux"):
+        self.lc_name = lc_name
+        self.odd_depth = None
+        self.even_depth = None
+        self.sigma = None
+
+    def run(self, tce, lightcurve, dur_frac=0.3):
+
+        self.time = lightcurve.time
+        self.flux = getattr(lightcurve, self.lc_name)
+        self.dur_frac = dur_frac
+        time_offset_str = lightcurve.time_format
+        time_offset_q = getattr(exo_const, time_offset_str)
+
+        self.period = tce['period'].to_value(u.day)
+        self.duration = tce['duration'].to_value(u.day)
+        self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+
+        self.sigma, self.odd_depth, self.even_depth = \
+            odd_even.calc_odd_even(self.time, self.flux, self.period,
+                                   self.epoch, self.duration, ingress=None,
+                                   dur_frac=self.dur_frac)
+
+    def plot(self):  # pragma: no cover
+
+        odd_even.diagnostic_plot(self.time, self.flux, self.period,
+                                 self.epoch, self.duration * self.dur_frac,
+                                 self.odd_depth, self.even_depth)
+
+        
+ class TransitPhaseCoverage(BaseVetter):
+    """Transit Phase Coverage"""
+
+    def __init__(self, lc_name="flux"):
+        self.lc_name = lc_name
+
+    def run(self, tce, lightcurve, nbins=10, ndur=2):
+
+        time = lightcurve.time
+        self.time = time
+        self.flux = getattr(lightcurve, self.lc_name)
+
+        p_day = tce['period'].to_value(u.day)
+        dur_hour = tce['duration'].to_value(u.hour)
+        time_offset_str = lightcurve.time_format
+        time_offset_q = getattr(exo_const, time_offset_str)
+        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+
+        self.tp_cover, self.hist, self.bins = \
+            transit_coverage.calc_coverage(time, p_day, epoch, dur_hour,
+                                           ndur=ndur, nbins=nbins)
+
+    def plot(self):  # pragma: no cover    
+      
+        transit_coverage.plot_coverage(self.hist, self.bins)        
+        
 import exovetter.sweet as sweet
 class Sweet(BaseVetter):
     """Class to handle SWEET Vetter functionality.
@@ -179,5 +237,3 @@ class Sweet(BaseVetter):
 
     def plot(self):  # pragma: no cover
         sweet.run(self.tce, self.lc, plot=True)
-
-

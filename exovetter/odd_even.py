@@ -6,7 +6,8 @@ __all__ = ['calc_odd_even', 'calc_ratio_significance',
            'calc_diff_significance', 'avg_odd_even']
 
 
-def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
+def calc_odd_even(time, flux, period, epoch, duration,
+                  ingress=None, dur_frac=0.5):
     """Simple odd/even vetter.
 
     Parameters
@@ -30,6 +31,9 @@ def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
         Ingress time in the same units as time.
         **This keyword is currently unused.**
 
+    dur_frac : float, optional
+       Fraction of in-transit duration to use for calculation
+
     Returns
     -------
     sigma : float
@@ -48,7 +52,7 @@ def calc_odd_even(time, flux, period, epoch, duration, ingress=None):
     dur_phase = duration / period
 
     odd_depth, even_depth = avg_odd_even(
-        twicephase, flux, dur_phase, frac=0.5, event_phase=offset)
+        twicephase, flux, dur_phase, frac=dur_frac, event_phase=offset)
 
     diff, error, sigma = calc_diff_significance(odd_depth, even_depth)
 
@@ -69,7 +73,7 @@ def diagnostic_plot(time, flux, period, epoch,
     epoch : float
         time of transit in units of time
     duration : float
-        duration of transit in units of time
+        duration of transit in units of time, used for length of red lines
     odd_depth : float
         odd depth in units of flux
     even_depth : float
@@ -81,33 +85,48 @@ def diagnostic_plot(time, flux, period, epoch,
     offset = 0.25
     twicephase = compute_phases(time, 2 * period, epoch, offset=offset)
     dur_phase = duration / (2 * period)
+    half_durphase = dur_phase / 2
     wf = 4  # plotting width fraction
+    w = 2  # line width
 
-    plt.figure()
+    if np.isnan(odd_depth[1]):
+        odd_depth[1] = 0
+    if np.isnan(even_depth[1]):
+        even_depth[1] = 0
+
+    plt.figure(figsize=(8, 5))
     ax1 = plt.subplot(121)
     plt.plot(twicephase, flux, 'b.', ms=3)
-    plt.hlines(odd_depth[0] + odd_depth[1], 0.25 - dur_phase, 0.25 + dur_phase,
-               linestyles='dashed', colors='r', label='1 sigma')
-    plt.hlines(odd_depth[0] - odd_depth[1], 0.25 - dur_phase, 0.25 + dur_phase,
-               linestyles='dashed', colors='r')
+    plt.hlines(odd_depth[0] + odd_depth[1], 0.25 - half_durphase,
+               0.25 + half_durphase,
+               linestyles='dashed', colors='r',
+               lw=w, label='1 sigma', zorder=10)
+    plt.hlines(odd_depth[0] - odd_depth[1],
+               0.25 - half_durphase, 0.25 + half_durphase,
+               linestyles='dashed', colors='r', lw=w, zorder=10)
+
     plt.legend(loc="upper left")
     plt.xlim(0.25 - wf * dur_phase, 0.25 + wf * dur_phase)
     plt.xlabel('odd transit')
-    plt.title(f'Depth:{odd_depth[0]} +- {odd_depth[1]}', fontsize=10)
+    plt.title(f'Depth:{odd_depth[0]:.2f} +- {odd_depth[1]:.2f}',
+              fontsize=10)
 
     plt.subplot(122, sharey=ax1)
     plt.plot(twicephase, flux, 'b.', ms=3)
-    plt.hlines(even_depth[0] + even_depth[1], 0.75 - dur_phase,
-               0.75 + dur_phase,
-               linestyles='dashed', colors='r', label="1 sigma")
-    plt.hlines(even_depth[0] - even_depth[1], 0.75 - dur_phase,
-               0.75 + dur_phase,
-               linestyles='dashed', colors='r')
+    plt.hlines(even_depth[0] + even_depth[1], 0.75 - half_durphase,
+               0.75 + half_durphase,
+               linestyles='dashed', colors='r', label="1 sigma",
+               lw=w, zorder=10)
+    plt.hlines(even_depth[0] - even_depth[1], 0.75 - half_durphase,
+               0.75 + half_durphase,
+               linestyles='dashed', colors='r', lw=w, zorder=10)
+
     plt.legend(loc="upper left")
     plt.xlim(0.75 - wf * dur_phase, 0.75 + wf * dur_phase)
     plt.xlabel('even transit')
 
-    plt.title(f'Depth:{even_depth[0]} +- {even_depth[1]}', fontsize=10)
+    plt.title(f'Depth:{even_depth[0]:.2f} +- {even_depth[1]:.2f}',
+              fontsize=10)
 
 
 def calc_ratio_significance(odd, even):
@@ -175,7 +194,7 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
     Parameters
     ----------
     phases : array
-        Phases when folding at 2x the period.
+        Phases when folding at 2x the period, zeroed at the transit epoch
 
     flux : array
         Relative flux of the light curve.
@@ -187,7 +206,7 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
         Phase of the odd transit.
 
     frac : float
-        Fraction of the in-transit points to use.
+        Fraction of the in-transit duration to use.
 
     Returns
     -------
@@ -199,9 +218,9 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
 
     """
 
-    outof_transit_phase = 0.25  # Most likely phase for fully out of transit
-    outof_transit_upper = event_phase + outof_transit_phase - duration
-    outof_transit_lower = event_phase + outof_transit_phase + duration
+    outof_transit_phase = 0.25  # likely phase for out of transit
+    outof_transit_upper = event_phase + outof_transit_phase + duration * frac
+    outof_transit_lower = event_phase + outof_transit_phase - duration * frac
     outof_transit_flux = flux[(phases > outof_transit_lower) &
                               (phases <= outof_transit_upper)]
 
@@ -218,8 +237,8 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
 
     if (len(even_transit_flux) > 1) & (len(odd_transit_flux) > 1):
 
-        avg_even = np.average(even_transit_flux)
-        avg_odd = np.average(odd_transit_flux)
+        avg_even = np.median(even_transit_flux)
+        avg_odd = np.median(odd_transit_flux)
 
         if len(outof_transit_flux) > 1:
             err_even = np.std(outof_transit_flux)
@@ -228,11 +247,10 @@ def avg_odd_even(phases, flux, duration, event_phase=0.25, frac=0.5):
             err_even = np.nan
             err_odd = np.nan
 
-        even_depth = (np.abs(avg_even), err_even)
-        odd_depth = (np.abs(avg_odd), err_odd)
+        even_depth = [np.abs(avg_even), err_even]
+        odd_depth = [np.abs(avg_odd), err_odd]
 
     else:
-        even_depth = (1, 1)
-        odd_depth = (1, 1)
-
+        even_depth = [1, 1]
+        odd_depth = [1, 1]
     return odd_depth, even_depth

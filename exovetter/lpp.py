@@ -366,8 +366,6 @@ class Lppdata:
 
         # make sure flux is zero norm.
         if np.round(np.median(self.flux)) != 0:
-            warnings.warn("Removing median. The supplied light curve is "
-                          "not normalized to zero.")
             self.flux = self.flux - np.median(self.flux)
 
     def check_tce(self, tce, default_snr):
