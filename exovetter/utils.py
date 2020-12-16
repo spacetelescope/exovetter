@@ -22,7 +22,7 @@ def sine(x, order, period=1):
 def estimate_scatter(flux):
     """Estimate the typical scatter in a lightcurve.
 
-    Uses the same method as Marshall (Mullally et al 2017)
+    Uses the same method as Marshall vetter (Mullally et al 2017)
 
     Inputs:
     ----------
