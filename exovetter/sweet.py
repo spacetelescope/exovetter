@@ -1,7 +1,6 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
-import exovetter.utils as utils
+from exovetter import utils
 import os
 
 
@@ -58,6 +57,7 @@ def sweet(time, flux, period, epoch, duration, plot=False):
     scatter = utils.estimate_scatter(flux)
 
     if plot:
+        import matplotlib.pyplot as plt
         plt.clf()
 
     out = []
