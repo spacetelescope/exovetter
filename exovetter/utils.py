@@ -18,6 +18,7 @@ def sine(x, order, period=1):
     else:
         raise ValueError("Order should be zero or one")
 
+
 def estimate_scatter(flux):
     """Estimate the typical scatter in a lightcurve.
 
@@ -42,20 +43,20 @@ def estimate_scatter(flux):
     """
 
     flux = flux[np.isfinite(flux)]
-    diff= np.diff(flux)
+    diff = np.diff(flux)
 
-    #Remove egregious outliers. Shouldn't make much difference
+    # Remove egregious outliers. Shouldn't make much difference
     idx = sigmaClip(diff, 5)
     diff = diff[~idx]
 
-    #TODO: should this be a running mean?
+    # TODO: should this be a running mean?
     mean = np.mean(diff)
-    mad = np.median(np.fabs(diff-mean))
-    std = 1.4826*mad
+    mad = np.median(np.fabs(diff - mean))
+    std = 1.4826 * mad
 
-    #std is the rms of the diff. std on single point
-    #is 1/sqrt(2) of that value,
-    return float(std/np.sqrt(2))
+    # std is the rms of the diff. std on single point
+    # is 1/sqrt(2) of that value,
+    return float(std / np.sqrt(2))
 
 
 def mark_transit_cadences(time, period_days, epoch_bkjd, duration_days,
@@ -130,7 +131,6 @@ def mark_transit_cadences(time, period_days, epoch_bkjd, duration_days,
     return idx
 
 
-
 def median_detrend(flux, nPoints):
     """Quick and dirty median smooth function.
     Not designed to be at all effecient"""
@@ -138,9 +138,9 @@ def median_detrend(flux, nPoints):
     size = len(flux)
     filtered = np.zeros_like(flux)
     for i in range(size):
-        lwr = max(i-nPoints, 0)
-        upr = min(lwr + 2*nPoints, size)
-        lwr = upr- 2*nPoints
+        lwr = max(i - nPoints, 0)
+        upr = min(lwr + 2 * nPoints, size)
+        lwr = upr - 2 * nPoints
 
         sub = flux[lwr:upr]
 
@@ -148,6 +148,7 @@ def median_detrend(flux, nPoints):
         filtered[i] = flux[i] - offset
 
     return filtered
+
 
 def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
     """Iteratively find and remove outliers
@@ -182,7 +183,7 @@ def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
     #import matplotlib.pyplot as mp
     idx = initialClip
     if initialClip is None:
-        idx = np.zeros( len(y), dtype=bool)
+        idx = np.zeros(len(y), dtype=bool)
 
     assert(len(idx) == len(y))
 
@@ -194,19 +195,19 @@ def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
         mean = np.nanmean(y[~idx])
         std = np.nanstd(y[~idx])
 
-        newIdx = np.fabs(y-mean) > nSigma*std
+        newIdx = np.fabs(y - mean) > nSigma * std
         newIdx = np.logical_or(idx, newIdx)
         newNumClipped = np.sum(newIdx)
 
-        #print "Iter %i: %i (%i) clipped points " \
-            #%(i, newNumClipped, oldNumClipped)
+        # print "Iter %i: %i (%i) clipped points " \
+        # %(i, newNumClipped, oldNumClipped)
 
         if newNumClipped == oldNumClipped:
             return newIdx
 
         oldNumClipped = newNumClipped
         idx = newIdx
-        i+=1
+        i += 1
     return idx
 
 
@@ -241,6 +242,7 @@ class WqedLSF:
         Invalid input.
 
     """
+
     def __init__(self, x, y, s=None, order=2, func=sine, **kwargs):
         size = len(x)
 
