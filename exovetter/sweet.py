@@ -1,3 +1,5 @@
+"""Module ot handle SWEET vetter."""
+
 import numpy as np
 
 from exovetter import utils
