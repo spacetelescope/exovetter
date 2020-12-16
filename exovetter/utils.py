@@ -157,26 +157,27 @@ def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
     the mean value. The recalculate the mean and std and repeat until
     no more outliers found.
 
-    Inputs:
-    ----------
-    y
-        (1d numpy array) Array to be cleaned
-    nSigma
-        (float) Threshold to cut at. 5 is typically a good value for
+    Inputs
+    ------
+    y : numpy array
+        Array to be cleaned
+    nSigma : float
+        Threshold to cut at.
+        5 is typically a good value for
         most arrays found in practice.
 
-    Optional Inputs:
-    -------------------
-    maxIter
-        (int) Maximum number of iterations
+    Optional Inputs
+    ---------
+    maxIter : int
+        Maximum number of iterations
 
-    initialClip
-        (1d boolean array) If an element of initialClip is set to True,
+    initialClip : 1d boolean array
+        If an element of initialClip is set to True,
         that value is treated as a bad value in the first iteration, and
         not included in the computation of the mean and std.
 
-    Returns:
-    ------------
+    Returns
+    -------
     1d numpy array. Where set to True, the corresponding element of y
     is an outlier.
     """
