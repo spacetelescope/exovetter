@@ -53,8 +53,9 @@ def test_sweet_vetter():
               target_name=target_name, event_name=event_name)
 
     # from lightkurve.lightcurve import LightCurve
+    rng = np.random.default_rng(seed=1234)
     time = np.arange(1000)
-    flux = 10 + np.random.randn(1000)
+    flux = 10 + rng.standard_normal(1000)
     lc = LightCurve(time, flux, time_format='bkjd')
 
     sweet_vetter = Sweet()
@@ -71,7 +72,7 @@ def test_sweet_vetter():
 def test_sine_curve():
     """Implementation test
 
-    Test peformance on a sine curve
+    Test on a sine curve
     """
     amp = .01
     noise = .001
@@ -95,7 +96,8 @@ def test_sine_curve():
 def run_sweet_metric(transit_period, sine_period, amp, noise, plot=False):
     x = np.arange(100, dtype=float)
     y = 1 + amp * np.sin(2 * np.pi * x / sine_period)
-    y += noise * np.random.randn(len(y))
+    rng = np.random.default_rng(seed=1234)
+    y += noise * rng.standard_normal(len(y))
 
     res = sweet.sweet(x, y, transit_period, 0, 1, plot)
     return res
