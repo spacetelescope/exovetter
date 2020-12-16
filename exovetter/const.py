@@ -32,3 +32,9 @@ ppm = 1e-3 * ppk
 
 frac_amp = u.dimensionless_unscaled
 """Frac amp"""
+
+string_to_offset = {'bkjd': bkjd, 'kjd': bkjd,
+                    'btjd': btjd,
+                    'bjd': bjd
+                    }
+"""Supported Time Offset Keywords"""
