@@ -34,8 +34,8 @@ def test_kplr10417986():
     res = sweet_vetter.run(tce, lc)
     amp = res['amp']
 
-    assert_allclose(amp[:, 0], 600, atol=.2)  # Amplitude
-    assert_allclose(amp[:, 1], 100, atol=.2)  # SNR
+    assert_allclose(amp[0, 0], 637, atol=30)  # Amplitude
+    assert_allclose(amp[0, 2], 106.94, atol=10)  # SNR
 
 
 def test_sweet_vetter():
