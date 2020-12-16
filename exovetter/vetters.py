@@ -1,14 +1,12 @@
 """Module to handle exoplanet vetters."""
 
-import os
-from abc import ABC, abstractmethod
-
-import numpy as np
-from astropy import units as u
-
-from exovetter import const as exo_const
+import exovetter.sweet as sweet
+from exovetter import odd_even
 from exovetter import lpp
-from exovetter.utils import mark_transit_cadences, WqedLSF, estimate_scatter
+from exovetter import transit_coverage
+from abc import ABC, abstractmethod
+from astropy import units as u
+from exovetter import const as exo_const
 
 __all__ = ['BaseVetter', 'Lpp', 'Sweet']
 
@@ -95,6 +93,7 @@ class Lpp(BaseVetter):
         populated by :meth:`run`.
 
     """
+
     def __init__(self, map_filename=None, lc_name="flux"):
         self.map_info = lpp.Loadmap(filename=map_filename)
         self.lc_name = lc_name
@@ -128,6 +127,7 @@ class Lpp(BaseVetter):
         target = self.tce.get('target_name', 'Target')
         lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 
+
 class OddEven(BaseVetter):
     """Odd-even Metric"""
 
@@ -160,8 +160,8 @@ class OddEven(BaseVetter):
                                  self.epoch, self.duration * self.dur_frac,
                                  self.odd_depth, self.even_depth)
 
-        
- class TransitPhaseCoverage(BaseVetter):
+
+class TransitPhaseCoverage(BaseVetter):
     """Transit Phase Coverage"""
 
     def __init__(self, lc_name="flux"):
@@ -183,11 +183,11 @@ class OddEven(BaseVetter):
             transit_coverage.calc_coverage(time, p_day, epoch, dur_hour,
                                            ndur=ndur, nbins=nbins)
 
-    def plot(self):  # pragma: no cover    
-      
-        transit_coverage.plot_coverage(self.hist, self.bins)        
-        
-import exovetter.sweet as sweet
+    def plot(self):  # pragma: no cover
+
+        transit_coverage.plot_coverage(self.hist, self.bins)
+
+
 class Sweet(BaseVetter):
     """Class to handle SWEET Vetter functionality.
 
@@ -211,6 +211,7 @@ class Sweet(BaseVetter):
         Least squares fit object, populated by :meth:`run`.
 
     """
+
     def __init__(self, threshold_sigma=3):
         self.tce = None
         self.lc = None
@@ -225,14 +226,18 @@ class Sweet(BaseVetter):
         time = lightcurve.time
         flux = lightcurve.flux
         period_days = tce['period'].to_value(u.day)
-        epoch = tce.get_epoch(getattr(exo_const, lightcurve.time_format)).to_value()
+        epoch = tce.get_epoch(
+            getattr(
+                exo_const,
+                lightcurve.time_format)).to_value()
         duration_days = tce['duration'].to_value(u.day)
 
         self.result = sweet.sweet(time, flux,
-                              period_days, epoch, duration_days,
-                              plot=True
-                      )
-        self.result = sweet.construct_message(self.result, self.threshold_sigma)
+                                  period_days, epoch, duration_days,
+                                  plot=True
+                                  )
+        self.result = sweet.construct_message(
+            self.result, self.threshold_sigma)
         return self.result
 
     def plot(self):  # pragma: no cover
