@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_allclose
 from astropy import units as u
 from astropy.utils.data import download_file
 from lightkurve import LightCurve
@@ -33,8 +34,8 @@ def test_kplr10417986():
     res = sweet_vetter.run(tce, lc)
     amp = res['amp']
 
-    assert np.max(amp[:, 0]) > 600  # Amplitude is about this
-    assert np.max(amp[:, 2]) > 100  # Detection SNR should be about this
+    assert_allclose(amp[:, 0], 600, atol=.2)  # Amplitude
+    assert_allclose(amp[:, 1], 100, atol=.2)  # SNR
 
 
 def test_sweet_vetter():
