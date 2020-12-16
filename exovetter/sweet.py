@@ -25,10 +25,10 @@ def sweet(time, flux, period, epoch, duration, plot=False):
         period in same units as time
 
     epoch : float
-        time of event in same units as time
+        time of transit event in same units as time
 
     duration : float
-        transit even duration in units of time
+        transit event duration in units of time
 
     Returns
     -------
@@ -56,8 +56,6 @@ def sweet(time, flux, period, epoch, duration, plot=False):
     flux = flux[~idx]
     flux -= np.mean(flux)
     scatter = utils.estimate_scatter(flux)
-
-    print("scatter is %f" % (scatter))
 
     if plot:
         plt.clf()
