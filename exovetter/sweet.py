@@ -6,10 +6,10 @@ import os
 
 
 def sweet(time, flux, period, epoch, duration, plot=False):
-    """Perform the SWEET test
+    """Perform the SWEET test.
 
     The SWEET test checks that the flux out of transit is not well
-    fit by a sinecurve at either the proposed orbital period, or half,
+    fit by a sine curve at either the proposed orbital period, or half,
     or twice that. It is a good check for both variable stars and
     ellopsoidal variation
 
