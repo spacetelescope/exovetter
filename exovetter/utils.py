@@ -187,8 +187,8 @@ def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
 
     assert(len(idx) == len(y))
 
-    #x = np.arange(len(y))
-    #mp.plot(x, y, 'k.')
+    # x = np.arange(len(y))
+    # mp.plot(x, y, 'k.')
 
     oldNumClipped = np.sum(idx)
     for i in range(int(maxIter)):
