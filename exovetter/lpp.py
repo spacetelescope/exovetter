@@ -330,6 +330,8 @@ def plot_lpp_diagnostic(data, target, norm_lpp):
     return fig
 
 
+from exovetter import lightkurve_utils
+
 class Lppdata:
     """Class to handle LPP data.
 
@@ -361,8 +363,9 @@ class Lppdata:
         if 'snr' in tce.keys():
             self.mes = tce['snr']
 
-        self.time = lc.time
-        self.flux = getattr(lc, lc_name)
+
+        self.time, self.flux, _ = \
+        lightkurve_utils.unpack_lk_version(lc, lc_name)
 
         # make sure flux is zero norm.
         if np.round(np.median(self.flux)) != 0:
