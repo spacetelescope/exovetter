@@ -4,6 +4,7 @@
 # TODO: Maybe the boat has sailed but maybe some of these functions,
 # especially the ones that pass around mapInfo should have been class methods.
 
+from exovetter import lightkurve_utils
 import copy
 import warnings
 
@@ -330,8 +331,6 @@ def plot_lpp_diagnostic(data, target, norm_lpp):
     return fig
 
 
-from exovetter import lightkurve_utils
-
 class Lppdata:
     """Class to handle LPP data.
 
@@ -363,9 +362,8 @@ class Lppdata:
         if 'snr' in tce.keys():
             self.mes = tce['snr']
 
-
         self.time, self.flux, _ = \
-        lightkurve_utils.unpack_lk_version(lc, lc_name)
+            lightkurve_utils.unpack_lk_version(lc, lc_name)
 
         # make sure flux is zero norm.
         if np.round(np.median(self.flux)) != 0:
