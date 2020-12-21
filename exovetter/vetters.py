@@ -128,7 +128,9 @@ class Lpp(BaseVetter):
 
         # target is populated in TCE, assume it already exists.
         target = self.tce.get('target_name', 'Target')
-        lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
+        fig = lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
+
+        return fig
 
 
 class OddEven(BaseVetter):
@@ -143,10 +145,10 @@ class OddEven(BaseVetter):
     def run(self, tce, lightcurve, dur_frac=0.3):
 
         self.time, self.flux, time_offset_str = \
-        lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name) # noqa: E50
-            
+        lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)  # noqa: E50
+
         self.dur_frac = dur_frac
-        
+
         time_offset_q = getattr(exo_const, time_offset_str)
 
         self.period = tce['period'].to_value(u.day)
@@ -174,11 +176,11 @@ class TransitPhaseCoverage(BaseVetter):
     def run(self, tce, lightcurve, nbins=10, ndur=2):
 
         time, flux, time_offset_str = \
-        lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name) # noqa: E50
+        lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)  # noqa: E50
 
         p_day = tce['period'].to_value(u.day)
         dur_hour = tce['duration'].to_value(u.hour)
-        
+
         time_offset_q = getattr(exo_const, time_offset_str)
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
 
@@ -223,12 +225,12 @@ class Sweet(BaseVetter):
         self.lc_name = lc_name
 
     def run(self, tce, lightcurve, plot=False):
-        
+
         self.tce = tce
         self.lc = lightcurve
-        
+
         time, flux, time_offset_str = \
-        lightkurve_utils.unpack_lk_version(self.lc, self.lc_name) # noqa: E50
+        lightkurve_utils.unpack_lk_version(self.lc, self.lc_name)  # noqa: E50
 
         period_days = tce['period'].to_value(u.day)
         time_offset_q = getattr(exo_const, time_offset_str)
@@ -236,9 +238,9 @@ class Sweet(BaseVetter):
         duration_days = tce['duration'].to_value(u.day)
 
         self.sweet = sweet.sweet(time, flux,
-                                  period_days, epoch, duration_days,
-                                  plot=plot
-                                  )
+                                 period_days, epoch, duration_days,
+                                 plot=plot
+                                 )
         self.sweet = sweet.construct_message(
             self.sweet, self.sweet_threshold_sigma)
         return self.sweet
