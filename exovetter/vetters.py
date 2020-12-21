@@ -142,7 +142,7 @@ class OddEven(BaseVetter):
 
     def run(self, tce, lightcurve, dur_frac=0.3):
         self.time, self.flux, time_offset_str = \
-        lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
+            lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
 
         self.dur_frac = dur_frac
 
@@ -165,14 +165,14 @@ class OddEven(BaseVetter):
 
 class TransitPhaseCoverage(BaseVetter):
     """Transit Phase Coverage Vetter"""
-    
+
     def __init__(self, lc_name="flux"):
         self.lc_name = lc_name
 
     def run(self, tce, lightcurve, nbins=10, ndur=2):
 
         time, flux, time_offset_str = \
-        lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)  # noqa: E50
+            lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)  # noqa: E50
 
         p_day = tce['period'].to_value(u.day)
         dur_hour = tce['duration'].to_value(u.hour)
@@ -224,7 +224,7 @@ class Sweet(BaseVetter):
         self.lc = lightcurve
 
         time, flux, time_offset_str = \
-        lightkurve_utils.unpack_lk_version(self.lc, self.lc_name)  # noqa: E50
+            lightkurve_utils.unpack_lk_version(self.lc, self.lc_name)  # noqa: E50
 
         period_days = tce['period'].to_value(u.day)
         time_offset_q = getattr(exo_const, time_offset_str)
