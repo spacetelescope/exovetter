@@ -141,7 +141,6 @@ class OddEven(BaseVetter):
         self.sigma = None
 
     def run(self, tce, lightcurve, dur_frac=0.3):
-
         self.time, self.flux, time_offset_str = \
         lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
 
@@ -159,15 +158,14 @@ class OddEven(BaseVetter):
                                    dur_frac=self.dur_frac)
 
     def plot(self):  # pragma: no cover
-
         odd_even.diagnostic_plot(self.time, self.flux, self.period,
                                  self.epoch, self.duration * self.dur_frac,
                                  self.odd_depth, self.even_depth)
 
 
 class TransitPhaseCoverage(BaseVetter):
-    """Transit Phase Coverage"""
-
+    """Transit Phase Coverage Vetter"""
+    
     def __init__(self, lc_name="flux"):
         self.lc_name = lc_name
 
@@ -187,7 +185,6 @@ class TransitPhaseCoverage(BaseVetter):
                                            ndur=ndur, nbins=nbins)
 
     def plot(self):  # pragma: no cover
-
         transit_coverage.plot_coverage(self.hist, self.bins)
 
 
@@ -223,7 +220,6 @@ class Sweet(BaseVetter):
         self.lc_name = lc_name
 
     def run(self, tce, lightcurve, plot=False):
-
         self.tce = tce
         self.lc = lightcurve
 
