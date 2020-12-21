@@ -61,6 +61,7 @@ def test_sweet_vetter():
 
     sweet_vetter = Sweet()
     res = sweet_vetter.run(tce, lc)
+    sweet_vetter.plot()
 
     assert isinstance(res, dict)
     assert 'msg' in res.keys()
