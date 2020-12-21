@@ -1,6 +1,4 @@
 """Module to handle exoplanet vetters."""
-
-import astropy
 import exovetter.sweet as sweet
 from exovetter import odd_even
 from exovetter import lpp
@@ -145,7 +143,7 @@ class OddEven(BaseVetter):
     def run(self, tce, lightcurve, dur_frac=0.3):
 
         self.time, self.flux, time_offset_str = \
-        lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)  # noqa: E50
+        lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
 
         self.dur_frac = dur_frac
 
