@@ -9,7 +9,7 @@ from exovetter import const as exo_const
 from exovetter import lightkurve_utils
 
 
-__all__ = ['BaseVetter', 'Lpp', 'Sweet']
+__all__ = ['BaseVetter', 'Lpp', 'Sweet', 'OddEven', 'TransitPhaseCoverage']
 
 
 class BaseVetter(ABC):
@@ -126,9 +126,7 @@ class Lpp(BaseVetter):
 
         # target is populated in TCE, assume it already exists.
         target = self.tce.get('target_name', 'Target')
-        fig = lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
-
-        return fig
+        lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 
 
 class OddEven(BaseVetter):
@@ -164,15 +162,37 @@ class OddEven(BaseVetter):
 
 
 class TransitPhaseCoverage(BaseVetter):
-    """Transit Phase Coverage Vetter"""
+    """Transit Phase Coverage Vetter
+
+    Attributes
+    ----------
+    tce : tce object
+        tce object is a dictionary that contains information about the tce
+        to vet, like period, epoch, duration, depth
+
+    lc : lightkurve object
+       lightkurve object with the time and flux of the data to use for vetting.
+
+    nbins : integer
+       number bins to divide-up the in transit points. default is 10, giving
+       an accuracy of 0.1.
+
+    ndur : float
+      the code considers a phase that cover ndur * transit_duration as
+      "in transit"
+
+    tp_cover : float
+        fraction of coverage
+
+    """
 
     def __init__(self, lc_name="flux"):
         self.lc_name = lc_name
 
-    def run(self, tce, lightcurve, nbins=10, ndur=2):
+    def run(self, tce, lc, nbins=10, ndur=2):
 
         time, flux, time_offset_str = \
-            lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)  # noqa: E50
+            lightkurve_utils.unpack_lk_version(lc, self.lc_name)  # noqa: E50
 
         p_day = tce['period'].to_value(u.day)
         dur_hour = tce['duration'].to_value(u.hour)
@@ -198,8 +218,12 @@ class Sweet(BaseVetter):
 
     Attributes
     ----------
-    tce, lc
-        Inputs to :meth:`run`.
+    tce : tce object
+        tce object is a dictionary that contains information about the tce
+        to vet, like period, epoch, duration, depth
+
+    lc : lightkurve object
+       lightkurve object with the time and flux of the data to use for vetting.
 
     result : dict
         ``'amp'`` contains the best fit amplitude, its uncertainty, and
