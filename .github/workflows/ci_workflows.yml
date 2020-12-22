@@ -50,7 +50,7 @@ jobs:
         python -m pip install 'numpy<1.19'
         python -m pip install -e .[test,all]
     - name: Test with stable deps and coverage
-      run: pytest --cov=./ --cov-report=xml --open-files --remote-data
+      run: pytest --cov=./ --cov-report=xml --remote-data
     - name: Coverage report
       uses: codecov/codecov-action@v1
 
@@ -72,4 +72,4 @@ jobs:
         python -m pip install git+https://github.com/astropy/astropy.git@master#egg=astropy
         python -m pip install -e .[test,all]
     - name: Test with dev deps
-      run: pytest --open-files --remote-data
+      run: pytest --remote-data
