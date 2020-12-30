@@ -180,6 +180,8 @@ class Tce(dict):
                 tmp[key] = self[key].value
                 unit_key = f'{key}_unit'
                 tmp[unit_key] = str(self[key].unit)
+            else:
+                tmp[key] = self[key]
             
         
         tce_json = json.dumps(tmp)
@@ -212,19 +214,19 @@ class Tce(dict):
         tmp = {}
         
         for key in jobj.keys():
-            if key[-4:] == 'unit':
+            if key[-5:] == '_unit':
                 pass
             else:
                 v = jobj[key]
-                try:
+                if key+"_unit" in jobj.keys():
                     unit_str = jobj[key+"_unit"]
                     if unit_str == "":
                         q = exo_const.frac_amp
                     else:
                         q = u.__dict__[unit_str]
                     tmp[key] = v * q
-                except KeyError:
-                    tmp[key] = v * q
+                else:
+                    tmp[key] = v
                 
         tce = cls(**tmp)
         
