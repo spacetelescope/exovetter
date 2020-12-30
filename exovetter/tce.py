@@ -44,7 +44,9 @@ Calculate flux from boxcar model:
 <Quantity [ 0.e+00, -1.e-06,  0.e+00]>
 
 """
+import json
 import astropy.units as u
+import exovetter.const as exo_const
 
 __all__ = ['Tce']
 
@@ -158,3 +160,72 @@ class Tce(dict):
                 raise TypeError(f"Special param {key} must be an astropy "
                                 "Quantity")
         return True
+    
+    def to_json(self, filename):
+        """Write a json file with standard file name
+        
+        Parameters
+        ----------
+        filename : string
+        Filename to write the json string.
+
+        Returns
+        -------
+        tce_json : json formatted string
+
+        """
+        tmp={}
+        for key in self.keys():
+            if type(self[key]) is u.Quantity:
+                tmp[key] = self[key].value
+                unit_key = f'{key}_unit'
+                tmp[unit_key] = str(self[key].unit)
+            
+        
+        tce_json = json.dumps(tmp)
+        
+        if filename is not None:
+            fobj = open(filename, 'w')
+            fobj.write(tce_json)
+            fobj.close()
+        
+        return tce_json
+   
+    @classmethod
+    def from_json(cls, filename):
+        """Read a json file and populate a TCE object
+        
+        Parameters
+        ----------
+        filename : string
+            Filename of json file containing tce informamtion
+
+        Returns
+        -------
+        None.
+
+        """
+        fobj = open(filename, 'r')
+        jobj = json.load(fobj)
+        fobj.close()
+        
+        tmp = {}
+        
+        for key in jobj.keys():
+            if key[-4:] == 'unit':
+                pass
+            else:
+                v = jobj[key]
+                try:
+                    unit_str = jobj[key+"_unit"]
+                    if unit_str == "":
+                        q = exo_const.frac_amp
+                    else:
+                        q = u.__dict__[unit_str]
+                    tmp[key] = v * q
+                except KeyError:
+                    tmp[key] = v * q
+                
+        tce = cls(**tmp)
+        
+        return tce
