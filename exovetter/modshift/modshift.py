@@ -27,7 +27,7 @@ import numpy as np
 
 
 def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
-                                 duration_hrs):
+                             duration_hrs):
     """Compute Jeff Coughlin's Modshift metrics.
 
     This algorithm is adapted from the Modshift code used in the Kepler
@@ -47,7 +47,8 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     * Identify the three strongest dips, and the strongest positive excursion
     * Remove some of these events, and measure scatter of the rest of the data
     * Scale the convolved data by the per-point scatter so that each point
-      represents the statistical significance of a transit signal at that phase.
+      represents the statistical significance of a transit signal at that
+      phase.
     * Record the statistical significance of the 4 events.
 
     Inputs
@@ -55,8 +56,8 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     time
         (1d numpy array) times of observations in units of days
     flux
-        (1d numpy array) flux values at each time. Flux should be in fractional amplitude
-        (with typical out-of-transit values close to zero)
+        (1d numpy array) flux values at each time. Flux should be in
+        fractional amplitude (with typical out-of-transit values close to zero)
     model
         (1d numpy array) Model transit flux based on the properties of the TCE
         len(model) == len(time)
@@ -72,7 +73,7 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     assert len(time) == len(flux)
 
     # offset = 0.25  #Primary transit at quarter phase, not zero phase
-    overres = 10 #Number of bins per transit duration
+    overres = 10  # Number of bins per transit duration
 
     numBins = overres * period_days * 24 / duration_hrs
     numBins = int(numBins)
@@ -81,11 +82,11 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     bphase = data[:, 0]
     bflux = data[:, 1]
 
-    #Fold the model here
+    # Fold the model here
     bModel = fold_and_bin_data(time, model, period_days, epoch_days, numBins)
-    bModel = bModel[:,1] / bModel[:,2]  #Avg flux per bin
+    bModel = bModel[:, 1] / bModel[:, 2]  # Avg flux per bin
 
-    #Scale model so integral from 0.. period is 1
+    # Scale model so integral from 0.. period is 1
     integral = -1 * spint.trapz(bModel, bphase)
     bModel /= integral
 
@@ -106,48 +107,49 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     )
     results.update(compute_event_significances(conv, sigma, results))
 
-    results["false_alarm_threshold"] = \
-        compute_false_alarm_threshold(period_days, duration_hrs)
-    results['Fred'] = np.nan
+    results["false_alarm_threshold"] = compute_false_alarm_threshold(
+        period_days, duration_hrs
+    )
+    results["Fred"] = np.nan
 
     if True:
         plotmodshift.plot_modshift(phi_days, flux, model, conv, results)
     return results
 
 
-
 def fold_and_bin_data(time, flux, period, epoch, num_bins):
     """Fold data, then bin it up.
 
-    Inputs
-   ------------
-    time
-        (1d numpy array) times of observations
-    flux
-        (1d numpy array) flux values at each time. Flux should be in fractional amplitude
-        (with typical out-of-transit values close to zero)
-    period
-        (float) Orbital Period of TCE. Should be in same units as *time*
-    epoch
-        (float) Time of first transit of TCE. Same units as *time*
-    num_bins
-        (int) How many bins to use for folded, binned, lightcurve
+     Inputs
+    ------------
+     time
+         (1d numpy array) times of observations
+     flux
+         (1d numpy array) flux values at each time. Flux should be in
+         fractional amplitude (with typical out-of-transit values close
+         to zero)
+     period
+         (float) Orbital Period of TCE. Should be in same units as *time*
+     epoch
+         (float) Time of first transit of TCE. Same units as *time*
+     num_bins
+         (int) How many bins to use for folded, binned, lightcurve
 
-    Returns
-    -----------
-    2d numpy array. columns are phase (running from 0 to period),
-    binned flux, and counts. The binned flux is the sum of all fluxes
-    in that bin, while counts is the number of flux points added to the
-    bin. To plot the binned lightcurve, you will want to find the average
-    flux per bin by dividing binnedFlux / counts. Separating out the
-    two components of average flux makes computing the significance
-    of the transit easier.
+     Returns
+     -----------
+     2d numpy array. columns are phase (running from 0 to period),
+     binned flux, and counts. The binned flux is the sum of all fluxes
+     in that bin, while counts is the number of flux points added to the
+     bin. To plot the binned lightcurve, you will want to find the average
+     flux per bin by dividing binnedFlux / counts. Separating out the
+     two components of average flux makes computing the significance
+     of the transit easier.
 
-    Notes
-    -----------
-    This isn't everything I want it to be. It assumes that every
-    element in y, falls entirely in one bin element, which is not
-    necessarily true.
+     Notes
+     -----------
+     This isn't everything I want it to be. It assumes that every
+     element in y, falls entirely in one bin element, which is not
+     necessarily true.
     """
     i = np.arange(num_bins + 1)
     bins = i / float(num_bins) * period  # 0..period in numBin steps
@@ -163,9 +165,9 @@ def fold_and_bin_data(time, flux, period, epoch, num_bins):
 
     numNonZeroBins = np.sum(idx)
     out = np.zeros((numNonZeroBins, 3))
-    out[:,0] = bins[:-1][idx]
-    out[:,1] = binnedFlux[idx]
-    out[:,2] = cts[idx]
+    out[:, 0] = bins[:-1][idx]
+    out[:, 1] = binnedFlux[idx]
+    out[:, 2] = cts[idx]
     return out
 
 
@@ -205,8 +207,9 @@ def compute_false_alarm_threshold(period_days, duration_hrs):
 def compute_event_significances(conv, sigma, results):
     """Compute the statistical significance of 4 major events
 
-    The 4 events are the primary and secondary transits, the "tertiary transit",
-    i.e the 3rd most significant dip, and the strongest postive signal.
+    The 4 events are the primary and secondary transits, the "tertiary
+    transit", i.e the 3rd most significant dip, and the strongest postive
+    signal.
 
     These statistical significances are the 4 major computed metrics of
     the modshift test.
@@ -219,8 +222,8 @@ def compute_event_significances(conv, sigma, results):
     sigma (float) As returned by `estimate_scatter`
 
     results
-        (dict) Contains the indices in `conv` of the 4 events. These indices are
-        stored in the keys "pri", "sec", "ter", "pos"
+        (dict) Contains the indices in `conv` of the 4 events. These indices
+        are stored in the keys "pri", "sec", "ter", "pos"
 
     Returns
     ------------
@@ -229,7 +232,7 @@ def compute_event_significances(conv, sigma, results):
     of the 4 major events.
     """
     assert sigma > 0
-    conv = conv.copy() / sigma  #conv is now in units of statistical signif
+    conv = conv.copy() / sigma  # conv is now in units of statistical signif
 
     assert set("pri sec ter pos".split()) <= set(results.keys())
     out = dict()
@@ -301,10 +304,11 @@ def find_indices_of_key_locations(phase, conv, duration_hrs):
         out["pos"] = i0
         out["phase_pos"] = phase[i0]
     else:
-        out['pos'] = np.nan
-        out['phase_pos'] = np.nan
+        out["pos"] = np.nan
+        out["phase_pos"] = np.nan
 
     return out
+
 
 def mark_phase_range(phase_days, i0, gap_width_days):
     assert np.all(np.diff(phase_days) >= 0), "Phase not sorted"
@@ -314,19 +318,21 @@ def mark_phase_range(phase_days, i0, gap_width_days):
     idx = p0 - gap_width_days < phase_days
     idx &= phase_days < p0 + gap_width_days
 
-    #Take care of event v close to first phase point
+    # Take care of event v close to first phase point
     if p0 < gap_width_days:
         diff = gap_width_days - p0
         idx |= phase_days > period_days - diff
 
-    #Event close to last phase point
+    # Event close to last phase point
     if p0 + gap_width_days > period_days:
         diff = p0 + gap_width_days - period_days
         idx |= phase_days < diff
 
     return idx
 
-def estimate_scatter(phi_days, flux, phi_pri_days, phi_sec_days, gap_width_hrs):
+
+def estimate_scatter(phi_days, flux, phi_pri_days, phi_sec_days,
+                     gap_width_hrs):
     """
     Estimate the point-to-point scatter in the lightcurve after the
     transits have been removed.
@@ -392,18 +398,16 @@ def compute_convolution_for_binned_data(phase, flux, model):
     period = np.max(phase)
     phase = np.concatenate([phase, period + phase])
     flux = np.concatenate([flux, flux])
-    conv = np.convolve(flux, -model, mode='valid')  # Ensures modshift values are -ve
+    # Ensures modshift values are -ve
+    conv = np.convolve(flux, -model, mode="valid")
 
     return conv[:-1]
 
 
-
 def compute_phase(time, period, epoch, offset=0):
-    #Make sure the epoch is before the first data point for folding
+    # Make sure the epoch is before the first data point for folding
     delta = epoch - np.min(time)
     if delta > 0:
-        epoch -= np.ceil(delta/period) * period
+        epoch -= np.ceil(delta / period) * period
 
     return np.fmod(time - epoch + offset * period, period)
-
-

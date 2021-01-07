@@ -6,49 +6,55 @@ import numpy as np
 
 def test_modshift():
     np.random.seed(1234)
-    x = np.arange(100) + .25
+    x = np.arange(100) + 0.25
     y = np.random.randn(100)
-    y[40:50] -= 5  #Primary
-    y[80:90] -= 3 #secondary
+    y[40:50] -= 5  # Primary
+    y[80:90] -= 3  # secondary
 
     model = np.zeros(len(x))
     model[40:48] = -5
 
     period_days = len(x)
     epoch = 44
-    duration_hrs = 10*24
+    duration_hrs = 10 * 24
 
-    res = modshift.compute_modshift_metrics(x, y, model, period_days, epoch, duration_hrs)
+    res = modshift.compute_modshift_metrics(
+        x, y, model, period_days, epoch, duration_hrs
+    )
 
-    assert np.isclose(res['pri'], 0, atol=1) or np.isclose(res['pri'], 99, atol=1), res
-    assert np.isclose(res['sec'], 84-epoch, atol=2), res
+    assert np.isclose(res["pri"], 0, atol=1) or \
+           np.isclose(res["pri"], 99, atol=1), res
+    assert np.isclose(res["sec"], 84 - epoch, atol=2), res
     return res
 
 
 def test_single_epoch_sigma():
     np.random.seed(1234)
-    x = np.arange(200) + .25
+    x = np.arange(200) + 0.25
     y = np.random.randn(200)
-    y[40] -= 5  #Primary
+    y[40] -= 5  # Primary
     y[160] -= 3
     model = np.zeros(len(x))
 
     model[40] = -5
     period_days = len(x)
     epoch = 40
-    duration_hrs = 1*24
+    duration_hrs = 1 * 24
 
-    res = modshift.compute_modshift_metrics(x, y, model, period_days, epoch, duration_hrs)
-    assert np.isclose(res['sigma_pri'], -10, atol=2), res['sigma_pri']
+    res = modshift.compute_modshift_metrics(
+        x, y, model, period_days, epoch, duration_hrs
+    )
+    assert np.isclose(res["sigma_pri"], -10, atol=2), res["sigma_pri"]
+
 
 def test_multi_epoch_sigma():
     # np.random.seed(1234)
-    x = np.arange(200) + .25
+    x = np.arange(200) + 0.25
     y = np.random.randn(200)
-    y[40] -= 5  #Primary
-    y[90] -= 5  #Primary
-    y[140] -= 5  #Primary
-    y[190] -= 5  #Primary
+    y[40] -= 5  # Primary
+    y[90] -= 5  # Primary
+    y[140] -= 5  # Primary
+    y[190] -= 5  # Primary
     # y[80] -= 3 #secondary
 
     model = np.zeros(len(x))
@@ -59,36 +65,16 @@ def test_multi_epoch_sigma():
     model[190] = -5
     period_days = len(x) / 4
     epoch = 40
-    duration_hrs = 1*24
+    duration_hrs = 1 * 24
 
-    res = modshift.compute_modshift_metrics(x, y, model, period_days, epoch, duration_hrs)
-    assert np.isclose(res['sigma_pri'], -40 , atol=4), res['sigma_pri']
-
-
-
-#def test_modshift():
-#     np.random.seed(1234)
-#     x = np.arange(100) + .25
-#     y = np.random.randn(100)
-#     y[40:50] -= 5  #Primary
-#     y[80:90] -= 3 #secondary
-
-#     model = np.zeros(len(x))
-#     model[40:48] = -5
-
-#     period_days = len(x)
-#     epoch = 44
-#     duration_hrs = 10*24
-
-#     res = modshift.compute_modshift_metrics(x, y, model, period_days, epoch, duration_hrs)
-
-#     assert np.isclose(res['pri'], 0, atol=2), res
-#     assert np.isclose(res['sec'], 84-44, atol=2), res
-#     return res
+    res = modshift.compute_modshift_metrics(
+        x, y, model, period_days, epoch, duration_hrs
+    )
+    assert np.isclose(res["sigma_pri"], -40, atol=4), res["sigma_pri"]
 
 
 def test_fold_and_bin_data():
-    x = np.arange(100)+ .25
+    x = np.arange(100) + 0.25
     y = np.random.randn(100)
 
     data = modshift.fold_and_bin_data(x, y, 100, 0, 500)
@@ -108,7 +94,7 @@ def test_convolve():
     flux = np.zeros(size)
     flux[0] = -1
     flux[-1] = -1
-    flux[8:10] = -.5
+    flux[8:10] = -0.5
 
     model = np.zeros(size)
     model[0] = -1
@@ -118,5 +104,5 @@ def test_convolve():
     assert len(conv) == len(phase), len(conv)
 
     print(conv)
-    assert np.isclose(conv[0],  -2), conv[0]
-    assert np.isclose(conv[9],  -1, atol=1e-3), conv[9]
+    assert np.isclose(conv[0], -2), conv[0]
+    assert np.isclose(conv[9], -1, atol=1e-3), conv[9]

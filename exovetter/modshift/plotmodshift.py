@@ -3,10 +3,9 @@
 Functions used in plotting the results of the modshift calculation
 """
 
-from ipdb import set_trace as idebug
-from pdb import set_trace as debug
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 def plot_modshift(phase, flux, model, conv, results):
 
@@ -26,21 +25,16 @@ def plot_modshift(phase, flux, model, conv, results):
 
     plt.subplot(212, sharex=ax)
     x = np.linspace(0, 1, len(conv)) * np.max(phase)
-    plt.plot(x, conv, 'b.')
-    # # mark_events(results)
-    # # mark_false_alarm_threshold(results)
-
-    # ymin = 2 * results["sigma_ter"]
-    # ymax = 2 * results["sigma_pos"]
-    # plt.ylim(ymin, ymax)
-    # plt.xlabel("Phase (days)")
-    # plt.ylabel(r"Significance ($\sigma$)")
+    plt.plot(x, conv, "b.")
 
 
 def mark_events(results):
     r = results
     plt.axvline(
-        r["phase_pri"], ls="--", color="g", label=r"Primary %.1f$\sigma$" % (r["sigma_pri"])
+        r["phase_pri"],
+        ls="--",
+        color="g",
+        label=r"Primary %.1f$\sigma$" % (r["sigma_pri"]),
     )
     plt.axvline(
         r["phase_sec"],
@@ -49,17 +43,27 @@ def mark_events(results):
         label=r"Secondary %.1f$\sigma$" % (r["sigma_sec"]),
     )
     plt.axvline(
-        r["phase_ter"], ls="--", color="m", label=r"Tertiary %.1f$\sigma$" % (r["sigma_ter"])
+        r["phase_ter"],
+        ls="--",
+        color="m",
+        label=r"Tertiary %.1f$\sigma$" % (r["sigma_ter"]),
     )
     plt.axvline(
-        r["phase_pos"], ls="--", color="c", label=r"Positive %.1f$\sigma$" % (r["sigma_pos"])
+        r["phase_pos"],
+        ls="--",
+        color="c",
+        label=r"Positive %.1f$\sigma$" % (r["sigma_pos"]),
     )
+
 
 def mark_events2(results):
     r = results
     # idebug()
     plt.axvline(
-        r["phase_pri"], ls="--", color="g", label=r"Primary %.1f$\sigma$" % (r["sigma_pri"])
+        r["phase_pri"],
+        ls="--",
+        color="g",
+        label=r"Primary %.1f$\sigma$" % (r["sigma_pri"]),
     )
     plt.axvline(
         r["phase_sec"],
@@ -68,10 +72,16 @@ def mark_events2(results):
         label=r"Secondary %.1f$\sigma$" % (r["sigma_sec"]),
     )
     plt.axvline(
-        r["phase_ter"], ls="--", color="m", label=r"Tertiary %.1f$\sigma$" % (r["sigma_ter"])
+        r["phase_ter"],
+        ls="--",
+        color="m",
+        label=r"Tertiary %.1f$\sigma$" % (r["sigma_ter"]),
     )
     plt.axvline(
-        r["phase_pos"], ls="--", color="c", label=r"Positive %.1f$\sigma$" % (r["sigma_pos"])
+        r["phase_pos"],
+        ls="--",
+        color="c",
+        label=r"Positive %.1f$\sigma$" % (r["sigma_pos"]),
     )
 
 

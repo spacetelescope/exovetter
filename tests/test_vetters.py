@@ -12,14 +12,16 @@ from astropy.utils.data import get_pkg_data_filename
 
 def get_wasp18_tce():
 
-    tce = Tce(period=0.94124 * u.day,
-              epoch=58374.669883 * u.day,
-              epoch_offset=-2400000.5 * u.day,
-              depth=0.00990112 * exo_const.frac_amp,
-              duration=0.08932 * u.day,
-              event_name='WASP-18 b',
-              target_name='WASP-18',
-              snr=50)
+    tce = Tce(
+        period=0.94124 * u.day,
+        epoch=58374.669883 * u.day,
+        epoch_offset=-2400000.5 * u.day,
+        depth=0.00990112 * exo_const.frac_amp,
+        duration=0.08932 * u.day,
+        event_name="WASP-18 b",
+        target_name="WASP-18",
+        snr=50,
+    )
 
     return tce
 
@@ -30,8 +32,12 @@ def get_wasp18_lightcurve():
 
     lc_table = ascii.read(lc_file, data_start=1)
 
-    lc = lk.LightCurve(time=lc_table['col2'], flux=lc_table['col3'],
-                       flux_err=lc_table['col4'], time_format="btjd")
+    lc = lk.LightCurve(
+        time=lc_table["col2"],
+        flux=lc_table["col3"],
+        flux_err=lc_table["col4"],
+        time_format="btjd",
+    )
 
     return lc
 
@@ -44,21 +50,20 @@ def test_vetters():
     metrics = dict()
     vetter_list = [vetters.Lpp(),
                    vetters.OddEven(),
-                   vetters.TransitPhaseCoverage()]
+                   vetters.TransitPhaseCoverage()
+                   ]
 
     for v in vetter_list:
         vetter = v
         _ = vetter.run(tce, lc)
         metrics.update(vetter.__dict__)
 
-    assert_allclose(metrics['norm_lpp'], 7.93119, rtol=1e-3)
-    assert_allclose(metrics['tp_cover'], 1.0, rtol=1e-5)
-    assert_allclose(metrics['odd_depth'][0], 0.99, rtol=1e-1)
-
+    assert_allclose(metrics["norm_lpp"], 7.93119, rtol=1e-3)
+    assert_allclose(metrics["tp_cover"], 1.0, rtol=1e-5)
+    assert_allclose(metrics["odd_depth"][0], 0.99, rtol=1e-1)
 
 
 class DefaultVetter(vetters.BaseVetter):
-
     def run(self, tce, lightcurve):
         pass
 
@@ -70,6 +75,7 @@ class ModifiedVetter(vetters.BaseVetter):
     def run(self, tce, lightcurve):
         pass
 
+
 def test_string_dunder():
     """Test that the vetter's string method behaves as expected.
 
@@ -78,14 +84,13 @@ def test_string_dunder():
 
     v = DefaultVetter()
 
-    #No metrics gets returned as an empty dictionary
-    assert str(v) == '{}', str(v)
+    # No metrics gets returned as an empty dictionary
+    assert str(v) == "{}", str(v)
 
-    #A metrics dictionary gets returned as a pprinted string
-    v.metrics = dict(key='value')
+    # A metrics dictionary gets returned as a pprinted string
+    v.metrics = dict(key="value")
     assert str(v) == "{'key': 'value'}", str(v)
 
     w = ModifiedVetter()
     expected = "<test_vetter.ModifiedVetter"
-    assert str(w)[:len(expected)] == expected, str(w)
-
+    assert str(w)[: len(expected)] == expected, str(w)
