@@ -12,7 +12,6 @@ from exovetter import const
 from exovetter import model
 
 from abc import ABC, abstractmethod
-from astropy import units as u
 import astropy.units as u
 import pprint
 
@@ -33,6 +32,7 @@ class BaseVetter(ABC):
         of the depth difference that causes a TCE to fail.
 
     """
+
     def __init__(self, **kwargs):
         self.metrics = None
 
@@ -94,7 +94,7 @@ class ModShift(BaseVetter):
 
         flux = lcutils.set_median_flux_to_zero(flux)
 
-        #We are content to use the epoch in the user supplied units
+        # We are content to use the epoch in the user supplied units
         period_days = tce['period'].to_value(u.day)
         epoch_days = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_hrs = tce['duration'].to_value(u.hour)
