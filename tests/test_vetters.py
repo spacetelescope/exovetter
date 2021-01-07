@@ -54,3 +54,38 @@ def test_vetters():
     assert_allclose(metrics['norm_lpp'], 7.93119, rtol=1e-3)
     assert_allclose(metrics['tp_cover'], 1.0, rtol=1e-5)
     assert_allclose(metrics['odd_depth'][0], 0.99, rtol=1e-1)
+
+
+
+class DefaultVetter(vetters.BaseVetter):
+
+    def run(self, tce, lightcurve):
+        pass
+
+
+class ModifiedVetter(vetters.BaseVetter):
+    def __init__(self, **kwargs):
+        pass
+
+    def run(self, tce, lightcurve):
+        pass
+
+def test_string_dunder():
+    """Test that the vetter's string method behaves as expected.
+
+    Note: We may choose to improve the string representation at some point
+    """
+
+    v = DefaultVetter()
+
+    #No metrics gets returned as an empty dictionary
+    assert str(v) == '{}', str(v)
+
+    #A metrics dictionary gets returned as a pprinted string
+    v.metrics = dict(key='value')
+    assert str(v) == "{'key': 'value'}", str(v)
+
+    w = ModifiedVetter()
+    expected = "<test_vetter.ModifiedVetter"
+    assert str(w)[:len(expected)] == expected, str(w)
+
