@@ -4,10 +4,14 @@
 # TODO: Maybe the boat has sailed but maybe some of these functions,
 # especially the ones that pass around mapInfo should have been class methods.
 
+from exovetter import lightkurve_utils
 import copy
 import warnings
 
 import numpy as np
+from astropy import units as u
+from astropy.utils.data import download_file, _is_url
+from scipy import io as spio
 
 __all__ = ['compute_lpp_Transitmetric', 'runningMedian', 'foldBinLightCurve',
            'computeRawLPPTransitMetric', 'knnDistance_fromKnown',
@@ -55,7 +59,7 @@ def runningMedian(t, y, dt, runt):
     for i in range(len(runt)):
         tmp = []
         for j in range(len(newt)):
-            if (newt[j] >= (runt[i]-dt)) and (newt[j] <= (runt[i]+dt)):
+            if (newt[j] >= (runt[i] - dt)) and (newt[j] <= (runt[i] + dt)):
                 tmp.append(newy[j])
 
         if np.isnan(np.nanmedian(np.array(tmp))):
@@ -218,7 +222,7 @@ def periodNormalLPPTransitMetric(rawTLpp, newPerMes, mapInfo):
 
     LppNPercentile = np.percentile(nearPeriodLpp, nPercentil)
 
-    NormLppTransitMetric = rawTLpp/LppNPercentile
+    NormLppTransitMetric = rawTLpp / LppNPercentile
 
     return NormLppTransitMetric
 
@@ -228,10 +232,10 @@ def lpp_onetransit(tcedata, mapInfo, ntransit):
     Then gather the lpp value for that one transit.
 
     """
-    startTime = tcedata.time[0]+ntransit*tcedata.period
+    startTime = tcedata.time[0] + ntransit * tcedata.period
 
     # A few cadences of overlap
-    endTime = tcedata.time[0]+(ntransit+1)*tcedata.period + 3 / 24.0
+    endTime = tcedata.time[0] + (ntransit + 1) * tcedata.period + 3 / 24.0
 
     want = (tcedata.time >= startTime) & (tcedata.time <= endTime)
     newtime = tcedata.time[want]
@@ -345,21 +349,24 @@ class Lppdata:
 
         self.check_tce(tce, default_snr)
 
-        self.tzero = tce['tzero']
-        self.dur = tce['duration']
-        self.period = tce['period']
+        # FIXME: This looks more correct but fails the test.
+        # from exovetter import const as exo_const
+        # self.tzero = tce.get_epoch(
+        #     getattr(exo_const, lc.time_format)).to_value(u.day)
+
+        self.tzero = tce['epoch'].to_value(u.day)
+        self.dur = tce['duration'].to_value(u.hr)
+        self.period = tce['period'].to_value(u.day)
 
         self.mes = default_snr
         if 'snr' in tce.keys():
             self.mes = tce['snr']
 
-        self.time = lc.time
-        self.flux = lc.__dict__[lc_name]  # TODO: Use getattr?
+        self.time, self.flux, _ = \
+            lightkurve_utils.unpack_lk_version(lc, lc_name)
 
         # make sure flux is zero norm.
         if np.round(np.median(self.flux)) != 0:
-            warnings.warn("Removing median. The supplied light curve is "
-                          "not normalized to zero.")
             self.flux = self.flux - np.median(self.flux)
 
     def check_tce(self, tce, default_snr):
@@ -387,13 +394,9 @@ class Loadmap:
         If URL is provided, it will be cached using :ref:`astropy:utils-data`
 
     """
-    builtin_mat = 'https://stsci.box.com/s/s2jup12rcjn05qll598h33bwycjeym8x'
-    # builtin_mat = 'https://sourceforge.net/p/lpptransitlikemetric/code/HEAD/tree/data/maps/combMapDR25AugustMapDV_6574.mat?format=raw'  # noqa: E501
+    builtin_mat = 'https://stsci.box.com/shared/static/1ffi1t1fhae82d7xeqexw4ymlhlk0ov4.mat'  # noqa
 
     def __init__(self, filename=None):
-        from astropy.utils.data import download_file, _is_url
-        from scipy import io as spio
-
         if filename is None:
             filename = self.builtin_mat
 

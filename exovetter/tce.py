@@ -1,100 +1,160 @@
 # -*- coding: utf-8 -*-
+"""Module to handle Threshold Crossing Event (TCE).
 
-"""
-A TCE class stores the measured properties of a proposed transit.
-Those properties include orbital period, transit depth etc.
+This module constains a `~exovetter.tce.Tce` class, which stores the measured
+properties (orbital period, transit depth, etc.) of a proposed transit.
 
-This class tries to reduce the risk of modeling a transit
-with data in the wrong unit, for example, entering the transit duration in
-hours, then treating the value as if it is the duration in days.
+To create model transits from a `~exovetter.tce.Tce`, see the
+`exovetter.model` module. For example, you can obtain flux from a boxcar
+model using :func:`~exovetter.model.create_box_model_for_tce`.
 
-A Tce class is a dictionary with a list of reserved keywords. The
-values of these keys must be astropy.units.Quantities objects. Other
-keys in the dictionary have no restrictions on their values. By ensuring
-that certain measured quantities are have included units, we can ensure
-that, for example, a TCE created with depth measured in parts per million,
-is used correctly in code that expects depths to be measured in fractional
-amplitude.
+Examples
+--------
 
-Transit times represent a wrinkle in this model. Most transit data has
-times corrected to the barycentre of the solar system, and expressed in
-units of days since some zero point. However, there is no agreement
-on the zero point. Some data is given in Julian Date, other missions choose
-mission specific zero points. For example, t=0 for Kepler data corresponds
-to a barycentric julian date of 2,454,833.0. Some common offsets are stored
-in const.py
+Define a TCE in BKJD:
 
-The Tce class addresses these zero points by making `epoch_offset` a
-reserved keyword. When creating a Tce, you must specify the period and
-epoch of the transit (typically with units of days), but also the time
-of the zero point of the time system.
+>>> from astropy import units as u
+>>> from exovetter import const as exo_const
+>>> from exovetter.model import create_box_model_for_tce
+>>> from exovetter.tce import Tce
+>>> period = 5.3 * u.day
+>>> epoch = 133.4 * u.day
+>>> depth = 1 * exo_const.ppm
+>>> duration = 24 * u.hr
+>>> my_tce = Tce(period=period, epoch=epoch, epoch_offset=exo_const.bkjd,
+...              depth=depth, duration=duration, comment='test')
+>>> my_tce
+{'period': <Quantity 5.3 d>,
+ 'epoch': <Quantity 133.4 d>,
+ 'epoch_offset': <Quantity -2454833. d>,
+ 'depth': <Quantity 1.e-06>,
+ 'duration': <Quantity 24. h>,
+ 'comment': 'test'}
 
-Example
-----------
-::
+Retrieve the epoch of the transit in BJD:
 
-    period_days = 5.3
-    epoch_days = 133.4
-    tce = Tce(period=periods_days * u.day,
-              epoch=epoch_days * u.day,
-              epoch_offset=const.bkjd)
+>>> epoch_bjd = my_tce.get_epoch(exo_const.bjd)
+>>> epoch_bjd
+<Quantity 2454966.4 d>
 
+Calculate flux from boxcar model:
 
-You can retrieve the epoch of the transit with the `get_epoch()` method.::
+>>> times = [134, 135, 136] * u.d
+>>> create_box_model_for_tce(my_tce, times, epoch_bjd)
+<Quantity [ 0.e+00, -1.e-06,  0.e+00]>
 
-    # Even though the Tce is created with transit time in BKJD, getting the
-    # Julian date of the transit is easy:
-    epoch_bjd = tce.get_epoch(const.bjd)
-
-See model.py for code to create model transits from a Tce object.
 """
 import astropy.units as u
 
+__all__ = ['Tce']
+
 
 class Tce(dict):
-    required_quantities = "period epoch epoch_offset duration depth".split()
-    required_quantities = set(required_quantities)
+    """Class to handle Threshold Crossing Event (TCE).
 
-    def __init__(self, **kwargs):
-        dict.__init__(self)
-        for k in kwargs:
-            self.__setitem__(k, kwargs[k])
+    It inherits from :py:obj:`dict` and defines a list of reserved
+    keywords in ``required_quantities``, which must contain
+    `~astropy.units.Quantity`. Other keys in the dictionary have
+    no restrictions.
+
+    By requiring that certain measured properties have units attached,
+    it reduces the risk of modeling a transit with data
+    in the wrong units; e.g., entering the transit duration in
+    hours but treating the value as if it is the duration in days.
+    It also allows depth given in parts per million to be used correctly
+    in places that expect depth to be in fractional amplitude.
+
+    This class also handles the problem with transit times given in
+    different zeropoints. Most transit data has times corrected to
+    the barycentre of the solar system and expressed in the unit of
+    days since some zeropoint. However, there is no agreement
+    on the zeropoint. Some data is given in Julian Date, while
+    other missions choose mission specific zeropoints; e.g.,
+    ``t=0`` for Kepler data corresponds to a Barycentric Julian Date
+    (BJD) of 2454833. This problem is addressed here by requiring
+    epoch and period data to be `~astropy.units.Quantity` and by
+    providing a :meth:`~exovetter.tce.Tce.get_epoch` method.
+
+    Attributes
+    ----------
+    required_quantities : set
+        Keys in which their values must be `~astropy.units.Quantity`.
+
+    Raises
+    ------
+    KeyError
+        Required quantities missing, causing
+        :meth:`~exovetter.tce.Tce.validate` to fail.
+
+    """
+    required_quantities = {'depth', 'duration', 'epoch', 'epoch_offset',
+                           'period'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.validate()
 
     def __setitem__(self, key, value):
-        if key in self.required_quantities:
-            if not isinstance(value, u.Quantity):
-                msg = "Special param %s must be an astropy quantity" % (key)
-                raise TypeError(msg)
+        if (key in self.required_quantities and
+                not isinstance(value, u.Quantity)):
+            raise TypeError(f"Special param {key} must be an astropy Quantity")
         self.setdefault(key, value)
 
-    def get_epoch(self, offset):
-        """Get the epoch of the transit in your favourite BJD based time system.
+    def get_epoch(self, offset=None):
+        """Get the epoch of the transit in the desired BJD-based time system.
 
         The time of first transit of your TCE is stored as a date offset
-        from BJD=0 by an amount given by epoch_offset (eg BKJD, TJD, etc.).
-        Converting this time of first transit to a time offset from the
-        epoch you need is fiddly, and easy to get a sign wrong. This method
-        takes care of the conversion for you.
+        from BJD=0 by an amount given by ``offset`` (e.g., BKJD, TJD).
+        This method converts the time of the first transit to a time offset
+        from the epoch desired.
 
-        Inputs
-        ---------
-        offset
-            (Astropy units quantity). The epoch offset you wish to obtain
-            the time of first transit in, eg const.bkjd. See const.py for some
-            more examples.
+        Parameters
+        ----------
+        offset : `~astropy.units.Quantity`
+            The epoch offset desired.
+            Some pre-defined offsets are available in `exovetter.const`.
+            For example, the time of first transit in `~exovetter.const.bkjd`.
 
         Returns
-        ----------
-        An astropy.unit.Quantity
+        -------
+        epoch : `~astropy.units.Quantity`
+            Epoch of the transit in the desired BJD-based time system.
+
+        Raises
+        ------
+        KeyError
+            Calculation failed due to missing keys.
+
         """
-        return self["epoch"] - self["epoch_offset"] + offset
+        if 'epoch' not in self or 'epoch_offset' not in self:
+            raise KeyError('epoch and epoch_offset must be defined first')
+        epoch = self["epoch"] - self["epoch_offset"]
+        if offset is not None:
+            epoch = epoch + offset
+        return epoch
 
     def validate(self):
-        """Check that required quantities are present in the object"""
-        is_ok = True
+        """Check that required quantities are present.
 
-        for q in self.required_quantities:
-            if q not in self:
-                print("Required quantitiy %s is missing" % (q))
-                is_ok = False
-        return is_ok
+        Returns
+        -------
+        status : bool
+            `True` if validation passes.
+
+        Raises
+        ------
+        KeyError
+            Some required quantities are missing.
+
+        TyperError
+            Some required quantities do not have units attached.
+
+        """
+        missing_keys = self.required_quantities - set(self.keys())
+        if len(missing_keys) != 0:
+            raise KeyError(f'Missing required quantities: {missing_keys}')
+        for key in self.required_quantities:
+            if not isinstance(self[key], u.Quantity):
+                raise TypeError(f"Special param {key} must be an astropy "
+                                "Quantity")
+        return True
