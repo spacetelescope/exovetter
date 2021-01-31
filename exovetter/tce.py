@@ -160,10 +160,10 @@ class Tce(dict):
                 raise TypeError(f"Special param {key} must be an astropy "
                                 "Quantity")
         return True
-    
+
     def to_json(self, filename):
         """Write a json file with standard file name
-        
+
         Parameters
         ----------
         filename : string
@@ -174,29 +174,28 @@ class Tce(dict):
         tce_json : json formatted string
 
         """
-        tmp={}
+        tmp = {}
         for key in self.keys():
-            if type(self[key]) is u.Quantity:
+            if isinstance(self[key], u.Quantity):
                 tmp[key] = self[key].value
                 unit_key = f'{key}_unit'
                 tmp[unit_key] = str(self[key].unit)
             else:
                 tmp[key] = self[key]
-            
-        
+
         tce_json = json.dumps(tmp)
-        
+
         if filename is not None:
             fobj = open(filename, 'w')
             fobj.write(tce_json)
             fobj.close()
-        
+
         return tce_json
-   
+
     @classmethod
     def from_json(cls, filename):
         """Read a json file and populate a TCE object
-        
+
         Parameters
         ----------
         filename : string
@@ -210,16 +209,16 @@ class Tce(dict):
         fobj = open(filename, 'r')
         jobj = json.load(fobj)
         fobj.close()
-        
+
         tmp = {}
-        
+
         for key in jobj.keys():
             if key[-5:] == '_unit':
                 pass
             else:
                 v = jobj[key]
-                if key+"_unit" in jobj.keys():
-                    unit_str = jobj[key+"_unit"]
+                if key + "_unit" in jobj.keys():
+                    unit_str = jobj[key + "_unit"]
                     if unit_str == "":
                         q = exo_const.frac_amp
                     else:
@@ -227,7 +226,7 @@ class Tce(dict):
                     tmp[key] = v * q
                 else:
                     tmp[key] = v
-                
+
         tce = cls(**tmp)
-        
+
         return tce
