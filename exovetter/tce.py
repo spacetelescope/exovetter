@@ -206,9 +206,8 @@ class Tce(dict):
         None.
 
         """
-        fobj = open(filename, 'r')
-        jobj = json.load(fobj)
-        fobj.close()
+        with open(filename, 'r') as fobj:
+            jobj = json.load(fobj)
 
         tmp = {}
 
