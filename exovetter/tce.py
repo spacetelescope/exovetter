@@ -186,9 +186,8 @@ class Tce(dict):
         tce_json = json.dumps(tmp)
 
         if filename is not None:
-            fobj = open(filename, 'w')
-            fobj.write(tce_json)
-            fobj.close()
+            with open(filename, 'w') as fobj:
+                fobj.write(tce_json)
 
         return tce_json
 
