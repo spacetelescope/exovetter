@@ -376,8 +376,14 @@ def estimate_scatter(phi_days, flux, phi_pri_days, phi_sec_days,
     rms : float
         The rms point-to-point scatter
 
+    Raises
+    ------
+    ValueError
+        Invalid inputs or calculation failed.
+
     """
-    assert len(phi_days) == len(flux)
+    if len(phi_days) != len(flux):
+        raise ValueError('phi_days and flux must be of same length')
 
     gap_width_days = gap_width_hrs / 24.0
 
@@ -391,7 +397,8 @@ def estimate_scatter(phi_days, flux, phi_pri_days, phi_sec_days,
 
     # Measure rms of all other points
     idx = ~(idx1 | idx2)
-    assert np.any(idx)
+    if not np.any(idx):
+        raise ValueError('RMS calculation failed')
     rms = np.std(flux[idx])
     return rms
 
