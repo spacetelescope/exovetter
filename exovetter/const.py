@@ -1,8 +1,9 @@
 """Constants and units for exoplanet vetting."""
 
-import astropy.units as u
+from astropy import units as u
 
-__all__ = ['bjd', 'bkjd', 'btjd', 'bet', 'ppk', 'ppm', 'frac_amp']
+__all__ = ['bjd', 'bkjd', 'btjd', 'bet', 'ppk', 'ppm', 'frac_amp',
+           'string_to_offset']
 
 # TODO: Improve docstrings
 
