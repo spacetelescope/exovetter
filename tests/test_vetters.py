@@ -95,5 +95,5 @@ def test_string_dunder():
 
     w = ModifiedVetter()
     w_str = str(w)
-    expected = "<test_vetter.ModifiedVetter"
+    expected = "<test_vetters.ModifiedVetter"
     assert w_str.startswith(expected), w_str
