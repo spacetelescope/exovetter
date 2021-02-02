@@ -1,3 +1,4 @@
+from astropy.utils.data import get_pkg_data_filename
 import pytest
 from numpy.testing import assert_allclose
 from astropy import units as u
@@ -44,14 +45,11 @@ def test_epoch():
         epoch_btjd, (2_454_833 - 2_457_000 + 1000) * u.day)
 
 
-from astropy.utils.data import get_pkg_data_filename
-def test_json_io():    
-    
+def test_json_io():
+
     input_file = get_pkg_data_filename("data/tce-test.json")
     atce = Tce.from_json(input_file)
-    
+
     assert_allclose(atce["period"].value, 0.830002, atol=1e-7)
     assert atce["period"].unit == "d"
     assert atce["sector"] == 14
-    
-    
