@@ -643,7 +643,7 @@ class TrapezoidFit:
         if idx.size > 0:
             ztmp = phi[idx] * per
             cadlen_div2 = cadlen * 0.5
-            delta_x_small_div2 = cadlen_div2 / np.float(samplen)
+            delta_x_small_div2 = cadlen_div2 / float(samplen)
             small_blk = np.linspace(-cadlen_div2 + delta_x_small_div2,
                                     cadlen_div2 - delta_x_small_div2, samplen)
             o_n = ztmp.size
