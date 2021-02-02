@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
-Utilities to deal with lightcurves and lighkurves
-"""
+"""Utilities to deal with lightcurves and lighkurve objects."""
 
 import numpy as np
 
+__all__ = ['set_median_flux_to_zero', 'set_median_flux_to_one']
+
 
 def set_median_flux_to_zero(flux):
-    assert np.all(np.isfinite(flux))
+    """Set median flux to zero."""
+    if not np.all(np.isfinite(flux)):
+        raise ValueError('flux must contain all finite values')
 
     medflux = np.median(flux)
     if np.isclose(medflux, 0):
@@ -19,7 +21,9 @@ def set_median_flux_to_zero(flux):
 
 
 def set_median_flux_to_one(flux):
-    assert np.all(np.isfinite(flux))
+    """Set median flux to one."""
+    if not np.all(np.isfinite(flux)):
+        raise ValueError('flux must contain all finite values')
 
     medflux = np.median(flux)
     if np.isclose(medflux, 0):

@@ -13,6 +13,12 @@ Reference/API
 .. automodapi:: exovetter.odd_even
     :no-inheritance-diagram:
 
+.. automodapi:: exovetter.sweet
+    :no-inheritance-diagram:
+
+.. automodapi:: exovetter.modshift
+    :no-inheritance-diagram:
+
 .. automodapi:: exovetter.trapezoid_fit
     :no-inheritance-diagram:
 
@@ -25,3 +31,12 @@ Reference/API
 .. automodapi:: exovetter.const
     :no-inheritance-diagram:
     :include-all-objects:
+
+.. automodapi:: exovetter.lcutils
+    :no-inheritance-diagram:
+
+.. automodapi:: exovetter.lightkurve_utils
+    :no-inheritance-diagram:
+
+.. automodapi:: exovetter.utils
+    :no-inheritance-diagram:

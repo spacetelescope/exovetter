@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-"""
-Functions used in plotting the results of the modshift calculation
-"""
+"""Functions used in plotting the results of the modshift calculation."""
 
-import matplotlib.pyplot as plt
 import numpy as np
+
+__all__ = ['plot_modshift', 'mark_events', 'mark_false_alarm_threshold']
 
 
 def plot_modshift(phase, flux, model, conv, results):
+    """Plot modshift results."""
+    import matplotlib.pyplot as plt
 
     srt = np.argsort(phase)
     phase = phase[srt]
@@ -20,7 +21,6 @@ def plot_modshift(phase, flux, model, conv, results):
     plt.plot(phase, 1e3 * model, "r-", label="Model")
     plt.ylabel("Flux (ppk)")
 
-    # mark_events(results)
     plt.legend()
 
     plt.subplot(212, sharex=ax)
@@ -29,36 +29,10 @@ def plot_modshift(phase, flux, model, conv, results):
 
 
 def mark_events(results):
-    r = results
-    plt.axvline(
-        r["phase_pri"],
-        ls="--",
-        color="g",
-        label=r"Primary %.1f$\sigma$" % (r["sigma_pri"]),
-    )
-    plt.axvline(
-        r["phase_sec"],
-        ls="--",
-        color="orange",
-        label=r"Secondary %.1f$\sigma$" % (r["sigma_sec"]),
-    )
-    plt.axvline(
-        r["phase_ter"],
-        ls="--",
-        color="m",
-        label=r"Tertiary %.1f$\sigma$" % (r["sigma_ter"]),
-    )
-    plt.axvline(
-        r["phase_pos"],
-        ls="--",
-        color="c",
-        label=r"Positive %.1f$\sigma$" % (r["sigma_pos"]),
-    )
+    """Mark events."""
+    import matplotlib.pyplot as plt
 
-
-def mark_events2(results):
     r = results
-    # idebug()
     plt.axvline(
         r["phase_pri"],
         ls="--",
@@ -86,6 +60,9 @@ def mark_events2(results):
 
 
 def mark_false_alarm_threshold(results):
+    """Mark false alarm threshold."""
+    import matplotlib.pyplot as plt
+
     plt.axhline(
         -results["false_alarm_threshold"],
         ls=":",
@@ -95,15 +72,14 @@ def mark_false_alarm_threshold(results):
 
 
 def _plot_convolution(phase, flux, bphase, conv):
-    """Debugging plot for `compute_convolution_for_binned_data
+    """Debugging plot for `compute_convolution_for_binned_data`"""
+    import matplotlib.pyplot as plt
 
-    Private functino"""
     plt.clf()
     plt.subplot(311)
     plt.plot(phase, flux, "ko")
 
     plt.subplot(312)
-    # plt.plot(phi, conv, 'b.-')
     plt.plot(conv, "b.-")
 
     plt.subplot(313)

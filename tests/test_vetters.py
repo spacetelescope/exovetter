@@ -83,14 +83,17 @@ def test_string_dunder():
     """
 
     v = DefaultVetter()
+    v_str = str(v)
 
     # No metrics gets returned as an empty dictionary
-    assert str(v) == "{}", str(v)
+    assert v_str == "{}", v_str
 
     # A metrics dictionary gets returned as a pprinted string
     v.metrics = dict(key="value")
-    assert str(v) == "{'key': 'value'}", str(v)
+    v_str = str(v)
+    assert v_str == "{'key': 'value'}", v_str
 
     w = ModifiedVetter()
+    w_str = str(w)
     expected = "<test_vetter.ModifiedVetter"
-    assert str(w)[: len(expected)] == expected, str(w)
+    assert w_str.startswith(expected), w_str

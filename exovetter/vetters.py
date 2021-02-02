@@ -1,22 +1,23 @@
 """Module to handle exoplanet vetters."""
+
+import pprint
+from abc import ABC, abstractmethod
+
+import astropy.units as u
+
 from exovetter import transit_coverage
 from exovetter import modshift
 from exovetter import odd_even
 from exovetter import sweet
 from exovetter import lpp
-
 from exovetter import const as exo_const
 from exovetter import lightkurve_utils
 from exovetter import lcutils
 from exovetter import const
 from exovetter import model
 
-from abc import ABC, abstractmethod
-import astropy.units as u
-import pprint
-
-
-__all__ = ['BaseVetter', 'Lpp', 'Sweet', 'OddEven', 'TransitPhaseCoverage']
+__all__ = ['BaseVetter', 'ModShift', 'Lpp', 'OddEven', 'TransitPhaseCoverage',
+           'Sweet']
 
 
 class BaseVetter(ABC):
@@ -81,6 +82,8 @@ class BaseVetter(ABC):
 
 
 class ModShift(BaseVetter):
+    """Modshift vetter."""
+
     def __init__(self, **kwargs):
         self.metrics = None
 
@@ -105,8 +108,7 @@ class ModShift(BaseVetter):
         return self.metrics
 
     def plot(self):
-        print("No plots implemented for ModShift vetter")
-        pass
+        raise NotImplementedError("No plots implemented for ModShift vetter")
 
 
 class Lpp(BaseVetter):
