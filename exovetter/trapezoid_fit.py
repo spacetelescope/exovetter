@@ -643,7 +643,7 @@ class TrapezoidFit:
         if idx.size > 0:
             ztmp = phi[idx] * per
             cadlen_div2 = cadlen * 0.5
-            delta_x_small_div2 = cadlen_div2 / np.float(samplen)
+            delta_x_small_div2 = cadlen_div2 / float(samplen)
             small_blk = np.linspace(-cadlen_div2 + delta_x_small_div2,
                                     cadlen_div2 - delta_x_small_div2, samplen)
             o_n = ztmp.size
@@ -756,7 +756,7 @@ class TrapezoidFit:
 
         best_chi2s = np.zeros(n_iter)
         best_pars = np.zeros((self.physvals.size, n_iter))
-        gd_fits = np.zeros(n_iter, dtype=np.bool)
+        gd_fits = np.zeros(n_iter, dtype=bool)
         depth_half = self.origests.depth * 0.5 / 1.0e6
         depth_half_abs = np.abs(depth_half)
 
