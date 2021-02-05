@@ -1,0 +1,1 @@
+{"period": 0.830002, "period_unit": "d", "epoch": 1683.8411716341777, "epoch_unit": "d", "depth": 0.0004468960873972016, "depth_unit": "", "duration": 0.5, "duration_unit": "d", "epoch_offset": -2457000.0, "epoch_offset_unit": "d", "snr": 0.22005524757821263, "target": "TIC 399860411", "sector": 14, "event": "1", "disposition": "FAIL", "reason": "-LowSNR--NormLPP-"}

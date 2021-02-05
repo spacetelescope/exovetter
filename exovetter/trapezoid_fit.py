@@ -756,7 +756,7 @@ class TrapezoidFit:
 
         best_chi2s = np.zeros(n_iter)
         best_pars = np.zeros((self.physvals.size, n_iter))
-        gd_fits = np.zeros(n_iter, dtype=np.bool)
+        gd_fits = np.zeros(n_iter, dtype=bool)
         depth_half = self.origests.depth * 0.5 / 1.0e6
         depth_half_abs = np.abs(depth_half)
 
