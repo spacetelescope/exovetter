@@ -9,8 +9,25 @@ on:
       - master
 
 jobs:
+  cancel_ci:
+    name: Mandatory checks before CI
+    runs-on: ubuntu-latest
+    outputs:
+      run_next: ${{ steps.skip_ci_step.outputs.run_next }}
+    steps:
+    - name: Check skip CI
+      uses: OpenAstronomy/action-skip-ci@main
+      id: skip_ci_step
+      with:
+        NO_FAIL: true
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # The rest only run if above are done
+
   pep_and_audit:
     runs-on: ubuntu-16.04
+    needs: cancel_ci
+    if: needs.cancel_ci.outputs.run_next == 'true'
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -38,6 +55,8 @@ jobs:
   # Python 3.7 + Numpy 1.19 resulted in NaN results, so we downgrade Numpy.
   initial_tests:
     runs-on: ubuntu-16.04
+    needs: cancel_ci
+    if: needs.cancel_ci.outputs.run_next == 'true'
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -60,6 +79,8 @@ jobs:
 
   dev_deps_tests:
     runs-on: ubuntu-latest
+    needs: cancel_ci
+    if: needs.cancel_ci.outputs.run_next == 'true'
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
