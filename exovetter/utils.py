@@ -5,7 +5,8 @@ import warnings
 
 import numpy as np
 
-__all__ = ['sine', 'mark_transit_cadences', 'WqedLSF']
+__all__ = ['sine', 'estimate_scatter', 'mark_transit_cadences',
+           'median_detrend', 'sigmaClip', 'WqedLSF']
 
 
 def sine(x, order, period=1):
@@ -24,19 +25,20 @@ def estimate_scatter(flux):
 
     Uses the same method as Marshall vetter (Mullally et al 2017)
 
-    Inputs:
+    Parameters
     ----------
     flux
         (np 1d array). Flux to measure scatter of. Need not have
         zero mean.
 
-    Returns:
-    ------------
-    (float) scatter of data in the same units as in the input ``flux``
+    Returns
+    -------
+    result : float
+        Scatter of data in the same units as in the input ``flux``
 
 
-    Notes:
-    ----------
+    Notes
+    -----
     Algorithm is reasonably insensitive to outliers. For best results
     uses outlier rejection on your lightcurve before computing scatter.
     Nan's and infs in lightcurve will propegate to the return value.
@@ -133,8 +135,8 @@ def mark_transit_cadences(time, period_days, epoch_bkjd, duration_days,
 
 def median_detrend(flux, nPoints):
     """Quick and dirty median smooth function.
-    Not designed to be at all effecient"""
-
+    Not designed to be at all efficient.
+    """
     size = len(flux)
     filtered = np.zeros_like(flux)
     for i in range(size):
@@ -157,29 +159,27 @@ def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
     the mean value. The recalculate the mean and std and repeat until
     no more outliers found.
 
-    Inputs
-    ------
-    y : numpy array
+    Parameters
+    ----------
+    y : ndarray
         Array to be cleaned
     nSigma : float
         Threshold to cut at.
         5 is typically a good value for
         most arrays found in practice.
-
-    Optional Inputs
-    ---------
-    maxIter : int
+    maxIter : int, optional
         Maximum number of iterations
-
-    initialClip : 1d boolean array
+    initialClip : ndarray, optional
+        1D boolean array.
         If an element of initialClip is set to True,
         that value is treated as a bad value in the first iteration, and
         not included in the computation of the mean and std.
 
     Returns
     -------
-    1d numpy array. Where set to True, the corresponding element of y
-    is an outlier.
+    idx : ndarray
+        1d numpy array. Where set to True, the corresponding element of y
+        is an outlier.
     """
 
     idx = initialClip

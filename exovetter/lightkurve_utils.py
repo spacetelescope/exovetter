@@ -1,6 +1,8 @@
-"""Functions to deal with the changing lightkurve versions"""
+"""Functions to handle compatibility with lightkurve."""
 
 import astropy
+
+__all__ = ['unpack_lk_version']
 
 
 def unpack_lk_version(lightcurve, flux_name):

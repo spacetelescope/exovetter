@@ -1,9 +1,12 @@
 """Module ot handle SWEET vetter."""
 
+import os
+
 import numpy as np
 
 from exovetter import utils
-import os
+
+__all__ = ['sweet']
 
 
 def sweet(time, flux, period, epoch, duration, plot=False):
@@ -14,8 +17,8 @@ def sweet(time, flux, period, epoch, duration, plot=False):
     or twice that. It is a good check for both variable stars and
     ellopsoidal variation
 
-    Inputs
-    --------
+    Parameters
+    ----------
     time : float array
         time of the observations
 
@@ -38,8 +41,8 @@ def sweet(time, flux, period, epoch, duration, plot=False):
         The rows are the fits at half the period, at the period,
         and twice the period.
 
-    Note
-    ------
+    Notes
+    -----
     It is the caller's responsbility to ensure that the inputs are
     given in consistent units.
     """
@@ -84,6 +87,7 @@ def sweet(time, flux, period, epoch, duration, plot=False):
 
 
 def construct_message(result, threshold_sigma):
+    """Construct message for SWEET test."""
     msg = []
     if result[0, -1] > threshold_sigma:
         msg.append("WARN: SWEET test finds signal at HALF transit period")

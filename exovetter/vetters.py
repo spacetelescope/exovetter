@@ -1,15 +1,23 @@
 """Module to handle exoplanet vetters."""
-import exovetter.sweet as sweet
-from exovetter import odd_even
-from exovetter import lpp
-from exovetter import transit_coverage
+
+import pprint
 from abc import ABC, abstractmethod
-from astropy import units as u
+
+import astropy.units as u
+
+from exovetter import transit_coverage
+from exovetter import modshift
+from exovetter import odd_even
+from exovetter import sweet
+from exovetter import lpp
 from exovetter import const as exo_const
 from exovetter import lightkurve_utils
+from exovetter import lcutils
+from exovetter import const
+from exovetter import model
 
-
-__all__ = ['BaseVetter', 'Lpp', 'Sweet', 'OddEven', 'TransitPhaseCoverage']
+__all__ = ['BaseVetter', 'ModShift', 'Lpp', 'OddEven', 'TransitPhaseCoverage',
+           'Sweet']
 
 
 class BaseVetter(ABC):
@@ -25,9 +33,19 @@ class BaseVetter(ABC):
         of the depth difference that causes a TCE to fail.
 
     """
-    @abstractmethod
+
     def __init__(self, **kwargs):
-        pass
+        self.metrics = None
+
+    def __str__(self):
+        try:
+            if self.metrics is None:
+                return '{}'  # An empty dictionary
+        except AttributeError:
+            # No metrics attribute, fall back on repr
+            return self.__repr__()
+
+        return pprint.pformat(self.metrics)
 
     @abstractmethod
     def run(self, tce, lightcurve):
@@ -51,9 +69,46 @@ class BaseVetter(ABC):
         """
         pass
 
-    def plot(self):  # pragma: no cover
-        """Generate a diagnostic plot."""
+    def plot(self, tce, lightcurve):
+        """Generate a diagnostic plot.
+
+        Parameters
+        ----------
+        tce, lightcurve
+            See :meth:`run`.
+
+        """
         pass
+
+
+class ModShift(BaseVetter):
+    """Modshift vetter."""
+
+    def __init__(self, **kwargs):
+        self.metrics = None
+
+    def run(self, tce, lightcurve):
+        """What I want this to look like, but it doesn't work yet
+        """
+        time = lightcurve.time
+        flux = lightcurve.flux
+        time_offset_str = lightcurve.time_format
+        time_offset_q = const.string_to_offset[time_offset_str]
+
+        flux = lcutils.set_median_flux_to_zero(flux)
+
+        # We are content to use the epoch in the user supplied units
+        period_days = tce['period'].to_value(u.day)
+        epoch_days = tce.get_epoch(time_offset_q).to_value(u.day)
+        duration_hrs = tce['duration'].to_value(u.hour)
+
+        box = model.create_box_model_for_tce(tce, time * u.day, time_offset_q)
+        self.metrics = modshift.compute_modshift_metrics(
+                 time, flux, box, period_days, epoch_days, duration_hrs)
+        return self.metrics
+
+    def plot(self):
+        raise NotImplementedError("No plots implemented for ModShift vetter")
 
 
 class Lpp(BaseVetter):
