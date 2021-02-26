@@ -1,9 +1,9 @@
+import lightkurve
 import numpy as np
 import pytest
 from astropy import units as u
 from astropy.utils.data import download_file
 from lightkurve import LightCurve
-from lightkurve.search import read as lc_read  # Was open in 1.x
 from numpy.testing import assert_allclose
 
 from exovetter import const as exo_const
@@ -28,8 +28,7 @@ def test_kplr10417986():
               duration=duration, depth=0 * exo_const.frac_amp,
               target_name=target_name, event_name=event_name)
 
-    lcf = lc_read(filename)
-    lc = lcf.PDCSAP_FLUX
+    lc = lightkurve.read(filename, flux_column="pdcsap_flux")
     sweet_vetter = Sweet()
     res = sweet_vetter.run(tce, lc)
     amp = res['amp']
