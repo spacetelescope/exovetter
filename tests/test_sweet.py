@@ -3,7 +3,7 @@ import pytest
 from astropy import units as u
 from astropy.utils.data import download_file
 from lightkurve import LightCurve
-from lightkurve.search import open as lc_read  # Will be read in 2.x
+from lightkurve.search import read as lc_read  # Was open in 1.x
 from numpy.testing import assert_allclose
 
 from exovetter import const as exo_const

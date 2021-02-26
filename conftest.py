@@ -16,9 +16,11 @@ except ImportError:
 
 
 PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
+PYTEST_HEADER_MODULES['scikit-learn'] = 'sklearn'
+PYTEST_HEADER_MODULES['lightkurve'] = 'lightkurve'
+PYTEST_HEADER_MODULES['lpproj'] = 'lpproj'
 
 # We can add these back to test header if they become a test dependency later.
-PYTEST_HEADER_MODULES.pop('Matplotlib', None)
 PYTEST_HEADER_MODULES.pop('h5py', None)
 PYTEST_HEADER_MODULES.pop('Pandas', None)
 
