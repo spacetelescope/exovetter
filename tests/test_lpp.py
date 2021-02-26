@@ -30,7 +30,8 @@ def test_one_lpp():
 
     # Generic function that runs lightkurve and returns a lightkurve object
     lcf = search_lightcurve(
-        target_name, quarter=q, mission=mission, exptime=1800).download(flux_column="sap_flux")
+        target_name, quarter=q, mission=mission, exptime=1800).download(
+            flux_column="sap_flux")
     lc = lcf.remove_nans().remove_outliers()
     flat = lc.flatten(window_length=81)
     flat.flux = flat.flux - 1.0
