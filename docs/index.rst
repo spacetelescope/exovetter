@@ -8,4 +8,5 @@ exovetter
   :maxdepth: 2
 
   install
-  api
+  vetters
+  utils

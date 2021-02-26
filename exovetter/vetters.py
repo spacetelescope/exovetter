@@ -16,8 +16,8 @@ from exovetter import lcutils
 from exovetter import const
 from exovetter import model
 
-__all__ = ['BaseVetter', 'ModShift', 'Lpp', 'OddEven', 'TransitPhaseCoverage',
-           'Sweet']
+__all__ = ['BaseVetter', 'Lpp', 'ModShift', 'OddEven', 'Sweet',
+           'TransitPhaseCoverage']
 
 
 class BaseVetter(ABC):
