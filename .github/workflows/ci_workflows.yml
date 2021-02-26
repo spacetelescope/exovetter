@@ -74,6 +74,7 @@ jobs:
         sudo apt-get install libxml2-utils
         python -m pip install --upgrade pip setuptools
         python -m pip install git+https://github.com/astropy/astropy.git@master#egg=astropy
+        python -m pip install git+https://github.com/lightkurve/lightkurve.git@main#egg=lightkurve
         python -m pip install -e .[test,all]
     - name: Test with dev deps
       run: pytest --remote-data
