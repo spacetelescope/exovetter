@@ -29,7 +29,7 @@ def test_kplr10417986():
               target_name=target_name, event_name=event_name)
 
     lcf = lc_read(filename)
-    lc = lcf.PDCSAP_FLUX
+    lc = lcf.flux
     sweet_vetter = Sweet()
     res = sweet_vetter.run(tce, lc)
     amp = res['amp']
