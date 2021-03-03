@@ -18,12 +18,12 @@ def test_modshift():
     epoch = 44
     duration_hrs = 10 * 24
 
-    res,conv = modshift.compute_modshift_metrics(
+    res, conv = modshift.compute_modshift_metrics(
         x, y, model, period_days, epoch, duration_hrs
     )
 
     assert np.isclose(res["pri"], 0, atol=1) or \
-           np.isclose(res["pri"], 99, atol=1), res
+        np.isclose(res["pri"], 99, atol=1), res
     assert np.isclose(res["sec"], 84 - epoch, atol=2), res
     return res
 
