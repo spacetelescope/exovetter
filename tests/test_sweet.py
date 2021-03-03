@@ -56,7 +56,7 @@ def test_sweet_vetter():
     rng = np.random.default_rng(seed=1234)
     time = np.arange(1000)
     flux = 10 + rng.standard_normal(1000)
-    lc = LightCurve(time, flux, time_format='bkjd')
+    lc = LightCurve(time = time, flux = flux, time_format='bkjd')
 
     sweet_vetter = Sweet()
     res = sweet_vetter.run(tce, lc)
