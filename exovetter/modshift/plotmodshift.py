@@ -6,16 +6,17 @@ import numpy as np
 __all__ = ['plot_modshift', 'mark_events', 'mark_false_alarm_threshold']
 
 
-def plot_modshift(phase, flux, model, conv, results):
+def plot_modshift(phase, period_days, flux, model, conv, results):
     """Plot modshift results."""
     import matplotlib.pyplot as plt
 
     srt = np.argsort(phase)
-    phase = phase[srt]
-    flux = flux[srt]
-    model = model[srt]
+    phase = np.concatenate((phase[srt] - period_days, phase[srt]))
+    flux = np.concatenate((flux[srt], flux[srt]))
+    model = np.concatenate((model[srt], model[srt]))
+    conv = np.concatenate((conv, conv))
 
-    plt.clf()
+    plt.figure(figsize=(8, 8))
     ax = plt.subplot(211)
     plt.plot(phase, 1e3 * flux, "k.")
     plt.plot(phase, 1e3 * model, "r-", label="Model")
@@ -24,8 +25,11 @@ def plot_modshift(phase, flux, model, conv, results):
     plt.legend()
 
     plt.subplot(212, sharex=ax)
-    x = np.linspace(0, 1, len(conv)) * np.max(phase)
-    plt.plot(x, conv, "b.")
+    x = np.linspace(-1 * period_days, period_days, len(conv)) * np.max(phase)
+    plt.plot(x, conv, "b.", label="convolution")
+    mark_events(results)
+    mark_false_alarm_threshold(results)
+    plt.legend()
 
 
 def mark_events(results):
@@ -68,6 +72,11 @@ def mark_false_alarm_threshold(results):
         ls=":",
         color="indigo",
         label="False Alarm Threshold",
+    )
+    plt.axhline(
+        results["false_alarm_threshold"],
+        ls=":",
+        color="indigo",
     )
 
 

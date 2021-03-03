@@ -84,31 +84,47 @@ class BaseVetter(ABC):
 class ModShift(BaseVetter):
     """Modshift vetter."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, lc_name="flux", **kwargs):
         self.metrics = None
+        self.lc_name = lc_name
 
     def run(self, tce, lightcurve):
-        """What I want this to look like, but it doesn't work yet
         """
-        time = lightcurve.time
-        flux = lightcurve.flux
-        time_offset_str = lightcurve.time_format
+        run ModShift vetter
+
+        Parameters
+        ---------
+        tce : tce object
+        tce object is a dictionary that contains information about the tce
+        to vet, like period, epoch, duration, depth
+
+        lc : lightkurve object
+        lightkurve object with the time and flux of the data to use for vetting.
+
+        Runs modshift.compute_modeshift_metrics and populates the vetter object.
+
+        """
+        self.time, self.flux, time_offset_str = \
+            lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
+
         time_offset_q = const.string_to_offset[time_offset_str]
 
-        flux = lcutils.set_median_flux_to_zero(flux)
+        self.flux = lcutils.set_median_flux_to_zero(self.flux)
 
-        # We are content to use the epoch in the user supplied units
-        period_days = tce['period'].to_value(u.day)
-        epoch_days = tce.get_epoch(time_offset_q).to_value(u.day)
-        duration_hrs = tce['duration'].to_value(u.hour)
+        self.period_days = tce['period'].to_value(u.day)
+        self.epoch_days = tce.get_epoch(time_offset_q).to_value(u.day)
+        self.duration_hrs = tce['duration'].to_value(u.hour)
 
-        box = model.create_box_model_for_tce(tce, time * u.day, time_offset_q)
-        self.metrics = modshift.compute_modshift_metrics(
-                 time, flux, box, period_days, epoch_days, duration_hrs)
-        return self.metrics
+        self.box = model.create_box_model_for_tce(tce, self.time * u.day,
+                                                  time_offset_q)
+        self.metrics, self.conv = modshift.compute_modshift_metrics(
+            self.time, self.flux, self.box, self.period_days,
+            self.epoch_days, self.duration_hrs, show_plot=False)
 
     def plot(self):
-        raise NotImplementedError("No plots implemented for ModShift vetter")
+        met, c = modshift.compute_modshift_metrics(
+            self.time, self.flux, self.box, self.period_days,
+            self.epoch_days, self.duration_hrs, show_plot=True)
 
 
 class Lpp(BaseVetter):

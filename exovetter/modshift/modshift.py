@@ -117,11 +117,13 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
 
     results["false_alarm_threshold"] = compute_false_alarm_threshold(
         period_days, duration_hrs)
-    results["Fred"] = np.nan
+
+    results["Fred"] = np.std(conv) / np.std(bflux)  # orig code had np.nan
 
     if show_plot:
-        plotmodshift.plot_modshift(phi_days, flux, model, conv, results)
-    return results
+        plotmodshift.plot_modshift(phi_days, period_days, flux, model,
+                                   conv, results)
+    return results, conv
 
 
 def fold_and_bin_data(time, flux, period, epoch, num_bins):
