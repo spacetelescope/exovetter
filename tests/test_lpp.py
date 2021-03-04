@@ -1,7 +1,7 @@
 """Test LPP functionalities."""
 import pytest
 from astropy import units as u
-from lightkurve import search_lightcurvefile
+from lightkurve import search_lightcurve
 from numpy.testing import assert_allclose
 
 from exovetter import const
@@ -29,11 +29,12 @@ def test_one_lpp():
     q = 4
 
     # Generic function that runs lightkurve and returns a lightkurve object
-    lcf = search_lightcurvefile(
-        target_name, quarter=q, mission=mission).download()
-    lc = lcf.SAP_FLUX.remove_nans().remove_outliers()
+    lcf = search_lightcurve(
+        target_name, quarter=q, mission=mission, exptime=1800).download(
+            flux_column="sap_flux")
+    lc = lcf.remove_nans().remove_outliers()
     flat = lc.flatten(window_length=81)
-    flat.flux = flat.flux - 1.0
+    flat.flux = flat.flux.value - 1.0
 
     # Use default .mat file from SourceForge
     lpp = vetters.Lpp(lc_name="flux", map_filename=None)
