@@ -116,7 +116,7 @@ class ModShift(BaseVetter):
 
         self.box = model.create_box_model_for_tce(tce, self.time * u.day,
                                                   time_offset_q)
-        self.metrics, self.conv = modshift.compute_modshift_metrics(
+        self.metrics, conv = modshift.compute_modshift_metrics(
             self.time, self.flux, self.box, self.period_days,
             self.epoch_days, self.duration_hrs, show_plot=False)
 
