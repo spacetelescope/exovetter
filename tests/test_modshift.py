@@ -18,12 +18,12 @@ def test_modshift():
     epoch = 44
     duration_hrs = 10 * 24
 
-    res = modshift.compute_modshift_metrics(
+    res, conv = modshift.compute_modshift_metrics(
         x, y, model, period_days, epoch, duration_hrs
     )
 
     assert np.isclose(res["pri"], 0, atol=1) or \
-           np.isclose(res["pri"], 99, atol=1), res
+        np.isclose(res["pri"], 99, atol=1), res
     assert np.isclose(res["sec"], 84 - epoch, atol=2), res
     return res
 
@@ -41,7 +41,7 @@ def test_single_epoch_sigma():
     epoch = 40
     duration_hrs = 1 * 24
 
-    res = modshift.compute_modshift_metrics(
+    res, conv = modshift.compute_modshift_metrics(
         x, y, model, period_days, epoch, duration_hrs
     )
     assert np.isclose(res["sigma_pri"], -10, atol=2), res["sigma_pri"]
@@ -67,7 +67,7 @@ def test_multi_epoch_sigma():
     epoch = 40
     duration_hrs = 1 * 24
 
-    res = modshift.compute_modshift_metrics(
+    res, conv = modshift.compute_modshift_metrics(
         x, y, model, period_days, epoch, duration_hrs
     )
     assert np.isclose(res["sigma_pri"], -40, atol=4), res["sigma_pri"]
