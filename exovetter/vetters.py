@@ -96,8 +96,8 @@ class ModShift(BaseVetter):
         Parameters
         -----------
         tce : tce object
-        tce object is a dictionary that contains information about the tce
-        to vet, like period, epoch, duration, depth
+            tce object is a dictionary that contains information about the tce
+            to vet, like period, epoch, duration, depth
 
         lc : lightkurve object
         lightkurve object with the time and flux to use for vetting.
