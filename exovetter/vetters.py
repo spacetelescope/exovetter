@@ -100,7 +100,7 @@ class ModShift(BaseVetter):
             to vet, like period, epoch, duration, depth
 
         lc : lightkurve object
-        lightkurve object with the time and flux to use for vetting.
+            lightkurve object with the time and flux to use for vetting.
 
         """
         self.time, self.flux, time_offset_str = \
