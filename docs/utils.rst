@@ -1,6 +1,10 @@
+.. _utils:
+
 ===============
 Utility Modules
 ===============
+
+These provide low-level functionality for ``exovetter``.
 
 .. automodapi:: exovetter.const
     :no-inheritance-diagram:

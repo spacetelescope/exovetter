@@ -4,9 +4,10 @@
 Vetters Building Blocks
 =======================
 
-These high-level vetter classes utilize lower level implementations laid out
-in :ref:`vetters-low-level` and pass around a data structure for Threshold
-Crossing Event (TCE) as documented in :ref:`vetters_tce_data_structure`.
+The high-level vetter classes in :ref:`vetters-main` utilize lower level
+implementations laid out in :ref:`vetters-low-level` and pass around a data
+structure for Threshold Crossing Event (TCE) as documented in
+:ref:`vetters_tce_data_structure`.
 
 
 .. _vetters-low-level:
