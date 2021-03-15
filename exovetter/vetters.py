@@ -316,7 +316,8 @@ class Sweet(BaseVetter):
         to vet, like period, epoch, duration, depth.
 
     lc : obj
-        ``lightkurve`` object with the time and flux of the data to use for vetting.
+        ``lightkurve`` object with the time and flux of the data to use
+        for vetting.
 
     sweet : dict
         ``'amp'`` contains the best fit amplitude, its uncertainty, and
