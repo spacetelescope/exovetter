@@ -93,7 +93,7 @@ class ModShift(BaseVetter):
         run ModShift vetter
         Runs modshift.compute_modeshift_metrics to populate the vetter object.
 
-        Parameters
+        Attributes
         -----------
         tce : tce object
             tce object is a dictionary that contains information about the tce
@@ -101,7 +101,15 @@ class ModShift(BaseVetter):
 
         lc : lightkurve object
             lightkurve object with the time and flux to use for vetting.
-
+            
+        modshift : dict
+            modshift result dictionary containing the following:
+                pri : primary signal
+                sec : secondary signal
+                ter : tertiary signal
+                pos : largest positive event
+                false_alarm_threshold : threshold for the 1 sigma false alarm
+                Fred : red noise level, std(convolution) divided by std(lightcurve)
         """
         self.time, self.flux, time_offset_str = \
             lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
@@ -121,6 +129,8 @@ class ModShift(BaseVetter):
             self.epoch_days, self.duration_hrs, show_plot=False)
 
         self.modshift = metrics
+        
+        return self.modshift
 
     def plot(self):
         met, c = modshift.compute_modshift_metrics(
@@ -184,8 +194,7 @@ class Lpp(BaseVetter):
 
         self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)  # noqa: E501
 
-        # TODO: Do we really need to return anything if everything is stored as
-        # instance attributes anyway?
+ 
         return {
             'raw_lpp': self.raw_lpp,
             'norm_lpp': self.norm_lpp,
@@ -202,7 +211,30 @@ class Lpp(BaseVetter):
 
 
 class OddEven(BaseVetter):
-    """Odd-even Metric"""
+    """Class to calculate whether the depth of the odd transits is 
+    different than the depth of the even transits
+    
+    Attributes
+    ----------
+    lc_name : str
+        Input ``lc_name``.
+
+    tce, lc
+        Inputs to :meth:`run`. 
+        
+    dur_frac:
+        option input to :meth:`run`. 
+        Fraction of in-transit duration to use for depth calculation.
+        
+    oe_sigma
+        significance of difference of odd/even depth measurements
+        
+    odd_depth : tuple
+        depth and error on depth of the odd transits
+        
+    even_depth : tuple
+        depth and error on depth of the even transits
+    """
 
     def __init__(self, lc_name="flux"):
         self.lc_name = lc_name
@@ -226,6 +258,10 @@ class OddEven(BaseVetter):
             odd_even.calc_odd_even(self.time, self.flux, self.period,
                                    self.epoch, self.duration, ingress=None,
                                    dur_frac=self.dur_frac)
+        
+        return {'oe_sigma' : self.oe_sigma,
+                'odd_depth' : self.odd_depth,
+                'even_depth' : self.even_depth}
 
     def plot(self):  # pragma: no cover
         odd_even.diagnostic_plot(self.time, self.flux, self.period,
@@ -275,7 +311,8 @@ class TransitPhaseCoverage(BaseVetter):
         self.tp_cover, self.hist, self.bins = \
             transit_coverage.calc_coverage(time, p_day, epoch, dur_hour,
                                            ndur=ndur, nbins=nbins)
-
+        return self.tp_cover
+    
     def plot(self):  # pragma: no cover
         transit_coverage.plot_coverage(self.hist, self.bins)
 
