@@ -5,8 +5,8 @@ import warnings
 
 import numpy as np
 
-__all__ = ['sine', 'estimate_scatter', 'mark_transit_cadences',
-           'median_detrend', 'sigmaClip', 'WqedLSF']
+#__all__ = ['sine', 'estimate_scatter', 'mark_transit_cadences',
+           #'median_detrend', 'sigmaClip', 'WqedLSF']
 
 
 def sine(x, order, period=1):
@@ -150,6 +150,25 @@ def median_detrend(flux, nPoints):
         filtered[i] = flux[i] - offset
 
     return filtered
+
+
+def set_median_flux_to_zero(flux):
+    """Set median flux to zero."""
+    flux = set_median_flux_to_one(flux)
+    return flux - 1
+
+
+def set_median_flux_to_one(flux):
+    """Set median flux to one."""
+    if not np.all(np.isfinite(flux)):
+        raise ValueError('flux must contain all finite values')
+
+    medflux = np.median(flux)
+    if np.isclose(medflux, 0):
+        return flux + 1
+
+    flux = flux.copy()
+    flux /= medflux
 
 
 def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):

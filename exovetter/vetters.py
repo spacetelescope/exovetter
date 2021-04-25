@@ -12,7 +12,7 @@ from exovetter import sweet
 from exovetter import lpp
 from exovetter import const as exo_const
 from exovetter import lightkurve_utils
-from exovetter import lcutils
+from exovetter import utils
 from exovetter import const
 from exovetter import model
 
@@ -104,7 +104,7 @@ class ModShift(BaseVetter):
 
         time_offset_q = const.string_to_offset[time_offset_str]
 
-        self.flux = lcutils.set_median_flux_to_zero(self.flux)
+        self.flux = utils.set_median_flux_to_zero(self.flux)
 
         self.period_days = tce['period'].to_value(u.day)
         self.epoch_days = tce.get_epoch(time_offset_q).to_value(u.day)
