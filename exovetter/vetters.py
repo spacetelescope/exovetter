@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 import astropy.units as u
 
+from exovetter.centroid import centroid as cent
 from exovetter import transit_coverage
 from exovetter import modshift
 from exovetter import odd_even
@@ -355,3 +356,60 @@ class Sweet(BaseVetter):
 
     def plot(self):  # pragma: no cover
         self.run(self.tce, self.lc, plot=True)
+
+
+
+
+class Centroid(BaseVetter):
+    """Class to handle centroid vetting
+
+    Parameters
+    ----------
+    lc_name : str
+        Name of the flux array in the ``lightkurve`` object.
+
+    threshold_sigma : float
+        Threshold for comparing signal to transit period.
+
+    Attributes
+    ----------
+    tce : `~exovetter.tce.Tce`
+        TCE object, a dictionary that contains information about the TCE
+        to vet, like period, epoch, duration, depth.
+
+    lc : obj
+        ``lightkurve`` object with the time and flux of the data to use
+        for vetting.
+
+    sweet : dict
+        ``'amp'`` contains the best fit amplitude, its uncertainty, and
+        amplitude-to-uncertainty ratio for half-period, period, and
+        twice the period. ``'msg'`` contains warnings, if applicable.
+        They are populated by running the :meth:`run` method.
+
+    """
+    def __init__(self, lc_name="flux"):
+        self.tce = None
+        self.lc_name = lc_name
+
+    def run(self, tce, lightkurve_tpf, plot=False):
+
+        self.tce = tce 
+        self.lightkurve_tpf = lightkurve_tpf
+        
+        #Is this how to extract a datacube from lightkurve?
+        time, cube, time_offset_str = \
+            lightkurve_utils.unpack_lk_version(lightkurve_tpf, self.lc_name)  # noqa: E50
+
+        period_days = tce['period'].to_value(u.day)
+        time_offset_q = getattr(exo_const, time_offset_str)
+        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+        duration_days = tce['duration'].to_value(u.day)
+        
+        result = cent.get_per_transit_diff_centroid(time, cube, period_days, epoch, duration_days, plot=plot)
+
+        out = dict(offset=result[0], unc=result[1])
+        return out
+    
+    def plot(self):  # pragma: no cover
+        self.run(self.te, self.lightkurve_tpf, plot=True)
