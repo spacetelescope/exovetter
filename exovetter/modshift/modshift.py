@@ -24,6 +24,7 @@ from scipy import special as spspec
 from scipy import integrate as spint
 
 import exovetter.modshift.plotmodshift as plotmodshift
+import warnings
 
 __all__ = ['compute_modshift_metrics', 'fold_and_bin_data',
            'compute_false_alarm_threshold', 'compute_event_significances',
@@ -400,9 +401,9 @@ def estimate_scatter(phi_days, flux, phi_pri_days, phi_sec_days,
     # Measure rms of all other points
     idx = ~(idx1 | idx2)
     if not np.any(idx):
-        Warning('RMS calculation failed. No points remain. \
-                Using flux values near secondary.')
-        rms = np.std(flux[~idx1])
+        warnings.warn('RMS calculation failed. No points remain. \
+                      Including all flux values near primary and secondary.')
+        rms = np.std(flux)
     else:
         rms = np.std(flux[idx])
     return rms
