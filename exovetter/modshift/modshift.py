@@ -400,8 +400,11 @@ def estimate_scatter(phi_days, flux, phi_pri_days, phi_sec_days,
     # Measure rms of all other points
     idx = ~(idx1 | idx2)
     if not np.any(idx):
-        raise ValueError('RMS calculation failed')
-    rms = np.std(flux[idx])
+        Warning('RMS calculation failed. No points remain. \
+                Using flux values near secondary.')
+        rms = np.std(flux[~idx1])
+    else:
+        rms = np.std(flux[idx])
     return rms
 
 
