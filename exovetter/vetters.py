@@ -377,9 +377,8 @@ class Centroid(BaseVetter):
         TCE object, a dictionary that contains information about the TCE
         to vet, like period, epoch, duration, depth.
 
-    lc : obj
-        ``lightkurve`` object with the time and flux of the data to use
-        for vetting.
+    lk_tpf: obj
+        ``lightkurve`` target pixel file object with pixels in column lc_name
 
     sweet : dict
         ``'amp'`` contains the best fit amplitude, its uncertainty, and
@@ -392,24 +391,24 @@ class Centroid(BaseVetter):
         self.tce = None
         self.lc_name = lc_name
 
-    def run(self, tce, lightkurve_tpf, plot=False):
+    def run(self, tce, lk_tpf, plot=False):
 
         self.tce = tce 
-        self.lightkurve_tpf = lightkurve_tpf
+        self.tpf = lk_tpf
         
-        #Is this how to extract a datacube from lightkurve?
         time, cube, time_offset_str = \
-            lightkurve_utils.unpack_lk_version(lightkurve_tpf, self.lc_name)  # noqa: E50
+            lightkurve_utils.unpack_tpf(self.tpf, self.lc_name)  # noqa: E50
 
         period_days = tce['period'].to_value(u.day)
         time_offset_q = getattr(exo_const, time_offset_str)
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_days = tce['duration'].to_value(u.day)
         
-        result = cent.get_per_transit_diff_centroid(time, cube, period_days, epoch, duration_days, plot=plot)
+        result = cent.get_per_transit_diff_centroid(time, cube, period_days, 
+                                            epoch, duration_days, plot=plot)
 
         out = dict(offset=result[0], unc=result[1])
         return out
     
     def plot(self):  # pragma: no cover
-        self.run(self.te, self.lightkurve_tpf, plot=True)
+        self.run(self.tce, self.tpf, plot=True)

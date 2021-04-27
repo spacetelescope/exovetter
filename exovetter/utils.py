@@ -198,7 +198,9 @@ def plateau(array, threshold):
     loc = np.where(sgnChange < 0)[0]
 
     if np.fmod( len(loc), 2) != 0:
-        loc.resize( (len(loc)+1))
+        locc = loc.copy()
+        locc.resize((len(loc)+1))
+        loc = locc.copy()
         loc[-1] = len(arr)
 
     if len(loc) == 0:
