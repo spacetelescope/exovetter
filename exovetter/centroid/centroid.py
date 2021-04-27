@@ -7,37 +7,7 @@ from pdb import set_trace as debug
 import matplotlib.patches as mpatch 
 import matplotlib.pyplot as plt
 import numpy as np
-
-
-#def tic_307210830_02_03():
-    #"""First TCE on TIC 307210830 in second sector """
-    #tic = 307210830
-    #sector = 2
-
-    #period_days = 2.25301
-    #epoch_btjd = 1355.2867
-    #duration_days = 1.0185/24.
-
-    #return main(tic, sector, period_days, epoch_btjd, duration_days)
-
-
-
-#def main(tic, sector, period_days, epoch_btjd, duration_days):
-
-    #import astropy.io.fits as pyfits 
-    #import kepler.tpf as ktpf 
     
-    #path = '/home/fergal/data/tess/hlsp_tess-data-alerts_tess_phot_%011i-s%02i_tess_v1_tp.fits'
-    #path = path %(tic, sector)
-    #fits, hdr = pyfits.getdata(path, header=True)
-    #cube = ktpf.getTargetPixelArrayFromFits(fits, hdr)
-    #cube = cube[:, 3:9, 2:8]
-
-    #time = fits['TIME']
-    #vetting_results = get_per_transit_diff_centroid(time, cube, period_days, epoch_btjd, duration_days, plot=True)
-
-    #return vetting_results
-
 
 def get_per_transit_diff_centroid(time, cube, period_days, epoch, duration_days, plot=False):
 
@@ -59,6 +29,7 @@ def get_per_transit_diff_centroid(time, cube, period_days, epoch, duration_days,
         shifts.append(res)
         figs.append(fig)
 
+    return np.array(shifts)
     vetting_result, fig = centroid_vet(shifts, plot)
     figs.append(fig)
     
@@ -85,6 +56,14 @@ def centroid_vet(centroid_shifts, plot):
     dcol = centroid_shifts[:,-2] - centroid_shifts[:,0]
     drow = centroid_shifts[:,-1] - centroid_shifts[:,1]
     
+    """
+    This should use the code in covar. 
+    Return offset, prob of this offset under null hypothesis.
+    Produce a plot if necessary 
+    
+Futurework: Overlay the plot on a POSS plateau
+    
+    """
     #Placeholder algorithm 
     col0 = np.mean(dcol) 
     col_unc = np.std(dcol)
@@ -96,19 +75,7 @@ def centroid_vet(centroid_shifts, plot):
     doffset = np.hypot(col_unc, row_unc)
 
     if plot:
-        fig = plt.figure()
-        
-        plt.plot(col0, row0, 'ko', ms=12)
-        for i in range(1,4):
-            patch = mpatch.Ellipse([col0, row0], i*col_unc, i*row_unc, color='grey', alpha=.4)
-            plt.gca().add_patch(patch)
-            
-        plt.axhline(0)
-        plt.axvline(0)
-        plt.plot(dcol, drow, 'g^')
-        plt.xlabel("Column Offset (pixels)")
-        plt.ylabel("Row Offset (pixels)")
-        plt.title("Mean Centroid Shift")
+        fig = plot_centroid_vetting(col0, row0, col_unc, row_unc)
 
     #signif = offset / doffset
     else:
@@ -116,6 +83,23 @@ def centroid_vet(centroid_shifts, plot):
         
     return [offset, doffset], fig
 
+
+def plot_centroid_vetting(col0, row0, col_unc, row_unc):
+    fig = plt.figure()
+    
+    plt.plot(col0, row0, 'ko', ms=12)
+    for i in range(1,4):
+        patch = mpatch.Ellipse([col0, row0], i*col_unc, i*row_unc, color='grey', alpha=.4)
+        plt.gca().add_patch(patch)
+
+        
+    plt.axhline(0)
+    plt.axvline(0)
+    #plt.plot(dcol, drow, 'g^')
+    plt.xlabel("Column Offset (pixels)")
+    plt.ylabel("Row Offset (pixels)")
+    plt.title("Mean Centroid Shift")
+    return fig
 
 def measure_centroid_shift(cube, cin, plot=False):
     oot, intrans, diff, ax = generateDiffImg(cube, cin, plot=plot)
