@@ -1,4 +1,6 @@
+from ipdb import set_trace as idebug
 from exovetter.centroid.centroid import get_per_transit_diff_centroid
+import exovetter.centroid.covar as covar
 import astropy.io.fits as pyfits 
 import kepler.tpf as ktpf 
 
@@ -24,7 +26,7 @@ def main(tic, sector, period_days, epoch_btjd, duration_days):
     cube = cube[:, 3:9, 2:8]
 
     time = fits['TIME']
-    vetting_results = get_per_transit_diff_centroid(
+    centroids = get_per_transit_diff_centroid(
         time, 
         cube, 
         period_days, 
@@ -33,4 +35,20 @@ def main(tic, sector, period_days, epoch_btjd, duration_days):
         plot=True
     )
 
-    return vetting_results
+    dcol = centroids[:,-3] - centroids[:,0]
+    drow = centroids[:,-2] - centroids[:,1]
+    
+    #covar.diagnostic_plot(dcol, drow)
+    return centroids
+
+
+
+
+    """
+    This should use the code in covar. 
+    Return offset, prob of this offset under null hypothesis.
+    Produce a plot if necessary 
+    Propegate failed fit info through 
+    Futurework: Overlay the plot on a POSS plateau
+    
+    """

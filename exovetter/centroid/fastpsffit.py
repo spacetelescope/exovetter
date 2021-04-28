@@ -65,10 +65,11 @@ def fastGaussianPrfFit(img, guess):
 
     assert len(guess) == 5
     
+    nr, nc = img.shape
     mask = None
     bounds = [
-            (None, None),
-            (None, None),
+            (0, nc),
+            (0, nc),
             (.2, 1),
             (None, None),
             (None, None),

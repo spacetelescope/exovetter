@@ -1,3 +1,4 @@
+from ipdb import set_trace as idebug
 
 import exovetter.centroid.fastpsffit as fpf
 import exovetter.centroid.disp as disp
@@ -119,7 +120,7 @@ def measure_centroid_shift(cube, cin, plot=False):
 
     if plot:
         #Add fit results to axis
-        #debug()
+        #idebug()
         disp.plotCentroidLocation(diffSoln, marker='^')
         disp.plotCentroidLocation(ootSoln, marker='o')
         disp.plotCentroidLocation(intransSoln, marker='+')
@@ -129,6 +130,13 @@ def measure_centroid_shift(cube, cin, plot=False):
     out.extend(ootSoln.x[:2])
     out.extend(intransSoln.x[:2])
     out.extend(diffSoln.x[:2])
+    flag = 0
+    if not diffSoln.success:
+        flag = 1
+    if diffSoln.x[3] < 4 * np.median(diff):
+        flag = 2
+    out.append(flag)
+    
     return out, ax
 
 

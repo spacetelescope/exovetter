@@ -44,41 +44,55 @@ import numpy as np
     6. Go back to step 2 and repeat until no more outliers found. 
 """
 
-import matplotlib.patches as mpatches
-def diagnostic_plot(x, y):
-    idx = find_outliers(x, y, threshold=1e-3)
+def diagnostic_plot(x, y, flag=None):
+    
+    if flag is None:
+        flag = np.zeros(len(x))
+    flag = flag.astype(bool)
+        
+    idx = find_outliers(x, y, initial_clip=flag, threshold=1e-5)
     mu_x = np.mean(x[~idx])
     mu_y = np.mean(y[~idx])
     sma, smi = compute_eigen_vectors(x[~idx], y[~idx])
+    
+
 
     plt.cla()
-    plt.plot(x, y, 'ko', label="Centroids")
-    plt.plot(x[idx], y[idx], 'o', color='pink', label="Outliers")
+    plt.plot(x, y, 'ko', label="Centroids", zorder=+5)
+    plt.plot(x[idx], y[idx], 'o', color='pink', label="Outliers", zorder=+6)
     
+    #prob = compute_prob_of_points(x, y, sma, smi)
     for i in range(len(x)):
-        plt.text(x[i], y[i], " %i" %(i))
+        plt.text(x[i], y[i], " %i" %(i), zorder=+5)
     
                    
     sigma_a = np.linalg.norm(sma)
     sigma_b = np.linalg.norm(smi)
     angle_deg = np.degrees(np.arctan2(sma[1], sma[0]))
 
+    #plt.plot([mu_x, mu_x+sma[0]], [mu_y, mu_y+sma[1]], 'r-')
+    #plt.plot([mu_x, mu_x+smi[0]], [mu_y, mu_y+smi[1]], 'b-')
+    #idebug()
+    
+    #print(sigma_a, sigma_b)
     #idebug()
     ax  = plt.gca()
-    for p in [.68, .95, .997]:
-        scale = 1/spstats.rayleigh().isf(p) 
-        width = 2 * sigma_a * scale 
-        height= 2 * sigma_b * scale  
-        ell = mpatches.Ellipse(
-            [mu_x, mu_y], 
-            width=width,
-            height=height,
-            angle=angle_deg, 
-            color='grey',
-            alpha=.2
-        )
-        ax.add_patch(ell)
-        
+    if 1:
+        for p in [.68, .95, .997]:
+            scale = spstats.rayleigh().isf(1-p) 
+            width = 2 * sigma_a * scale 
+            height= 2 * sigma_b * scale  
+            ell = Ellipse(
+                [mu_x, mu_y], 
+                width=width,
+                height=height,
+                angle=angle_deg, 
+                color='gray',
+                alpha=.2,
+                label="Prob",
+            )
+            ax.add_patch(ell)
+ 
         #scale = inverseChiSquare(1-p)  # Convert prob to chisq
         #sma = np.sqrt(scale * eigenVals[0])
         #smi = np.sqrt(scale * eigenVals[1])
@@ -90,16 +104,20 @@ def diagnostic_plot(x, y):
     plt.plot(0, 0, '*', color='c', ms=28, mec='w', mew=2)
     plt.xlabel("Column shift (pixels)")
     plt.ylabel("Row shift (pixels)")
-    
+    plt.axis('equal')
     plt.legend()
-        
+    
+    msg = "Prob Transit on Target: %.1e" %(compute_probability_of_offset(x, y))
+    plt.title(msg)
         
 
 def compute_probability_of_offset(x, y):
     idx = find_outliers(x, y)
+    centroid = get_centroid_point(x[~idx], y[~idx])
     sma, smi = compute_eigen_vectors(x[~idx], y[~idx])
-    prob = compute_prob_of_points([0],[0], sma, smi)
+    prob = compute_prob_of_points([0],[0], sma, smi, centroid)
     return prob
+
 
 
 def find_outliers(x, y, threshold=1e-6, initial_clip=None, max_iter=10):
@@ -107,7 +125,9 @@ def find_outliers(x, y, threshold=1e-6, initial_clip=None, max_iter=10):
     
     Use a sigma-clipping algorithm to identify outlier points 
     in the distribution of points (x,y), then return the indices 
-    of the inliers, i.e the good data points. 
+    of the inliers, i.e the good data points.
+    
+    This can crash if everything gets clipped!
     """
     
     #idx is true if a point is bad
@@ -123,6 +143,7 @@ def find_outliers(x, y, threshold=1e-6, initial_clip=None, max_iter=10):
     for i in range(int(max_iter)):
         sma, smi = compute_eigen_vectors(x[~idx], y[~idx])
         prob = compute_prob_of_points(x, y, sma, smi)
+        print(prob)
         new_idx = idx | (prob < threshold)
         new_num_clipped = np.sum(new_idx)
 
@@ -179,7 +200,7 @@ def compute_eigen_vectors(x, y):
     
     
 
-def compute_prob_of_points(x, y, sma_vec, smi_vec):
+def compute_prob_of_points(x, y, sma_vec, smi_vec, cent_vec=None):
     """Compute the probability of observing a point as far away as (x,y) for 
     a given ellipse. 
     
@@ -195,23 +216,23 @@ def compute_prob_of_points(x, y, sma_vec, smi_vec):
         (2 elt numpy array) Vector describing the semi-major axis
     smi_vec
         (2 elt numpy array) Vector describing the semi-minor axis
-
+    cent_vec
+        (2 elt numpy array) Vector describing centroid of ellipse.
+        If **None**, is set to the centroid of the input points.
     Returns 
     --------
     1d numpy array of the probabilities for each point.
     """
-    
-    xy = np.vstack([x,y]).transpose()
-    
-    assert xy.ndim == 2
-    assert xy.shape[1] == 2 
+    if cent_vec is None:
+        cent_vec = get_centroid_point(x, y)
+        
+    assert len(x) == len(y)
+    assert len(cent_vec) == 2
     assert len(sma_vec) == 2 
     assert len(smi_vec) == 2 
-    
-    #Distance of each point from the centroid
-    centroid_vec = [np.mean(x), np.mean(y)]
-    centroid_vec = np.array(centroid_vec)
-    rel_vec = xy - centroid_vec 
+
+    xy = np.vstack([x,y]).transpose()
+    rel_vec = xy - cent_vec 
     
     #The covector of a vector **v** is defined here as a vector that
     #is parallel to **v**, but has length :math:`= 1/|v|`
@@ -225,11 +246,7 @@ def compute_prob_of_points(x, y, sma_vec, smi_vec):
     dist_sigma = np.hypot(coeff1, coeff2)
     prob = spstats.rayleigh().sf(dist_sigma)
     return prob
+    
 
-
-
-
-
-
-
-
+def get_centroid_point(x, y):
+    return np.array([np.mean(x), np.mean(y)])
