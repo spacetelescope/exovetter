@@ -45,8 +45,8 @@ def fastGaussianPrfFit(img, guess):
     prfFunc
         (function) Model to fit. See module level documentation for more details.
     guess
-        (tuple or array) Elements are 
-        
+        (tuple or array) Elements are
+
         col0, row0
             Location of PSF centroid
         sigma
@@ -64,17 +64,19 @@ def fastGaussianPrfFit(img, guess):
     """
 
     assert len(guess) == 5
-    
+
     nr, nc = img.shape
     mask = None
     bounds = [
-            (0, nc),
-            (0, nc),
-            (.2, 1),
-            (None, None),
-            (None, None),
-            ]            
-    soln = spOpt.minimize(costFunc, guess,args=(img,mask), method='L-BFGS-B', bounds=bounds)
+        (0, nc),
+        (0, nc),
+        (0.2, 1),
+        (None, None),
+        (None, None),
+    ]
+    soln = spOpt.minimize(
+        costFunc, guess, args=(img, mask), method="L-BFGS-B", bounds=bounds
+    )
     return soln
 
 
@@ -108,11 +110,11 @@ def costFunc(arglist, img, mask=None):
     diff = img - model
 
     if mask is not None:
-        assert np.all( mask.shape == img.shape)
+        assert np.all(mask.shape == img.shape)
         diff[~mask] = 0
-        img[~mask] = 0  #In case bad values are set to Nan
+        img[~mask] = 0  # In case bad values are set to Nan
 
-    cost = np.sqrt( np.sum(diff**2) )
+    cost = np.sqrt(np.sum(diff ** 2))
     return cost
 
 
@@ -133,41 +135,42 @@ def computeModel(numCols, numRows, arglist):
     A 2d numpy array representing the model PRF image.
     """
 
-    model = np.zeros( (numRows, numCols) )
+    model = np.zeros((numRows, numCols))
 
     xc = np.arange(numCols)
     xr = np.arange(numRows)
     cols, rows = np.meshgrid(xc, xr)
-    
+
     model = analytic_gaussian_integral(cols, rows, *arglist)
-    
+
     return model
 
 
 def analytic_gaussian_integral(col, row, col0, row0, sigma0, flux0, sky):
 
-    z_col1 = .5 * (col - col0) / sigma0
-    z_col2 = .5 * (col+1 - col0) / sigma0
-    
-    z_row1 = .5 * (row - row0) / sigma0
-    z_row2 = .5 * (row+1 - row0) / sigma0
-    
-    flux = flux0 
+    z_col1 = 0.5 * (col - col0) / sigma0
+    z_col2 = 0.5 * (col + 1 - col0) / sigma0
+
+    z_row1 = 0.5 * (row - row0) / sigma0
+    z_row2 = 0.5 * (row + 1 - row0) / sigma0
+
+    flux = flux0
     flux *= phi(z_col2) - phi(z_col1)
-    flux *= phi(z_row2) - phi(z_row1) 
+    flux *= phi(z_row2) - phi(z_row1)
     flux += sky
     return flux
 
 
-#Precompute for speed
-sqrt2 = np.sqrt(2)    
+# Precompute for speed
+sqrt2 = np.sqrt(2)
+
+
 def phi(z):
     """Compute integral of gaussian function in the range (-Inf, z],
-    
+
     `z` is defined as (x - x0) / sigma, where x0 is the central value of the Gaussian.
-    
+
     See `scipy.special.erf` for details
     """
-    
-    return .5 * ( 1 + erf(z/sqrt2) ) 
 
+    return 0.5 * (1 + erf(z / sqrt2))

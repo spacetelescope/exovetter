@@ -27,39 +27,37 @@ import psffit
 
 
 def show():
-    path = '/home/fergal/data/tess/hlsp_tess-data-alerts_tess_phot_00307210830-s02_tess_v1_tp.fits'
+    path = "/home/fergal/data/tess/hlsp_tess-data-alerts_tess_phot_00307210830-s02_tess_v1_tp.fits"
     fits, hdr = pyfits.getdata(path, header=True)
 
     cube = ktpf.getTargetPixelArrayFromFits(fits, hdr)
 
     for i in range(1000, 1002):
         plt.clf()
-        mn = np.fabs(np.min(cube[i,:,:])) + 1
-        plt.imshow(np.log10(cube[i,:,:]), origin="bottom")
-#        plt.imshow(cube[i,:,:], origin="bottom", cmap=plt.cm.bone)
-#        plt.clim(-20, 100)
+        mn = np.fabs(np.min(cube[i, :, :])) + 1
+        plt.imshow(np.log10(cube[i, :, :]), origin="bottom")
+        #        plt.imshow(cube[i,:,:], origin="bottom", cmap=plt.cm.bone)
+        #        plt.clim(-20, 100)
         plt.colorbar()
         plt.title(i)
         plt.pause(1)
 
 
-
 def computeCentroidTs(i0=0):
-    path = '/home/fergal/data/tess/hlsp_tess-data-alerts_tess_phot_00307210830-s02_tess_v1_tp.fits'
+    path = "/home/fergal/data/tess/hlsp_tess-data-alerts_tess_phot_00307210830-s02_tess_v1_tp.fits"
     fits, hdr = pyfits.getdata(path, header=True)
 
-    time = fits['TIME']
-    cin = fits['CADENCENO']
+    time = fits["TIME"]
+    cin = fits["CADENCENO"]
     cube = ktpf.getTargetPixelArrayFromFits(fits, hdr)
 
-    idx = np.isfinite(time) & (time>0)
+    idx = np.isfinite(time) & (time > 0)
     time = time[idx]
     cube = cube[idx]
     cin = cin[idx]
 
-
     num = 2000 - i0
-    out = np.zeros( (num, 6) )
+    out = np.zeros((num, 6))
     for i in range(i0, num):
         print(i)
         img = cube[i]
@@ -69,39 +67,40 @@ def computeCentroidTs(i0=0):
         modelIn = ddf.computeModel(nc, nr, guess)
         soln = ddf.fastGaussianPrfFit(img, guess)
 
-        if soln.x[2] < .1:
-            soln = ddf.fastGaussianPrfFit(img, guess + np.random.rand(5)*.1)
+        if soln.x[2] < 0.1:
+            soln = ddf.fastGaussianPrfFit(img, guess + np.random.rand(5) * 0.1)
 
         modelOut = ddf.computeModel(nc, nr, soln.x)
-#
-#        log = True
-#        clim = [1, np.max(img)]
-#
-#        if log:
-#            clim = np.log10( np.array(clim) )
-#
-#        plt.clf()
-#        plt.suptitle("%i CIN = %i BTJD = %.3f" %(i, cin[i], time[i]))
-#        plt.subplot(221)
-#        disp.plotImage(img, clim=clim, log=log)
-#
-#        plt.subplot(222)
-#        disp.plotImage(modelIn, clim=clim, log=log)
-#
-#        plt.subplot(223)
-#        disp.plotImage(modelOut, clim=clim, log=log)
-#
-#        plt.subplot(224)
-#        disp.plotDiffImage(img - modelOut)
-#
-#        print(soln.x, soln.success, soln.fun)
-#        plt.pause(1)
-#
-        out[i-i0, :-1]  = soln.x
-        out[i-i0, -1] = soln.fun
-#        return soln
+        #
+        #        log = True
+        #        clim = [1, np.max(img)]
+        #
+        #        if log:
+        #            clim = np.log10( np.array(clim) )
+        #
+        #        plt.clf()
+        #        plt.suptitle("%i CIN = %i BTJD = %.3f" %(i, cin[i], time[i]))
+        #        plt.subplot(221)
+        #        disp.plotImage(img, clim=clim, log=log)
+        #
+        #        plt.subplot(222)
+        #        disp.plotImage(modelIn, clim=clim, log=log)
+        #
+        #        plt.subplot(223)
+        #        disp.plotImage(modelOut, clim=clim, log=log)
+        #
+        #        plt.subplot(224)
+        #        disp.plotDiffImage(img - modelOut)
+        #
+        #        print(soln.x, soln.success, soln.fun)
+        #        plt.pause(1)
+        #
+        out[i - i0, :-1] = soln.x
+        out[i - i0, -1] = soln.fun
+    #        return soln
 
     return out
+
 
 def pickInitialGuess(img):
     """Pick initial guess of params for `fastGaussianPrfFit`
@@ -115,80 +114,80 @@ def pickInitialGuess(img):
     ---------
     An array of initial conditions for the fit
     """
-    r0, c0 = np.unravel_index( np.argmax(img), img.shape)
+    r0, c0 = np.unravel_index(np.argmax(img), img.shape)
 
-    guess = [c0+.5, r0+.5, .5, 8*np.max(img), np.median(img)]
-#    guess = [c0+.5, r0+.5, .5, 1*np.max(img), np.median(img)]
+    guess = [c0 + 0.5, r0 + 0.5, 0.5, 8 * np.max(img), np.median(img)]
+    #    guess = [c0+.5, r0+.5, .5, 1*np.max(img), np.median(img)]
     return guess
-
 
 
 #########################################################################
 
+
 def tic_307210830_02_01():
-    """First TCE on TIC 307210830 in second sector """
+    """First TCE on TIC 307210830 in second sector"""
     tic = 307210830
     sector = 2
 
     period_days = 3.69061
     epoch_btjd = 1356.2038
-    duration_days = 1.2676/24.
+    duration_days = 1.2676 / 24.0
 
     main(tic, sector, period_days, epoch_btjd, duration_days)
 
 
 def tic_307210830_02_03():
-    """First TCE on TIC 307210830 in second sector """
+    """First TCE on TIC 307210830 in second sector"""
     tic = 307210830
     sector = 2
 
     period_days = 2.25301
     epoch_btjd = 1355.2867
-    duration_days = 1.0185/24.
+    duration_days = 1.0185 / 24.0
 
-    outpattern = "t%11i-s%02i-c03" %(tic, sector)
+    outpattern = "t%11i-s%02i-c03" % (tic, sector)
 
     main(tic, sector, period_days, epoch_btjd, duration_days, outpattern)
 
 
-
 def main(tic, sector, period_days, epoch_btjd, duration_days, outpattern):
 
-    path = '/home/fergal/data/tess/hlsp_tess-data-alerts_tess_phot_%011i-s%02i_tess_v1_tp.fits'
-    path = path %(tic, sector)
+    path = "/home/fergal/data/tess/hlsp_tess-data-alerts_tess_phot_%011i-s%02i_tess_v1_tp.fits"
+    path = path % (tic, sector)
     fits, hdr = pyfits.getdata(path, header=True)
     cube = ktpf.getTargetPixelArrayFromFits(fits, hdr)
     cube = cube[:, 3:9, 2:8]
 
-    time = fits['TIME']
+    time = fits["TIME"]
     isnan = np.isnan(time)
     time = time[~isnan]
     cube = cube[~isnan]
 
     transits = getIngressEgressCadences(time, period_days, epoch_btjd, duration_days)
-    with open('%s.cent.txt' %(outpattern), 'w') as fp:
+    with open("%s.cent.txt" % (outpattern), "w") as fp:
         for i in range(len(transits)):
-            print("Transit %i" %(i))
+            print("Transit %i" % (i))
             cin = transits[i]
             res = measureCentroidShift(cube, cin, True)
 
-            plt.suptitle('%s-trans%02i' %(outpattern, i))
-            plt.savefig('%s-trans%02i.png' %(outpattern, i))
+            plt.suptitle("%s-trans%02i" % (outpattern, i))
+            plt.savefig("%s-trans%02i.png" % (outpattern, i))
 
             pattern = "%.6f " * len(res)
             pattern = pattern + "\n"
-            fp.write( pattern % tuple(res))
+            fp.write(pattern % tuple(res))
+
 
 def plotCentroids(fn):
     plt.clf()
     apj.pre()
     data = np.loadtxt(fn)
-    plt.plot(data[:,0], data[:,1], 'ko', label="Before")
-    plt.plot(data[:,2], data[:,3], 'ro', label="Difference")
-    plt.plot(data[:,4], data[:,5], 'co', label="After")
+    plt.plot(data[:, 0], data[:, 1], "ko", label="Before")
+    plt.plot(data[:, 2], data[:, 3], "ro", label="Difference")
+    plt.plot(data[:, 4], data[:, 5], "co", label="After")
 
     for i in range(len(data)):
-        plt.text(data[i,2], data[i,3], ' %i' %(i))
+        plt.text(data[i, 2], data[i, 3], " %i" % (i))
 
     plt.xlabel("Column")
     plt.ylabel("Row")
@@ -196,9 +195,10 @@ def plotCentroids(fn):
     apj.post()
     apj.pgid()
 
+
 def measureCentroidShift(cube, cin, plot=True):
     before, after, diff = generateDiffImg(cube, cin, plot=plot)
-    plt.pause(.01)
+    plt.pause(0.01)
 
     print("Before...")
     guess = pickInitialGuess(before)
@@ -212,8 +212,8 @@ def measureCentroidShift(cube, cin, plot=True):
     guess = pickInitialGuess(after)
     afterSoln = psffit.fitPrf(after, psffit.gaussianWithConstantSkyPrf, guess)
 
-    if not np.all( map(lambda x: x.success, [beforeSoln, diffSoln, afterSoln]) ):
-        print("WARN: Not all fits converged for [%i, %i]" %(cin[0], cin[1]))
+    if not np.all(map(lambda x: x.success, [beforeSoln, diffSoln, afterSoln])):
+        print("WARN: Not all fits converged for [%i, %i]" % (cin[0], cin[1]))
 
     out = []
     out.extend(beforeSoln.x[:2])
@@ -222,19 +222,19 @@ def measureCentroidShift(cube, cin, plot=True):
     return out
 
 
-
 def pickInitialGuess(img):
 
-    r0, c0 = np.unravel_index( np.argmax(img), img.shape)
+    r0, c0 = np.unravel_index(np.argmax(img), img.shape)
 
-    guess = [c0+.5, r0+.5, .5, np.max(img), np.median(img)]
+    guess = [c0 + 0.5, r0 + 0.5, 0.5, np.max(img), np.median(img)]
     return guess
+
 
 def getIngressEgressCadences(time, period_days, epoch_btjd, duration_days):
     assert np.all(np.isfinite(time))
 
     idx = kplrfits.markTransitCadences(time, period_days, epoch_btjd, duration_days)
-    transits = np.array(plateau(idx, .5))
+    transits = np.array(plateau(idx, 0.5))
 
     return transits
 
@@ -275,37 +275,37 @@ def generateDiffImg(cube, transits, plot=False):
     image will show distinct departures from the ideal prf.
     """
 
-    dur  = transits[1] - transits[0]
+    dur = transits[1] - transits[0]
     s0, s1 = transits - dur
     e0, e1 = transits + dur
 
     before = cube[s0:s1].sum(axis=0)
-    during = cube[transits[0]:transits[1]].sum(axis=0)
+    during = cube[transits[0] : transits[1]].sum(axis=0)
     after = cube[e0:e1].sum(axis=0)
 
-    diff = .5 * (before + after) - during
-#    diff = before - during
-#    diff = after - before
+    diff = 0.5 * (before + after) - during
+    #    diff = before - during
+    #    diff = after - before
 
     if plot:
         plt.clf()
         plt.subplot(221)
-        plt.imshow(before, origin='bottom')
+        plt.imshow(before, origin="bottom")
         plt.title("Before")
         plt.colorbar()
 
         plt.subplot(222)
-        plt.imshow(after, origin='bottom')
+        plt.imshow(after, origin="bottom")
         plt.title("After")
         plt.colorbar()
 
         plt.subplot(223)
-        plt.imshow(after - before, origin='bottom', cmap=plt.cm.RdYlBu_r)
+        plt.imshow(after - before, origin="bottom", cmap=plt.cm.RdYlBu_r)
         plt.title("After - Before")
         plt.colorbar()
 
         plt.subplot(224)
-        plt.imshow(diff, origin='bottom', cmap=plt.cm.RdYlBu_r)
+        plt.imshow(diff, origin="bottom", cmap=plt.cm.RdYlBu_r)
         plt.title("Diff")
         plt.colorbar()
 

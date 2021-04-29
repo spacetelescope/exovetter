@@ -17,8 +17,7 @@ from exovetter import utils
 from exovetter import const
 from exovetter import model
 
-__all__ = ['BaseVetter', 'Lpp', 'ModShift', 'OddEven', 'Sweet',
-           'TransitPhaseCoverage']
+__all__ = ["BaseVetter", "Lpp", "ModShift", "OddEven", "Sweet", "TransitPhaseCoverage"]
 
 
 class BaseVetter(ABC):
@@ -41,7 +40,7 @@ class BaseVetter(ABC):
     def __str__(self):
         try:
             if self.metrics is None:
-                return '{}'  # An empty dictionary
+                return "{}"  # An empty dictionary
         except AttributeError:
             # No metrics attribute, fall back on repr
             return self.__repr__()
@@ -95,34 +94,47 @@ class ModShift(BaseVetter):
         Name of the flux array in the ``lightkurve`` object.
 
     """
+
     def __init__(self, lc_name="flux"):
         self.metrics = None
         self.lc_name = lc_name
 
     def run(self, tce, lightcurve):
-        self.time, self.flux, time_offset_str = \
-            lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
+        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+            lightcurve, self.lc_name
+        )
 
         time_offset_q = const.string_to_offset[time_offset_str]
 
         self.flux = utils.set_median_flux_to_zero(self.flux)
 
-        self.period_days = tce['period'].to_value(u.day)
+        self.period_days = tce["period"].to_value(u.day)
         self.epoch_days = tce.get_epoch(time_offset_q).to_value(u.day)
-        self.duration_hrs = tce['duration'].to_value(u.hour)
+        self.duration_hrs = tce["duration"].to_value(u.hour)
 
-        self.box = model.create_box_model_for_tce(tce, self.time * u.day,
-                                                  time_offset_q)
+        self.box = model.create_box_model_for_tce(tce, self.time * u.day, time_offset_q)
         metrics, conv = modshift.compute_modshift_metrics(
-            self.time, self.flux, self.box, self.period_days,
-            self.epoch_days, self.duration_hrs, show_plot=False)
+            self.time,
+            self.flux,
+            self.box,
+            self.period_days,
+            self.epoch_days,
+            self.duration_hrs,
+            show_plot=False,
+        )
 
         self.modshift = metrics
 
     def plot(self):
         met, c = modshift.compute_modshift_metrics(
-            self.time, self.flux, self.box, self.period_days,
-            self.epoch_days, self.duration_hrs, show_plot=True)
+            self.time,
+            self.flux,
+            self.box,
+            self.period_days,
+            self.epoch_days,
+            self.duration_hrs,
+            show_plot=True,
+        )
 
 
 class Lpp(BaseVetter):
@@ -179,22 +191,24 @@ class Lpp(BaseVetter):
 
         self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
 
-        self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric(self.lpp_data, self.map_info)  # noqa: E501
+        self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric(
+            self.lpp_data, self.map_info
+        )  # noqa: E501
 
         # TODO: Do we really need to return anything if everything is stored as
         # instance attributes anyway?
         return {
-            'raw_lpp': self.raw_lpp,
-            'norm_lpp': self.norm_lpp,
-            'plot_data': self.plot_data}
+            "raw_lpp": self.raw_lpp,
+            "norm_lpp": self.norm_lpp,
+            "plot_data": self.plot_data,
+        }
 
     def plot(self):  # pragma: no cover
         if self.plot_data is None:
-            raise ValueError(
-                'LPP plot data is empty. Execute self.run(...) first.')
+            raise ValueError("LPP plot data is empty. Execute self.run(...) first.")
 
         # target is populated in TCE, assume it already exists.
-        target = self.tce.get('target_name', 'Target')
+        target = self.tce.get("target_name", "Target")
         lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 
 
@@ -220,26 +234,38 @@ class OddEven(BaseVetter):
         self.oe_sigma = None
 
     def run(self, tce, lightcurve, dur_frac=0.3):
-        self.time, self.flux, time_offset_str = \
-            lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
+        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+            lightcurve, self.lc_name
+        )
 
         self.dur_frac = dur_frac
 
         time_offset_q = getattr(exo_const, time_offset_str)
 
-        self.period = tce['period'].to_value(u.day)
-        self.duration = tce['duration'].to_value(u.day)
+        self.period = tce["period"].to_value(u.day)
+        self.duration = tce["duration"].to_value(u.day)
         self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
 
-        self.oe_sigma, self.odd_depth, self.even_depth = \
-            odd_even.calc_odd_even(self.time, self.flux, self.period,
-                                   self.epoch, self.duration, ingress=None,
-                                   dur_frac=self.dur_frac)
+        self.oe_sigma, self.odd_depth, self.even_depth = odd_even.calc_odd_even(
+            self.time,
+            self.flux,
+            self.period,
+            self.epoch,
+            self.duration,
+            ingress=None,
+            dur_frac=self.dur_frac,
+        )
 
     def plot(self):  # pragma: no cover
-        odd_even.diagnostic_plot(self.time, self.flux, self.period,
-                                 self.epoch, self.duration * self.dur_frac,
-                                 self.odd_depth, self.even_depth)
+        odd_even.diagnostic_plot(
+            self.time,
+            self.flux,
+            self.period,
+            self.epoch,
+            self.duration * self.dur_frac,
+            self.odd_depth,
+            self.even_depth,
+        )
 
 
 class TransitPhaseCoverage(BaseVetter):
@@ -257,6 +283,7 @@ class TransitPhaseCoverage(BaseVetter):
         Fraction of coverage from :func:`exovetter.transit_coverage.calc_coverage`.
 
     """  # noqa
+
     def __init__(self, lc_name="flux"):
         self.lc_name = lc_name
 
@@ -282,18 +309,19 @@ class TransitPhaseCoverage(BaseVetter):
             as "in transit".
 
         """
-        time, flux, time_offset_str = \
-            lightkurve_utils.unpack_lk_version(lc, self.lc_name)  # noqa: E50
+        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+            lc, self.lc_name
+        )  # noqa: E50
 
-        p_day = tce['period'].to_value(u.day)
-        dur_hour = tce['duration'].to_value(u.hour)
+        p_day = tce["period"].to_value(u.day)
+        dur_hour = tce["duration"].to_value(u.hour)
 
         time_offset_q = getattr(exo_const, time_offset_str)
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
 
-        self.tp_cover, self.hist, self.bins = \
-            transit_coverage.calc_coverage(time, p_day, epoch, dur_hour,
-                                           ndur=ndur, nbins=nbins)
+        self.tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(
+            time, p_day, epoch, dur_hour, ndur=ndur, nbins=nbins
+        )
 
     def plot(self):  # pragma: no cover
         transit_coverage.plot_coverage(self.hist, self.bins)
@@ -327,6 +355,7 @@ class Sweet(BaseVetter):
         They are populated by running the :meth:`run` method.
 
     """
+
     def __init__(self, lc_name="flux", threshold_sigma=3):
         self.tce = None
         self.lc = None
@@ -338,26 +367,23 @@ class Sweet(BaseVetter):
         self.tce = tce
         self.lc = lightcurve
 
-        time, flux, time_offset_str = \
-            lightkurve_utils.unpack_lk_version(self.lc, self.lc_name)  # noqa: E50
+        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+            self.lc, self.lc_name
+        )  # noqa: E50
 
-        period_days = tce['period'].to_value(u.day)
+        period_days = tce["period"].to_value(u.day)
         time_offset_q = getattr(exo_const, time_offset_str)
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-        duration_days = tce['duration'].to_value(u.day)
+        duration_days = tce["duration"].to_value(u.day)
 
-        self.sweet = sweet.sweet(time, flux,
-                                 period_days, epoch, duration_days,
-                                 plot=plot
-                                 )
-        self.sweet = sweet.construct_message(
-            self.sweet, self.sweet_threshold_sigma)
+        self.sweet = sweet.sweet(
+            time, flux, period_days, epoch, duration_days, plot=plot
+        )
+        self.sweet = sweet.construct_message(self.sweet, self.sweet_threshold_sigma)
         return self.sweet
 
     def plot(self):  # pragma: no cover
         self.run(self.tce, self.lc, plot=True)
-
-
 
 
 class Centroid(BaseVetter):
@@ -387,40 +413,37 @@ class Centroid(BaseVetter):
         They are populated by running the :meth:`run` method.
 
     """
+
     def __init__(self, lc_name="flux"):
         self.tce = None
         self.lc_name = lc_name
 
     def run(self, tce, lk_tpf, plot=False):
 
-        self.tce = tce 
+        self.tce = tce
         self.tpf = lk_tpf
-        
-        time, cube, time_offset_str = \
-            lightkurve_utils.unpack_tpf(self.tpf, self.lc_name)  # noqa: E50
 
-        period_days = tce['period'].to_value(u.day)
+        time, cube, time_offset_str = lightkurve_utils.unpack_tpf(
+            self.tpf, self.lc_name
+        )  # noqa: E50
+
+        period_days = tce["period"].to_value(u.day)
         time_offset_q = getattr(exo_const, time_offset_str)
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-        duration_days = tce['duration'].to_value(u.day)
-        
+        duration_days = tce["duration"].to_value(u.day)
+
         centroids, figs = cent.compute_diff_image_centroids(
-            time, 
-            cube, 
-            period_days, 
-            epoch, 
-            duration_days, 
-            plot=plot
+            time, cube, period_days, epoch, duration_days, plot=plot
         )
         offset, signif, fig = cent.measure_centroid_shift(centroids, plot)
         figs.append(fig)
 
-        #TODO: If plot=True, figs is a list of figure handles. 
-        #Do I save those figures, put them in a single pdf, 
-        #close them all?
-        
+        # TODO: If plot=True, figs is a list of figure handles.
+        # Do I save those figures, put them in a single pdf,
+        # close them all?
+
         out = dict(offset=offset, significance=signif)
         return out
-    
+
     def plot(self):  # pragma: no cover
         self.run(self.tce, self.tpf, plot=True)
