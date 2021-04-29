@@ -146,22 +146,25 @@ def plotDiffImage(img, **kwargs):
 
 
 
-def plotCentroidLocation(soln, **kwargs):
+def plotCentroidLocation(col, row, **kwargs):
     """Add a point to the a plot.
     
     Private function of `generateDiffImgPlot()`
     """
-    col, row = soln.x[:2]
     ms = kwargs.pop('ms', 8)
-
-    kwargs['color'] = 'g'
-    kwargs['marker'] = kwargs.get('marker', 'o')
+    clr = kwargs.pop('color', 'g')
+    mec = kwargs.pop('mec', 'w')
+    mew = kwargs.pop('mew', '1')
+    marker = kwargs.pop('marker', 'o')
     
     plt.plot([col], [row], ms=ms+1, **kwargs)
 
-    color='orange'
-    if soln.success:
-        color='w'
-    kwargs['color'] = color
-    plt.plot([col], [row], **kwargs)
+    plt.plot([col], [row], 
+        marker=marker, 
+        color=clr,
+        mec=mec,
+        mew=mew,
+        ms=ms,
+        **kwargs
+    )
 

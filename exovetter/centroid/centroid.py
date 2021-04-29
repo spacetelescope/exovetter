@@ -1,43 +1,113 @@
 from ipdb import set_trace as idebug
 
 import exovetter.centroid.fastpsffit as fpf
+import exovetter.centroid.covar as covar
 import exovetter.centroid.disp as disp
 import exovetter.utils as utils 
-
-from pdb import set_trace as debug
-import matplotlib.patches as mpatch 
 import matplotlib.pyplot as plt
 import numpy as np
     
 
-def get_per_transit_diff_centroid(time, cube, period_days, epoch, duration_days, plot=False):
+def compute_diff_image_centroids(time, cube, period_days, epoch, duration_days, plot=False):
+    """Compute difference image centroid shifts for every transit in a dataset.
+    
+    Given a data cube containing a time-series of images, and a transit 
+    defined by a period, epoch and duration, compute centroid shift 
+    between in- and out-of- transit images for each transit covered by 
+    the time-series. 
 
-    #Turning off plotting for the moment
-    plot=False 
+    
+    Inputs 
+    -----------
+    time    
+        (1d np array) Times of each slice of the data cube. Units of days
+        
+    cube 
+        (3d np array). Shape of the cube is (numCadences, numRows, numCols)
+        There are numCadence images, and each image has a shape of (numRows, numCols). 
+    
+    period_days 
+        (float) Orbital period of transit. 
+    epoch 
+        (float) Epoch of transit centre in the same time system as `time`.
+    duration_days 
+        (float) Duration of transit.  
+    
+    Returns
+    ---------------
+    A 2d numpy array. Each row represents a single transit event. The columns are 
+    
+    * Out of transit (OOT) centroid column 
+    * OOT row. 
+    * In Transit (ITR) column 
+    * ITR row 
+    * Difference image centroid (DIC) column 
+    * DIC row 
+    * DIC flag. A non-zero value means the centroid is untrustworthy.
+    
+    
+    ITR images are computed by co-adding all cadences in transit 
+    (as defined by the period, epoch, and duration). 
+    OOT images are computed by co-adding 1 transit-duration worth 
+    of images from both before and after the transit. 
+    Difference image centroids (DIC) are computed by subtracting
+    OOT from In-transit. 
+    """
+    
     isnan = np.isnan(time)
     time = time[~isnan]
     cube = cube[~isnan]
     
     transits = getIngressEgressCadences(time, period_days, epoch, duration_days)
     
-    #This might change to do per cadence diffs
     figs = []
-    shifts = []
+    centroids = []
     for i in range(len(transits)):
         print("Transit %i" %(i))
         cin = transits[i]
-        res, fig = measure_centroid_shift(cube, cin, plot=plot)
-        shifts.append(res)
+        cents, fig = measure_centroids(cube, cin, plot=plot)
+        centroids.append(cents)
         figs.append(fig)
 
-    return np.array(shifts)
-    vetting_result, fig = centroid_vet(shifts, plot)
-    figs.append(fig)
     
+    centroids = np.array(centroids)
+    return centroids, figs
+
+
+
+def measure_centroid_shift(centroids, plot=False):
+    """Measure the average offset of the DIC centroids from the OOT centroids.
+    
+    Inputs
+    ---------- 
+    centroids 
+        (2d np array) Output of :func:`compute_diff_image_centroids`
+        
+    Returns
+    -----------
+    offset  
+        (float) Size of offset in pixels (or whatever unit `centroids` 
+        is in)
+    signif 
+        (float) The statistical significance of the transit. Values
+        close to 1 mean the transit is likely on the target star.
+        Values less than ~1e-3 suggest the target is not the 
+        source of the transit. 
+    fig 
+        A figure handle. Is **None** if plot is **False**
+    """
+    
+    #DIC - OOT 
+    dcol = centroids[:,5] - centroids[:,0]
+    drow = centroids[:,4] - centroids[:,1]
+    flags = centroids[:,-1].astype(bool)
+    
+    offset_pix, signif = covar.compute_offset_and_signif(dcol[~flags], drow[~flags])
+    
+    fig = None
     if plot:
-        return vetting_result, figs
-    else:
-        return vetting_result
+        fig = covar.diagnostic_plot(dcol, drow, flags)
+    return offset_pix, signif, fig
 
 
 
@@ -50,62 +120,23 @@ def getIngressEgressCadences(time, period_days, epoch_btjd, duration_days):
     return transits
 
 
-def centroid_vet(centroid_shifts, plot):
-    centroid_shifts = np.array(centroid_shifts)
+
+
+def measure_centroids(cube, cin, plot=False):
+    """Private function of :func:`compute_diff_image_centroids`
     
-    #OOT - DIC
-    dcol = centroid_shifts[:,-2] - centroid_shifts[:,0]
-    drow = centroid_shifts[:,-1] - centroid_shifts[:,1]
+    Computes OOT, ITR and diff images for a single transit event, 
+    and computes image centroid by fitting a Gaussian. 
     
+    Inputs
+    ---------
+    cube 
+        3d numpy array: Timeseries of images.
+    cin
+        2-tuple) Cadences of start and end of transit. 
     """
-    This should use the code in covar. 
-    Return offset, prob of this offset under null hypothesis.
-    Produce a plot if necessary 
-    
-Futurework: Overlay the plot on a POSS plateau
-    
-    """
-    #Placeholder algorithm 
-    col0 = np.mean(dcol) 
-    col_unc = np.std(dcol)
-
-    row0 = np.mean(drow) 
-    row_unc = np.std(drow)
-    
-    offset = np.hypot(col0, row0)
-    doffset = np.hypot(col_unc, row_unc)
-
-    if plot:
-        fig = plot_centroid_vetting(col0, row0, col_unc, row_unc)
-
-    #signif = offset / doffset
-    else:
-        fig = None 
-        
-    return [offset, doffset], fig
-
-
-def plot_centroid_vetting(col0, row0, col_unc, row_unc):
-    fig = plt.figure()
-    
-    plt.plot(col0, row0, 'ko', ms=12)
-    for i in range(1,4):
-        patch = mpatch.Ellipse([col0, row0], i*col_unc, i*row_unc, color='grey', alpha=.4)
-        plt.gca().add_patch(patch)
-
-        
-    plt.axhline(0)
-    plt.axvline(0)
-    #plt.plot(dcol, drow, 'g^')
-    plt.xlabel("Column Offset (pixels)")
-    plt.ylabel("Row Offset (pixels)")
-    plt.title("Mean Centroid Shift")
-    return fig
-
-def measure_centroid_shift(cube, cin, plot=False):
     oot, intrans, diff, ax = generateDiffImg(cube, cin, plot=plot)
-    plt.pause(.01)
-
+ 
     guess = pickInitialGuess(oot)
     ootSoln = fpf.fastGaussianPrfFit(oot, guess)
 
@@ -119,11 +150,18 @@ def measure_centroid_shift(cube, cin, plot=False):
         print("WARN: Not all fits converged for [%i, %i]" %(cin[0], cin[1]))
 
     if plot:
-        #Add fit results to axis
-        #idebug()
-        disp.plotCentroidLocation(diffSoln, marker='^')
-        disp.plotCentroidLocation(ootSoln, marker='o')
-        disp.plotCentroidLocation(intransSoln, marker='+')
+        clr = 'orange'
+        if diffSoln.success:
+            clr = 'green'
+            
+        res = diffSoln.x
+        disp.plotCentroidLocation(res[0], res[1], marker='^', color=clr)
+
+        res = ootSoln.x
+        disp.plotCentroidLocation(res[0], res[1], marker='o', color=clr)
+
+        res = intransSoln.x
+        disp.plotCentroidLocation(res[0], res[1], marker='+', color=clr)
 
         
     out = []
@@ -187,6 +225,7 @@ def generateDiffImg(cube, transits, plot=False):
 
     if plot:
         fig = plt.figure()
+        fig.set_size_inches(16, 4)
         disp.plotTransit(fig, oot, during, diff)
     else:
         fig = None
@@ -209,5 +248,4 @@ def pickInitialGuess(img):
     r0, c0 = np.unravel_index( np.argmax(img), img.shape)
 
     guess = [c0+.5, r0+.5, .5, 8*np.max(img), np.median(img)]
-#    guess = [c0+.5, r0+.5, .5, 1*np.max(img), np.median(img)]
     return guess

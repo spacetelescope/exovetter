@@ -404,10 +404,22 @@ class Centroid(BaseVetter):
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_days = tce['duration'].to_value(u.day)
         
-        result = cent.get_per_transit_diff_centroid(time, cube, period_days, 
-                                            epoch, duration_days, plot=plot)
+        centroids, figs = cent.compute_diff_image_centroids(
+            time, 
+            cube, 
+            period_days, 
+            epoch, 
+            duration_days, 
+            plot=plot
+        )
+        offset, signif, fig = cent.measure_centroid_shift(centroids, plot)
+        figs.append(fig)
 
-        out = dict(offset=result[0], unc=result[1])
+        #TODO: If plot=True, figs is a list of figure handles. 
+        #Do I save those figures, put them in a single pdf, 
+        #close them all?
+        
+        out = dict(offset=offset, significance=signif)
         return out
     
     def plot(self):  # pragma: no cover

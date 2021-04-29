@@ -48,18 +48,20 @@ def diagnostic_plot(x, y, flag=None):
     
     if flag is None:
         flag = np.zeros(len(x))
-    flag = flag.astype(bool)
-        
-    idx = find_outliers(x, y, initial_clip=flag, threshold=1e-5)
+    idx = flag.astype(bool)
+    
+    #Turned off outlier detection because it doesn't work well.
+    #idx = find_outliers(x, y, initial_clip=idx, threshold=1e-5)
     mu_x = np.mean(x[~idx])
     mu_y = np.mean(y[~idx])
     sma, smi = compute_eigen_vectors(x[~idx], y[~idx])
     
-
-
-    plt.cla()
-    plt.plot(x, y, 'ko', label="Centroids", zorder=+5)
-    plt.plot(x[idx], y[idx], 'o', color='pink', label="Outliers", zorder=+6)
+    
+    plt.clf()
+    plt.gcf().set_size_inches((10,8))
+    plt.plot(x, y, 'ko', mec='w', label="Centroids", zorder=+5)
+    if np.any(idx):
+        plt.plot(x[idx], y[idx], 'o', color='pink', label="Outliers", zorder=+6)
     
     #prob = compute_prob_of_points(x, y, sma, smi)
     for i in range(len(x)):
@@ -70,12 +72,6 @@ def diagnostic_plot(x, y, flag=None):
     sigma_b = np.linalg.norm(smi)
     angle_deg = np.degrees(np.arctan2(sma[1], sma[0]))
 
-    #plt.plot([mu_x, mu_x+sma[0]], [mu_y, mu_y+sma[1]], 'r-')
-    #plt.plot([mu_x, mu_x+smi[0]], [mu_y, mu_y+smi[1]], 'b-')
-    #idebug()
-    
-    #print(sigma_a, sigma_b)
-    #idebug()
     ax  = plt.gca()
     if 1:
         for p in [.68, .95, .997]:
@@ -89,16 +85,10 @@ def diagnostic_plot(x, y, flag=None):
                 angle=angle_deg, 
                 color='gray',
                 alpha=.2,
-                label="Prob",
+                label="%g%% Prob" %(100*p),
             )
             ax.add_patch(ell)
  
-        #scale = inverseChiSquare(1-p)  # Convert prob to chisq
-        #sma = np.sqrt(scale * eigenVals[0])
-        #smi = np.sqrt(scale * eigenVals[1])
-        #ell = Ellipse(xy=[muX,muY], width=2 * sma, height=2 * smi,
-        #angle=angle_deg, **kwargs)
-        #ax.add_patch(ell)
     plt.axhline(0)
     plt.axvline(0)
     plt.plot(0, 0, '*', color='c', ms=28, mec='w', mew=2)
@@ -107,16 +97,42 @@ def diagnostic_plot(x, y, flag=None):
     plt.axis('equal')
     plt.legend()
     
-    msg = "Prob Transit on Target: %.1e" %(compute_probability_of_offset(x, y))
+    offset, signif = compute_offset_and_signif(x[~idx], y[~idx])
+    msg = "Offset %i pixels\nProb Transit on Target: %.0e" %(offset, signif)
     plt.title(msg)
-        
+    return plt.gcf()
 
-def compute_probability_of_offset(x, y):
-    idx = find_outliers(x, y)
-    centroid = get_centroid_point(x[~idx], y[~idx])
-    sma, smi = compute_eigen_vectors(x[~idx], y[~idx])
+
+def compute_offset_and_signif(col, row):
+    """Compute the mean offset of a set of points from the origin
+
+    Computes the mean position of the inputs, and the statistical significance
+    of the offset. The statistical signifance calculation assumes the 
+    points are drawn from a 2d Gaussian. See module docs above.
+    
+    Inputs
+    ----------
+    col, row
+        (1d np arrays) Column and row values for each obseration. 
+
+    Returns
+    ----------
+    A tuple of (offset, signif)
+    The offset is the offset of the mean value for column and row from 
+    the origin, and is measured in the same units as the inputs. The significance
+    is measured as the probability of seeing an offset at least this large 
+    in this direction, given the variance (and co-variances) of the 
+    column and row values. Values close to 1 indicate the offset is consistent
+    with zero. Low values (< 1e-3 or so) indicate the offset is 
+    statistically significant
+    """
+    
+    centroid = get_centroid_point(col, row)
+    sma, smi = compute_eigen_vectors(col, row)
+    
+    offset_pixels = np.linalg.norm(centroid)
     prob = compute_prob_of_points([0],[0], sma, smi, centroid)
-    return prob
+    return offset_pixels, prob
 
 
 
@@ -138,7 +154,6 @@ def find_outliers(x, y, threshold=1e-6, initial_clip=None, max_iter=10):
     assert len(x) == len(y)
     assert len(idx) == len(y)
 
-    #idebug()
     old_num_clipped = np.sum(idx)
     for i in range(int(max_iter)):
         sma, smi = compute_eigen_vectors(x[~idx], y[~idx])
@@ -194,19 +209,18 @@ def compute_eigen_vectors(x, y):
     smi_vec = eigenVecs[:, 1] * np.sqrt(eigenVals[1])
     return sma_vec, smi_vec
     
-    #centroid_vec = [np.mean(x), np.mean(y)]
-    #centroid_vec = np.array(centroid_vec)
-    #return centroid_vec, sma_vec, smi_vec
-    
-    
 
 def compute_prob_of_points(x, y, sma_vec, smi_vec, cent_vec=None):
-    """Compute the probability of observing a point as far away as (x,y) for 
+    """Compute the probability of observing points as far away as (x,y) for 
     a given ellipse. 
     
-    For the ellipse described by centroid, sma and smi, compute the
-    probabliity of observing a point at least as far away as x,y in 
+    For the ellipse described by centroid, semi-major and semi-minor axes 
+    `sma_vec` and `smi_vec`, compute the
+    probability of observing points at least as far away as x,y in 
     the direction of that point. 
+    
+    If no cent_vec supplied, it is computed as the centroid of the 
+    input points.
     
     Inputs
     ---------
@@ -219,6 +233,7 @@ def compute_prob_of_points(x, y, sma_vec, smi_vec, cent_vec=None):
     cent_vec
         (2 elt numpy array) Vector describing centroid of ellipse.
         If **None**, is set to the centroid of the input points.
+    
     Returns 
     --------
     1d numpy array of the probabilities for each point.
