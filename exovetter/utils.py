@@ -225,6 +225,8 @@ def set_median_flux_to_one(flux):
 
     flux = flux.copy()
     flux /= medflux
+    
+    return flux
 
 
 def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):

@@ -65,7 +65,7 @@ def compute_diff_image_centroids(
     figs = []
     centroids = []
     for i in range(len(transits)):
-        print("Transit %i" % (i))
+        #print("Transit %i" % (i))
         cin = transits[i]
         cents, fig = measure_centroids(cube, cin, plot=plot)
         centroids.append(cents)

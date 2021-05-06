@@ -255,6 +255,8 @@ class OddEven(BaseVetter):
             ingress=None,
             dur_frac=self.dur_frac,
         )
+        
+        return dict(oe_sigma=self.oe_sigma, odd_depth=self.odd_depth, even_depth=self.even_depth)
 
     def plot(self):  # pragma: no cover
         odd_even.diagnostic_plot(
