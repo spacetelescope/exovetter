@@ -1,5 +1,3 @@
-from ipdb import set_trace as idebug
-
 import exovetter.centroid.fastpsffit as fpf
 import exovetter.centroid.covar as covar
 import exovetter.centroid.disp as disp
@@ -9,8 +7,7 @@ import numpy as np
 
 
 def compute_diff_image_centroids(
-    time, cube, period_days, epoch, duration_days, plot=False
-):
+    time, cube, period_days, epoch, duration_days, plot=False):
     """Compute difference image centroid shifts for every transit in a dataset.
 
     Given a data cube containing a time-series of images, and a transit

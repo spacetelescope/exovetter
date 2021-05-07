@@ -1,4 +1,3 @@
-from ipdb import set_trace as idebug
 from matplotlib.patches import Ellipse
 import matplotlib.pyplot as plt
 import scipy.stats as spstats
@@ -7,42 +6,42 @@ import numpy as np
 """
     Given a set of points, (x,y), compute to properties of
     the probability density ellipse from which they were drawn.
-    
-    Given a set of points (x,y), assume they were drawn from 
-    a probability density distribution well described by a 
+
+    Given a set of points (x,y), assume they were drawn from
+    a probability density distribution well described by a
     2-dimensional Gaussian. The distribution may show co-variance,
     (i.e large values of x may make large values of y more or less
     likely, and vice-versa), so in general, the distribution will
-    not be aligned with the x and y-axes. 
-    
+    not be aligned with the x and y-axes.
+
     Additionally, some of the input points are outliers, so must
-    perform some kind of sigma clipping to remove those values from 
-    the fit. 
-    
-    The probability density ellipse is descibed by 
-    
+    perform some kind of sigma clipping to remove those values from
+    the fit.
+
+    The probability density ellipse is descibed by
+
     * A vector pointing from the origin to the centre of the ellipse.
     * A vector from the centre pointing along the semi-major axis, with
-      length equal to the the :math:`\sigma` of the Gaussian in 
-      that direction, :math:`\sigma_a`. 
-    * A vector from the centre pointing along the semi-minor axis, 
-      with length equal to the :math:`\sigma` of the Gaussian in 
-      that direction, :math:`\sigma_b`. 
-      
-    The algorith proceeds as follows. 
+      length equal to the the :math:`\\sigma` of the Gaussian in
+      that direction, :math:`\\sigma_a`.
+    * A vector from the centre pointing along the semi-minor axis,
+      with length equal to the :math:`\\sigma` of the Gaussian in
+      that direction, :math:`\\sigma_b`.
+
+    The algorith proceeds as follows.
     1. Input all data points (x,y)
-    2. Compute the centroid, semi-major and semi-minor axes of the ellipse. 
+    2. Compute the centroid, semi-major and semi-minor axes of the ellipse.
     3. Transform all the input points to a coordinate system where
-       their first coordainte is distance along the semi-major axis in 
-       units of :math:`\sigma_a`, and the second coordinate is the distance 
-       along the semi-minor axis in units of :math:`\sigma_b`. This
-       distrubtion is radiall symmetric around the origin. 
+       their first coordainte is distance along the semi-major axis in
+       units of :math:`\\sigma_a`, and the second coordinate is the distance
+       along the semi-minor axis in units of :math:`\\sigma_b`. This
+       distrubtion is radiall symmetric around the origin.
     4. Compute the survival probability of each point, i.e the probability
-       of finding a point at least that far from the origin in this 
+       of finding a point at least that far from the origin in this
        transformed space.
-    5. Reject points whose survival probability is less that some 
-       threshold. These points are the outliers 
-    6. Go back to step 2 and repeat until no more outliers found. 
+    5. Reject points whose survival probability is less that some
+       threshold. These points are the outliers
+    6. Go back to step 2 and repeat until no more outliers found.
 """
 
 
@@ -62,7 +61,13 @@ def diagnostic_plot(x, y, flag=None):
     plt.gcf().set_size_inches((10, 8))
     plt.plot(x, y, "ko", mec="w", label="Centroids", zorder=+5)
     if np.any(idx):
-        plt.plot(x[idx], y[idx], "o", color="pink", label="Outliers", zorder=+6)
+        plt.plot(
+            x[idx],
+            y[idx],
+            "o",
+            color="pink",
+            label="Outliers",
+            zorder=+6)
 
     # prob = compute_prob_of_points(x, y, sma, smi)
     for i in range(len(x)):
@@ -119,7 +124,8 @@ def compute_offset_and_signif(col, row):
     ----------
     A tuple of (offset, signif)
     The offset is the offset of the mean value for column and row from
-    the origin, and is measured in the same units as the inputs. The significance
+    the origin, and is measured in the same units as the inputs. 
+    The significance
     is measured as the probability of seeing an offset at least this large
     in this direction, given the variance (and co-variances) of the
     column and row values. Values close to 1 indicate the offset is consistent
@@ -162,7 +168,7 @@ def find_outliers(x, y, threshold=1e-6, initial_clip=None, max_iter=10):
         new_num_clipped = np.sum(new_idx)
 
         # print( "Iter %i: %i (%i) clipped points "
-        #%(i, new_num_clipped, old_num_clipped))
+        # %(i, new_num_clipped, old_num_clipped))
 
         if new_num_clipped == old_num_clipped:
             return new_idx

@@ -5,15 +5,21 @@ Created on Mon Nov 19 16:39:13 2018
 
 A much faster PRF fitter, with the caveat that the psf model is hardcoded.
 
-psffit.py can fit an arbitrary PSF model to an image. The cost of this flexibility
-is that it must perform numerical intergration to calculate the flux in each pixel.
+psffit.py can fit an arbitrary PSF model to an image. 
+The cost of this flexibility
+is that it must perform numerical intergration to calculate 
+the flux in each pixel.
 This is slow. On my test machine, a 10x12 image takes 20ms to compute.
 
-Since by far the most common model to fit is that of a symmetric Gaussian function with
-a constant sky background, and this model can be computed quite quickly, this module
-enables this special case to be run much faster. On the same machine, the same image
+Since by far the most common model to fit is that of a symmetric 
+Gaussian function with
+a constant sky background, and this model can be computed quite 
+quickly, this module
+enables this special case to be run much faster. On the same machine, 
+the same image
 can be computed in 95.7us, or a x200 speed up. There's still more speed up to
-be had if you make a Model() class that assigns memory for the model once and overwrites
+be had if you make a Model() class that assigns memory for the model 
+once and overwrites
 it each time instead of computing from scratch in each call.
 
 The downside is that none of the code is shared with the general purpose code.
@@ -28,8 +34,6 @@ The only two public methods are
 @author: fergal
 """
 
-from pdb import set_trace as debug
-
 import scipy.optimize as spOpt
 from scipy.special import erf
 import numpy as np
@@ -43,7 +47,8 @@ def fastGaussianPrfFit(img, guess):
     img
         (2d numpy array) Image to fit
     prfFunc
-        (function) Model to fit. See module level documentation for more details.
+        (function) Model to fit. See module level documentation for more 
+        details.
     guess
         (tuple or array) Elements are
 
@@ -59,7 +64,8 @@ def fastGaussianPrfFit(img, guess):
 
     Returns
     ------------
-    A scipy.optiminze.ResultsObject. The .x attribute contains the best fit parameters
+    A scipy.optiminze.ResultsObject. The .x attribute contains the best 
+    fit parameters
 
     """
 
@@ -96,7 +102,8 @@ def costFunc(arglist, img, mask=None):
     Optional Inputs
     ----------------
     mask
-        (2d np array) Zero elements of mask indicate bad data which should not be
+        (2d np array) Zero elements of mask indicate bad data which should 
+        not be
         included in the fit
 
 
