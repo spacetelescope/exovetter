@@ -60,7 +60,8 @@ def compute_diff_image_centroids(
     time = time[~isnan]
     cube = cube[~isnan]
 
-    transits = getIngressEgressCadences(time, period_days, epoch, duration_days)
+    transits = getIngressEgressCadences(
+        time, period_days, epoch, duration_days)
 
     figs = []
     centroids = []
@@ -102,7 +103,8 @@ def measure_centroid_shift(centroids, plot=False):
     drow = centroids[:, 4] - centroids[:, 1]
     flags = centroids[:, -1].astype(bool)
 
-    offset_pix, signif = covar.compute_offset_and_signif(dcol[~flags], drow[~flags])
+    offset_pix, signif = covar.compute_offset_and_signif(
+        dcol[~flags], drow[~flags])
 
     fig = None
     if plot:
@@ -113,7 +115,8 @@ def measure_centroid_shift(centroids, plot=False):
 def getIngressEgressCadences(time, period_days, epoch_btjd, duration_days):
     assert np.all(np.isfinite(time))
 
-    idx = utils.mark_transit_cadences(time, period_days, epoch_btjd, duration_days)
+    idx = utils.mark_transit_cadences(
+        time, period_days, epoch_btjd, duration_days)
     transits = np.array(utils.plateau(idx, 0.5))
 
     return transits
@@ -211,7 +214,7 @@ def generateDiffImg(cube, transits, plot=False):
     e0, e1 = transits + dur
 
     before = cube[s0:s1].sum(axis=0)
-    during = cube[transits[0] : transits[1]].sum(axis=0)
+    during = cube[transits[0]: transits[1]].sum(axis=0)
     after = cube[e0:e1].sum(axis=0)
 
     oot = 0.5 * (before + after)

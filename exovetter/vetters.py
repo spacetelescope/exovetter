@@ -17,7 +17,13 @@ from exovetter import utils
 from exovetter import const
 from exovetter import model
 
-__all__ = ["BaseVetter", "Lpp", "ModShift", "OddEven", "Sweet", "TransitPhaseCoverage"]
+__all__ = [
+    "BaseVetter",
+    "Lpp",
+    "ModShift",
+    "OddEven",
+    "Sweet",
+    "TransitPhaseCoverage"]
 
 
 class BaseVetter(ABC):
@@ -112,7 +118,8 @@ class ModShift(BaseVetter):
         self.epoch_days = tce.get_epoch(time_offset_q).to_value(u.day)
         self.duration_hrs = tce["duration"].to_value(u.hour)
 
-        self.box = model.create_box_model_for_tce(tce, self.time * u.day, time_offset_q)
+        self.box = model.create_box_model_for_tce(
+            tce, self.time * u.day, time_offset_q)
         metrics, conv = modshift.compute_modshift_metrics(
             self.time,
             self.flux,
@@ -205,7 +212,8 @@ class Lpp(BaseVetter):
 
     def plot(self):  # pragma: no cover
         if self.plot_data is None:
-            raise ValueError("LPP plot data is empty. Execute self.run(...) first.")
+            raise ValueError(
+                "LPP plot data is empty. Execute self.run(...) first.")
 
         # target is populated in TCE, assume it already exists.
         target = self.tce.get("target_name", "Target")
@@ -255,8 +263,9 @@ class OddEven(BaseVetter):
             ingress=None,
             dur_frac=self.dur_frac,
         )
-        
-        return dict(oe_sigma=self.oe_sigma, odd_depth=self.odd_depth, even_depth=self.even_depth)
+
+        return dict(oe_sigma=self.oe_sigma,
+                    odd_depth=self.odd_depth, even_depth=self.even_depth)
 
     def plot(self):  # pragma: no cover
         odd_even.diagnostic_plot(
@@ -381,7 +390,8 @@ class Sweet(BaseVetter):
         self.sweet = sweet.sweet(
             time, flux, period_days, epoch, duration_days, plot=plot
         )
-        self.sweet = sweet.construct_message(self.sweet, self.sweet_threshold_sigma)
+        self.sweet = sweet.construct_message(
+            self.sweet, self.sweet_threshold_sigma)
         return self.sweet
 
     def plot(self):  # pragma: no cover

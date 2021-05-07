@@ -181,31 +181,30 @@ def plateau(array, threshold):
     exactly equal.
     """
 
-
-    arr  = array.astype(np.float32)
+    arr = array.astype(np.float32)
     arr = arr - threshold + 1e-12
     arrPlus = np.roll(arr, 1)
 
-    #Location of changes from -ve to +ve (or vice versa)
-    #Last point is bogus , so we calcualte it by hand
-    sgnChange = arr*arrPlus
+    # Location of changes from -ve to +ve (or vice versa)
+    # Last point is bogus , so we calcualte it by hand
+    sgnChange = arr * arrPlus
 
-    #Roll around can't compute sign change for zeroth elt.
+    # Roll around can't compute sign change for zeroth elt.
     sgnChange[0] = +1
     if arr[0] > 0:
         sgnChange[0] = -1
 
     loc = np.where(sgnChange < 0)[0]
 
-    if np.fmod( len(loc), 2) != 0:
+    if np.fmod(len(loc), 2) != 0:
         locc = loc.copy()
-        locc.resize((len(loc)+1))
+        locc.resize((len(loc) + 1))
         loc = locc.copy()
         loc[-1] = len(arr)
 
     if len(loc) == 0:
         return []
-    return loc.reshape( (-1,2))
+    return loc.reshape((-1, 2))
 
 
 def set_median_flux_to_zero(flux):
@@ -225,7 +224,7 @@ def set_median_flux_to_one(flux):
 
     flux = flux.copy()
     flux /= medflux
-    
+
     return flux
 
 
