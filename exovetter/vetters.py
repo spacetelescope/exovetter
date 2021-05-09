@@ -242,7 +242,7 @@ class OddEven(BaseVetter):
         self.oe_sigma = None
 
     def run(self, tce, lightcurve, dur_frac=0.3):
-        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version( # noqa
             lightcurve, self.lc_name
         )
 

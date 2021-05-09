@@ -1,4 +1,3 @@
-from ipdb import set_trace as idebug
 from exovetter.centroid.centroid import get_per_transit_diff_centroid
 import exovetter.centroid.covar as covar
 import astropy.io.fits as pyfits
@@ -19,7 +18,7 @@ def tic_307210830_02_03():
 
 def main(tic, sector, period_days, epoch_btjd, duration_days):
 
-    path = "/home/fergal/data/tess/hlsp_tess-data-alerts_tess_phot_%011i-s%02i_tess_v1_tp.fits"
+    path = "/home/fergal/data/tess/hlsp_tess-data-alerts_tess_phot_%011i-s%02i_tess_v1_tp.fits"  # noqa
     path = path % (tic, sector)
     fits, hdr = pyfits.getdata(path, header=True)
     cube = ktpf.getTargetPixelArrayFromFits(fits, hdr)
@@ -37,10 +36,10 @@ def main(tic, sector, period_days, epoch_btjd, duration_days):
     return centroids
 
     """
-    This should use the code in covar. 
+    This should use the code in covar.
     Return offset, prob of this offset under null hypothesis.
-    Produce a plot if necessary 
-    Propegate failed fit info through 
+    Produce a plot if necessary
+    Propegate failed fit info through
     Futurework: Overlay the plot on a POSS plateau
-    
+
     """

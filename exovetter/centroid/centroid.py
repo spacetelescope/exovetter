@@ -7,7 +7,7 @@ import numpy as np
 
 
 def compute_diff_image_centroids(
-    time, cube, period_days, epoch, duration_days, plot=False):
+        time, cube, period_days, epoch, duration_days, plot=False):
     """Compute difference image centroid shifts for every transit in a dataset.
 
     Given a data cube containing a time-series of images, and a transit
@@ -23,7 +23,8 @@ def compute_diff_image_centroids(
 
     cube
         (3d np array). Shape of the cube is (numCadences, numRows, numCols)
-        There are numCadence images, and each image has a shape of (numRows, numCols).
+        There are numCadence images, and each image has a shape of
+        (numRows, numCols).
 
     period_days
         (float) Orbital period of transit.
@@ -34,7 +35,8 @@ def compute_diff_image_centroids(
 
     Returns
     ---------------
-    A 2d numpy array. Each row represents a single transit event. The columns are
+    A 2d numpy array. Each row represents a single transit event.
+    The columns are
 
     * Out of transit (OOT) centroid column
     * OOT row.
@@ -177,7 +179,8 @@ def measure_centroids(cube, cin, plot=False):
 def generateDiffImg(cube, transits, plot=False):
     """Generate a difference image.
 
-    Also generates an image for each the $n$ cadedences before and after the transit,
+    Also generates an image for each the $n$ cadedences before
+    and after the transit,
     where $n$ is the number of cadences of the transit itself
 
     Inputs
@@ -198,11 +201,13 @@ def generateDiffImg(cube, transits, plot=False):
     Three 2d images, and a figure handle
 
     diff
-        The difference between the flux in-transit and the average of the flux before and after
+        The difference between the flux in-transit and the average of the
+        flux before and after
 
     Notes
     ---------
-    When there is image motion, the before and after images won't be identical, and the difference
+    When there is image motion, the before and after images won't be
+    identical, and the difference
     image will show distinct departures from the ideal prf.
     """
 

@@ -124,7 +124,7 @@ def compute_offset_and_signif(col, row):
     ----------
     A tuple of (offset, signif)
     The offset is the offset of the mean value for column and row from
-    the origin, and is measured in the same units as the inputs. 
+    the origin, and is measured in the same units as the inputs.
     The significance
     is measured as the probability of seeing an offset at least this large
     in this direction, given the variance (and co-variances) of the
