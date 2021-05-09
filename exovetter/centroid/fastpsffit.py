@@ -66,7 +66,6 @@ def fastGaussianPrfFit(img, guess):
     ------------
     A scipy.optiminze.ResultsObject. The .x attribute contains the best
     fit parameters
-
     """
 
     assert len(guess) == 5
