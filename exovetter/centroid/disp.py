@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-
-"""
-Created on Mon Dec  3 21:14:40 2018
-
-Functions to plot target pixel files and difference images with sane defaults
-@author: fergal
-"""
-
 from __future__ import print_function
 from __future__ import division
 
@@ -43,11 +34,13 @@ def plotImage(img, **kwargs):
     log
         (bool) Plot the image in log scalings. (Default False)
     origin
-        (str) If 'bottom', put origin of image in bottom left hand corner (default).
+        (str) If 'bottom', put origin of image in bottom left
+        hand corner (default).
         If 'top', but it in top left corner
 
     interpolation
-        (str) Interpolation method. Default is nearest. See `plt.imshow` for more options
+        (str) Interpolation method. Default is nearest. See `plt.imshow`
+        for more options
 
     cmap
         (plt.cm.cmap) Color map. Default is YlGnBu_r
@@ -120,7 +113,8 @@ def showPixelValues(img, cmap, norm):
 def plotDifferenceImage(img, **kwargs):
     """Plot a difference image.
 
-    The colour bar is chosen so zero flux is at the centre of the colour map"""
+    The colour bar is chosen so zero flux is at the centre of the colour map
+    """
     if "origin" not in kwargs:
         kwargs["origin"] = "lower"
 
@@ -159,4 +153,5 @@ def plotCentroidLocation(col, row, **kwargs):
 
     plt.plot([col], [row], ms=ms + 1, **kwargs)
 
-    plt.plot([col], [row], marker=marker, color=clr, mec=mec, mew=mew, ms=ms, **kwargs)
+    plt.plot([col], [row], marker=marker, color=clr, mec=mec,
+             mew=mew, ms=ms, **kwargs)

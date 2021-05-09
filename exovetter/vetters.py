@@ -106,9 +106,8 @@ class ModShift(BaseVetter):
         self.lc_name = lc_name
 
     def run(self, tce, lightcurve):
-        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(
-            lightcurve, self.lc_name
-        )
+        self.time, self.flux, time_offset_str = \
+            lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
 
         time_offset_q = const.string_to_offset[time_offset_str]
 
@@ -242,7 +241,7 @@ class OddEven(BaseVetter):
         self.oe_sigma = None
 
     def run(self, tce, lightcurve, dur_frac=0.3):
-        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version( # noqa
+        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(  # noqa
             lightcurve, self.lc_name
         )
 

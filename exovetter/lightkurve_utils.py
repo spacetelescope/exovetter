@@ -20,29 +20,29 @@ def unpack_lk_version(lightcurve, flux_name):
 
     return time, flux, time_offset_str
 
+
 def unpack_tpf(tpf, name):
     """
-    
+
 
     Parameters
     ----------
     tpf : lightkurve object
-        DESCRIPTION.
-    name : name of column with pixels
-        DESCRIPTION.
+        lightkurve target pixel file object
+    name : string
+        name of column with pixels
+        
 
     Returns
     -------
-    cube :
+    cube : numpy array
         pixels as a data cube
-    time : 
+    time : numpy array
         times
-    
+
     """
-    time = tpf.time.value   
+    time = tpf.time.value
     cube = getattr(tpf, name).value
     time_offset_str = tpf.time.format
-   
+
     return time, cube, time_offset_str
-    
-    

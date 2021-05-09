@@ -1,5 +1,4 @@
 from exovetter.centroid.centroid import get_per_transit_diff_centroid
-import exovetter.centroid.covar as covar
 import astropy.io.fits as pyfits
 import kepler.tpf as ktpf
 
@@ -29,8 +28,8 @@ def main(tic, sector, period_days, epoch_btjd, duration_days):
         time, cube, period_days, epoch_btjd, duration_days, plot=True
     )
 
-    dcol = centroids[:, -3] - centroids[:, 0]
-    drow = centroids[:, -2] - centroids[:, 1]
+    #dcol = centroids[:, -3] - centroids[:, 0]
+    #drow = centroids[:, -2] - centroids[:, 1]
 
     # covar.diagnostic_plot(dcol, drow)
     return centroids
