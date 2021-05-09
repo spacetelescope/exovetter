@@ -20,20 +20,21 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-    - name: Lint with flake8
+    - name: Lint with pyflakes
       run: |
-        python -m pip install --upgrade pip flake8
-        flake8 --count
+        python -m pip install --upgrade pip pyflakes
+        pyflakes
     # Make sure that packaging will work
     - name: pep517 build
       run: |
         python -m pip install --upgrade setuptools build twine
         python -m build --sdist .
         twine check dist/*
-    - name: Security audit
-      run: |
-        python -m pip install --upgrade bandit
-        bandit -r . -c .bandit.yaml
+    # This test turned off for the moment
+    #- name: Security audit
+    #  run: |
+    #    python -m pip install --upgrade bandit
+    #    bandit -r . -c .bandit.yaml
 
   # Python 3.7 + Numpy 1.19 resulted in NaN results, so we downgrade Numpy.
   initial_tests:
@@ -55,8 +56,8 @@ jobs:
         python -m pip install -e .[test,all]
     - name: Test with stable deps and coverage
       run: pytest --cov=./ --cov-report=xml --remote-data
-    - name: Coverage report
-      uses: codecov/codecov-action@v1
+#    - name: Coverage report
+#      uses: codecov/codecov-action@v1
 
   dev_deps_tests:
     runs-on: ubuntu-latest
