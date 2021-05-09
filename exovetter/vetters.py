@@ -197,7 +197,7 @@ class Lpp(BaseVetter):
 
         self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
 
-        self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric(
+        self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric( # noqa
             self.lpp_data, self.map_info
         )  # noqa: E501
 
@@ -253,7 +253,7 @@ class OddEven(BaseVetter):
         self.duration = tce["duration"].to_value(u.day)
         self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
 
-        self.oe_sigma, self.odd_depth, self.even_depth = odd_even.calc_odd_even(
+        self.oe_sigma, self.odd_depth, self.even_depth = odd_even.calc_odd_even( # noqa
             self.time,
             self.flux,
             self.period,

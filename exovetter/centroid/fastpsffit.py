@@ -174,7 +174,6 @@ sqrt2 = np.sqrt(2)
 
 def phi(z):
     """Compute integral of gaussian function in the range (-Inf, z],
-
     `z` is defined as (x - x0) / sigma, where x0 is the central value 
     of the Gaussian.
 

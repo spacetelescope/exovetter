@@ -31,7 +31,6 @@ def unpack_tpf(tpf, name):
         lightkurve target pixel file object
     name : string
         name of column with pixels
-        
 
     Returns
     -------
