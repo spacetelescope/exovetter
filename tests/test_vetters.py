@@ -1,4 +1,5 @@
 from numpy.testing import assert_allclose
+import numpy as np
 from astropy.io import ascii
 from astropy import units as u
 import lightkurve as lk
@@ -6,6 +7,7 @@ import lightkurve as lk
 from exovetter import const as exo_const
 from exovetter import vetters
 from exovetter.tce import Tce
+from exovetter.centroid import centroid as cent
 
 from astropy.utils.data import get_pkg_data_filename
 
@@ -61,6 +63,34 @@ def test_vetters():
     assert_allclose(metrics["norm_lpp"], 7.93119, rtol=1e-3)
     assert_allclose(metrics["tp_cover"], 1.0, rtol=1e-5)
     assert_allclose(metrics["odd_depth"][0], 0.99, rtol=1e-1)
+
+
+def test_cent_vetter():
+
+    tce = get_wasp18_tce()
+    lc = get_wasp18_lightcurve()
+
+    time = lc.time.value
+    time_offset_str = lc.time.format
+    px_size = (len(time), 7, 9)
+
+    cube = 2000.0 * np.ones(px_size) + \
+        np.random.normal(loc=0, scale=100, size=px_size)
+    cube[:, 3, 4] = 3901.1 + np.zeros(len(time))
+    cube[:, 4, 4] = 3202.5 + np.zeros(len(time))
+
+    period_days = tce["period"].to_value(u.day)
+    time_offset_q = getattr(exo_const, time_offset_str)
+    epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+    duration_days = tce["duration"].to_value(u.day)
+
+    centroids, figs = cent.compute_diff_image_centroids(
+        time, cube, period_days, epoch, duration_days, plot=False
+    )
+    offset, signif, fig = cent.measure_centroid_shift(centroids, plot=False)
+
+    assert len(centroids) == 21
+    assert offset < 9
 
 
 class DefaultVetter(vetters.BaseVetter):
