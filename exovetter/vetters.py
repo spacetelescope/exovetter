@@ -381,7 +381,7 @@ class TransitPhaseCoverage(BaseVetter):
         tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(
             time, p_day, epoch, dur_hour, ndur=self.ndur, nbins=self.nbins
         )
-        return tp_cover
+        return {'transit_phase_coverage': tp_cover}
     
     def plot(self):  # pragma: no cover
         transit_coverage.plot_coverage(self.hist, self.bins)
@@ -441,7 +441,7 @@ class Sweet(BaseVetter):
         )
         self.sweet = sweet.construct_message(
             self.sweet, self.sweet_threshold_sigma)
-        return self.sweet
+        return {'sweet_metric': self.sweet}
 
     def plot(self):  # pragma: no cover
         self.run(self.tce, self.lc, plot=True)
