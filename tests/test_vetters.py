@@ -43,27 +43,29 @@ def get_wasp18_lightcurve():
 
     return lc
 
+def test_name():
+    v = vetters.OddEven()
+    assert v.name() == "OddEven", v.name()
 
 def test_vetters():
 
     tce = get_wasp18_tce()
     lc = get_wasp18_lightcurve()
 
-    metrics = dict()
+    results = dict()
     vetter_list = [vetters.Lpp(),
                    vetters.OddEven(),
                    vetters.TransitPhaseCoverage()
                    ]
 
+    results = dict()
     for v in vetter_list:
-        vetter = v
-        tp_cover = vetter.run(tce, lc)
-        metrics.update(vetter.__dict__)
+        res = v.run(tce, lc)
+        results[v.name()] = res
 
-    assert_allclose(tp_cover, 1.0, rtol=1e-5)
-    assert_allclose(metrics["norm_lpp"], 7.93119, rtol=1e-3)
-    assert_allclose(metrics["odd_depth"][0], 0.99, rtol=1e-1)
-
+    assert set("Lpp OddEven TransitPhaseCoverage".split()) == set(results.keys())
+    for k in results:
+        assert isinstance(results[k], dict)
 
 def test_cent_vetter():
 

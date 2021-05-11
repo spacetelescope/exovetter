@@ -1,5 +1,6 @@
 """Module to handle exoplanet vetters."""
 
+from ipdb import set_trace as idebug
 import pprint
 from abc import ABC, abstractmethod
 
@@ -16,14 +17,6 @@ from exovetter import lightkurve_utils
 from exovetter import utils
 from exovetter import const
 from exovetter import model
-
-__all__ = [
-    "BaseVetter",
-    "Lpp",
-    "ModShift",
-    "OddEven",
-    "Sweet",
-    "TransitPhaseCoverage"]
 
 
 class BaseVetter(ABC):
@@ -43,6 +36,10 @@ class BaseVetter(ABC):
     def __init__(self, **kwargs):
         self.metrics = None
 
+    def name(self):
+        name = str(type(self)).split('.')[-1][:-2]
+        return name 
+        
     def __str__(self):
         try:
             if self.metrics is None:
@@ -436,12 +433,12 @@ class Sweet(BaseVetter):
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_days = tce["duration"].to_value(u.day)
 
-        self.sweet = sweet.sweet(
+        result_dict = sweet.sweet(
             time, flux, period_days, epoch, duration_days, plot=plot
         )
-        self.sweet = sweet.construct_message(
-            self.sweet, self.sweet_threshold_sigma)
-        return {'sweet_metric': self.sweet}
+        result_dict = sweet.construct_message(
+            result_dict, self.sweet_threshold_sigma)
+        return result_dict
 
     def plot(self):  # pragma: no cover
         self.run(self.tce, self.lc, plot=True)
