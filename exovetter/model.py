@@ -1,4 +1,5 @@
-"""Module to handle transit models.
+"""The ``exovetter.model`` module handles transit models for the
+modshift vetter.
 
 Available models:
 

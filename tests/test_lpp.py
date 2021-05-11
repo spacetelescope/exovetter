@@ -9,7 +9,9 @@ from exovetter import vetters
 from exovetter.tce import Tce
 
 
-@pytest.mark.remote_data
+#pytest's filterwarnings works around a problem in lightkurve I don't understand
+#@pytest.mark.remote_data
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_one_lpp():
     """"Use case is to get values for one TCE."""
 
