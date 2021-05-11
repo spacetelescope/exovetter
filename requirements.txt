@@ -1,0 +1,13 @@
+lightkurve>2
+astropy
+numpy
+scipy
+matplotlib
+
+#Pip install 
+lpproj
+#For buildind documentation
+#sphinx
+#sphinx-automodapi
+#sphinx-astropy 
+#sphinx-rtd-theme
