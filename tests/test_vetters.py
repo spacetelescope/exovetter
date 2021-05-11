@@ -1,4 +1,3 @@
-from numpy.testing import assert_allclose
 import numpy as np
 
 from exovetter.centroid import centroid as cent

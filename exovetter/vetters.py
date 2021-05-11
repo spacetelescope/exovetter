@@ -1,6 +1,5 @@
 """Module to handle exoplanet vetters."""
 
-from ipdb import set_trace as idebug
 import pprint
 from abc import ABC, abstractmethod
 
