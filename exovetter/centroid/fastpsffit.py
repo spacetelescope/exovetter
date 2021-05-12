@@ -39,7 +39,7 @@ from scipy.special import erf
 import numpy as np
 
 
-def fastGaussianPrfFit(img, guess):
+def fastGaussianPrfFit(img, guess, max_shift_pix=None):
     """Fit a Symmetric Gaussian PSF to an image, really quickly
 
     Inputs
@@ -60,6 +60,10 @@ def fastGaussianPrfFit(img, guess):
             Height of gaussian. Beware this is not normalized
         sky
             Background level
+    max_shift_pix 
+        (float) Constrain fit to keep centroid within
+        this many pixels of the initial guess in any 
+        direction. Default is to keep centroid on the image
 
 
     Returns
@@ -71,10 +75,18 @@ def fastGaussianPrfFit(img, guess):
     assert len(guess) == 5
 
     nr, nc = img.shape
+    if max_shift_pix is None:
+        col_constraint = (0, nc)
+        row_constraint = (0, nr)
+    else:
+        mx = max_shift_pix 
+        col_constraint = (guess[0] - mx, guess[0] + mx)
+        row_constraint = (guess[1] - mx, guess[1] + mx)
+
     mask = None
     bounds = [
-        (0, nc),
-        (0, nc),
+        col_constraint,
+        row_constraint,
         (0.2, 1),
         (None, None),
         (None, None),
