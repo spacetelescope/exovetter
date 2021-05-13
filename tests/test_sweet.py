@@ -1,18 +1,20 @@
+import pytest
 import lightkurve
 import numpy as np
-import pytest
+
 from astropy import units as u
 from astropy.utils.data import download_file
 from lightkurve import LightCurve
-from numpy.testing import assert_allclose
 
 from exovetter import const as exo_const
 from exovetter import sweet
 from exovetter.tce import Tce
 from exovetter.vetters import Sweet
 
+#pytest's filterwarnings works around a problem in lightkurve I don't understand
 
-@pytest.mark.remote_data
+#@pytest.mark.remote_data
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_kplr10417986():
     """Integration test"""
     filename = download_file('https://archive.stsci.edu/missions/kepler/lightcurves/0104/010417986/kplr010417986-2010174085026_llc.fits', cache=True)  # noqa
@@ -33,8 +35,8 @@ def test_kplr10417986():
     res = sweet_vetter.run(tce, lc)
     amp = res['amp']
 
-    assert_allclose(amp[0, 0], 637, atol=30)  # Amplitude
-    assert_allclose(amp[0, 2], 106.94, atol=10)  # SNR
+    assert np.allclose(amp[0, 0], 637, atol=30)  # Amplitude
+    assert np.allclose(amp[0, 2], 106.94, atol=10)  # SNR
 
 
 def test_sweet_vetter():

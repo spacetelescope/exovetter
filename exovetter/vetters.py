@@ -17,14 +17,6 @@ from exovetter import utils
 from exovetter import const
 from exovetter import model
 
-__all__ = [
-    "BaseVetter",
-    "Lpp",
-    "ModShift",
-    "OddEven",
-    "Sweet",
-    "TransitPhaseCoverage"]
-
 
 class BaseVetter(ABC):
     """Base class for vetters.
@@ -43,6 +35,10 @@ class BaseVetter(ABC):
     def __init__(self, **kwargs):
         self.metrics = None
 
+    def name(self):
+        name = str(type(self)).split('.')[-1][:-2]
+        return name 
+        
     def __str__(self):
         try:
             if self.metrics is None:
@@ -87,25 +83,46 @@ class BaseVetter(ABC):
         pass
 
 
+
+
 class ModShift(BaseVetter):
-    """Modshift vetter.
+    """Modshift vetter."""
 
-    Its :meth:`run` method runs the
-    :func:`exovetter.modshift.compute_modeshift_metrics` function
-    to populate the results.
-
-    Parameters
-    ----------
-    lc_name : str
-        Name of the flux array in the ``lightkurve`` object.
-
-    """
-
-    def __init__(self, lc_name="flux"):
+    def __init__(self, lc_name="flux", **kwargs):
+        """
+        Parameters
+        ----------
+        lc_name : str
+            Name of the flux array in the ``lightkurve`` object.
+        """
         self.metrics = None
         self.lc_name = lc_name
 
     def run(self, tce, lightcurve):
+        """
+        Runs modshift.compute_modeshift_metrics to populate the vetter object.
+
+        Parameters
+        -----------
+        tce : tce object
+            tce object is a dictionary that contains information about the tce
+            to vet, like period, epoch, duration, depth
+
+        lc : lightkurve object
+            lightkurve object with the time and flux to use for vetting.
+        
+        Returns
+        ------------
+        modshift : dict
+            modshift result dictionary containing the following:
+                pri : primary signal
+                sec : secondary signal
+                ter : tertiary signal
+                pos : largest positive event
+                false_alarm_threshold : threshold for the 1 sigma false alarm
+                Fred : red noise level, std(convolution) divided by std(lightcurve)
+        """
+
         self.time, self.flux, time_offset_str = \
             lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
 
@@ -130,6 +147,8 @@ class ModShift(BaseVetter):
         )
 
         self.modshift = metrics
+        
+        return self.modshift
 
     def plot(self):
         met, c = modshift.compute_modshift_metrics(
@@ -145,44 +164,45 @@ class ModShift(BaseVetter):
 
 class Lpp(BaseVetter):
     """Class to handle LPP Vetter functionality.
-
-    Parameters
-    ----------
-    map_filename : str or `None`
-        Full path to a LPP ``.mat`` file.
-        See `~exovetter.lpp.Loadmap`.
-
-    lc_name : str
-        Name of the flux array in the ``lightkurve`` object.
-
-    Attributes
-    ----------
-    map_info : `~exovetter.lpp.Loadmap`
-        Map info from ``map_filename``.
-
-    lc_name : str
-        Input ``lc_name``.
-
-    tce, lc
-        Inputs to :meth:`run`. TCE for this vetter should also
-        contain ``snr`` estimate.
-
-    lpp_data : `exovetter.lpp.Lppdata`
-        Populated by :meth:`run`.
-
-    raw_lpp : float
-        Raw LPP value, populated by :meth:`run`.
-
-    norm_lpp : float
-        LPP value normalized by period and SNR, populated by :meth:`run`.
-
-    plot_data : dict
-        The folded, binned transit prior to the LPP transformation,
-        populated by :meth:`run`.
-
     """
 
     def __init__(self, map_filename=None, lc_name="flux"):
+        """
+        Parameters
+        ----------
+        map_filename : str or `None`
+            Full path to a LPP ``.mat`` file.
+            See `~exovetter.lpp.Loadmap`.
+
+        lc_name : str
+            Name of the flux array in the ``lightkurve`` object.
+
+
+        Attributes
+        ----------
+        map_info : `~exovetter.lpp.Loadmap`
+            Map info from ``map_filename``.
+
+        lc_name : str
+            Input ``lc_name``.
+
+        tce, lc
+            Inputs to :meth:`run`. TCE for this vetter should also
+            contain ``snr`` estimate.
+
+        lpp_data : `exovetter.lpp.Lppdata`
+            Populated by :meth:`run`.
+
+        raw_lpp : float
+            Raw LPP value, populated by :meth:`run`.
+
+        norm_lpp : float
+            LPP value normalized by period and SNR, populated by :meth:`run`.
+
+        plot_data : dict
+            The folded, binned transit prior to the LPP transformation,
+            populated by :meth:`run`.
+        """
         self.map_info = lpp.Loadmap(filename=map_filename)
         self.lc_name = lc_name
         self.tce = None
@@ -201,8 +221,7 @@ class Lpp(BaseVetter):
             self.lpp_data, self.map_info
         )  # noqa: E501
 
-        # TODO: Do we really need to return anything if everything is stored as
-        # instance attributes anyway?
+ 
         return {
             "raw_lpp": self.raw_lpp,
             "norm_lpp": self.norm_lpp,
@@ -220,32 +239,55 @@ class Lpp(BaseVetter):
 
 
 class OddEven(BaseVetter):
-    """Odd-even metric vetter.
-
-    Parameters
-    ----------
-    lc_name : str
-        Name of the flux array in the ``lightkurve`` object.
-
-    Attributes
-    ----------
-    odd_depth, even_depth, oe_sigma : float
-        Results from :func:`exovetter.odd_even.calc_odd_even`.
-
+    """Class to calculate whether the depth of the odd transits is 
+    different than the depth of the even transits
     """
 
-    def __init__(self, lc_name="flux"):
+    def __init__(self, lc_name="flux", dur_frac=0.3):
+        """
+        Parameters
+        ----------
+        lc_name : str
+            Input ``lc_name``.
+
+        dur_frac:
+            Fraction of in-transit duration to use for depth calculation.
+
+        Attributes
+        ------------
+        oe_sigma
+            significance of difference of odd/even depth measurements
+            
+        odd_depth : tuple
+            depth and error on depth of the odd transits
+            
+        even_depth : tuple
+            depth and error on depth of the even transits
+        """
+
         self.lc_name = lc_name
+        self.dur_frac = dur_frac
         self.odd_depth = None
         self.even_depth = None
         self.oe_sigma = None
 
-    def run(self, tce, lightcurve, dur_frac=0.3):
+
+    def run(self, tce, lightcurve):
+        """
+        Parameters
+        ----------
+        tce : `~exovetter.tce.Tce`
+            TCE.
+
+        lightcurve : obj
+            ``lightkurve`` object that contains the detrended lightcurve's
+            time and flux arrays.
+        
+
+        """
         self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(  # noqa
             lightcurve, self.lc_name
         )
-
-        self.dur_frac = dur_frac
 
         time_offset_q = getattr(exo_const, time_offset_str)
 
@@ -262,9 +304,10 @@ class OddEven(BaseVetter):
             ingress=None,
             dur_frac=self.dur_frac,
         )
-
-        return dict(oe_sigma=self.oe_sigma,
-                    odd_depth=self.odd_depth, even_depth=self.even_depth)
+        
+        return {'oe_sigma' : self.oe_sigma,
+                'odd_depth' : self.odd_depth,
+                'even_depth' : self.even_depth}
 
     def plot(self):  # pragma: no cover
         odd_even.diagnostic_plot(
@@ -279,25 +322,35 @@ class OddEven(BaseVetter):
 
 
 class TransitPhaseCoverage(BaseVetter):
-    """Transit Phase Coverage vetter.
+    """Transit Phase Coverage Vetter
+    """
 
-    Parameters
-    ----------
-    lc_name : str
-        Name of the flux array in the ``lightkurve`` object.
+    def __init__(self, lc_name="flux", nbins=10, ndur=2):
+        """
+        Parameters
+        ----------
+        tce : tce object
+            tce object is a dictionary that contains information about the tce
+            to vet, like period, epoch, duration, depth
 
+        lc : lightkurve object
+        lightkurve object with the time and flux of the data to use for vetting.
 
-    Attributes
-    ----------
-    tp_cover : float
-        Fraction of coverage from :func:`exovetter.transit_coverage.calc_coverage`.
+        nbins : integer
+        number bins to divide-up the in transit points. default is 10, giving
+        an accuracy of 0.1.
 
-    """  # noqa
+        ndur : float
+        the code considers a phase that cover ndur * transit_duration as
+        "in transit"
 
-    def __init__(self, lc_name="flux"):
+        """
         self.lc_name = lc_name
+        self.nbins = nbins 
+        self.ndur = ndur 
 
-    def run(self, tce, lc, nbins=10, ndur=2):
+
+    def run(self, tce, lc):
         """Run the vetter on the specified Threshold Crossing Event (TCE)
         and lightcurve to obtain metric.
 
@@ -309,15 +362,6 @@ class TransitPhaseCoverage(BaseVetter):
         lc : obj
             ``lightkurve`` object that contains the detrended lightcurve's
             time and flux arrays to use for vetting.
-
-        nbins : int
-            Number of bins to divide up the in transit points.
-            Default is 10, giving an accuracy of 0.1.
-
-        ndur : float
-            The code considers a phase that cover ``ndur * transit_duration``
-            as "in transit".
-
         """
         time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
             lc, self.lc_name
@@ -329,44 +373,46 @@ class TransitPhaseCoverage(BaseVetter):
         time_offset_q = getattr(exo_const, time_offset_str)
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
 
-        self.tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(
-            time, p_day, epoch, dur_hour, ndur=ndur, nbins=nbins
+    
+        tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(
+            time, p_day, epoch, dur_hour, ndur=self.ndur, nbins=self.nbins
         )
-
+        return {'transit_phase_coverage': tp_cover}
+    
     def plot(self):  # pragma: no cover
         transit_coverage.plot_coverage(self.hist, self.bins)
 
 
+
 class Sweet(BaseVetter):
-    """Class to handle SWEET vetter functionality.
-
-    Parameters
-    ----------
-    lc_name : str
-        Name of the flux array in the ``lightkurve`` object.
-
-    threshold_sigma : float
-        Threshold for comparing signal to transit period.
-
-    Attributes
-    ----------
-    tce : `~exovetter.tce.Tce`
-        TCE object, a dictionary that contains information about the TCE
-        to vet, like period, epoch, duration, depth.
-
-    lc : obj
-        ``lightkurve`` object with the time and flux of the data to use
-        for vetting.
-
-    sweet : dict
-        ``'amp'`` contains the best fit amplitude, its uncertainty, and
-        amplitude-to-uncertainty ratio for half-period, period, and
-        twice the period. ``'msg'`` contains warnings, if applicable.
-        They are populated by running the :meth:`run` method.
-
+    """Class to handle SWEET Vetter functionality.
     """
 
     def __init__(self, lc_name="flux", threshold_sigma=3):
+        """
+        Parameters
+        ----------
+        threshold_sigma : float
+            Threshold for comparing signal to transit period.
+
+        Attributes
+        ----------
+        tce : tce object
+            tce object is a dictionary that contains information about the tce
+            to vet, like period, epoch, duration, depth
+
+        lc : lightkurve object
+        lightkurve object with the time and flux of the data to use for vetting.
+
+        result : dict
+            ``'amp'`` contains the best fit amplitude, its uncertainty, and
+            amplitude-to-uncertainty ratio for half-period, period, and
+            twice the period. ``'msg'`` contains warnings, if applicable.
+            Populated by :meth:`run`.
+
+        lsf : `~exovetter.utils.WqedLSF`
+            Least squares fit object, populated by :meth:`run`.
+        """
         self.tce = None
         self.lc = None
         self.result = None
@@ -386,12 +432,12 @@ class Sweet(BaseVetter):
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_days = tce["duration"].to_value(u.day)
 
-        self.sweet = sweet.sweet(
+        result_dict = sweet.sweet(
             time, flux, period_days, epoch, duration_days, plot=plot
         )
-        self.sweet = sweet.construct_message(
-            self.sweet, self.sweet_threshold_sigma)
-        return self.sweet
+        result_dict = sweet.construct_message(
+            result_dict, self.sweet_threshold_sigma)
+        return result_dict
 
     def plot(self):  # pragma: no cover
         self.run(self.tce, self.lc, plot=True)

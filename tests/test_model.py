@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from astropy import units as u
-from astropy.tests.helper import assert_quantity_allclose
 
 from exovetter import const
 from exovetter.model import create_box_model_for_tce
@@ -19,5 +18,5 @@ def test_get_model(epoch_val, ans_argmin):
 
     assert np.sum(model < 0) == 1
     assert np.sum(model > 0) == 0
-    assert_quantity_allclose(np.min(model), -1e-3)
+    assert np.isclose(np.min(model), -1e-3)
     assert np.argmin(model) == ans_argmin
