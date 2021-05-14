@@ -68,13 +68,22 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
         for nt in np.arange(0, nsteps, 1):
             ph = phases[ntransit == nt]
             fl = flux[ntransit == nt]
-    
+
             color = (0, 0.3 - 0.3 * (nt / nsteps), nt / nsteps)
-    
-            plt.plot(ph * period, fl + step_size * nt, '.--', c=color, ms=5, lw=1)
+
+            plt.plot(
+                ph *
+                period,
+                fl +
+                step_size *
+                nt,
+                '.--',
+                c=color,
+                ms=5,
+                lw=1)
             plt.annotate("Transit %i" % nt, (xmin, np.median(fl) + step_size * nt),
                          c=color)
-    
+
         plt.xlim(xmin, xmax)
         plt.xlabel("Phased Time")
 
@@ -122,17 +131,17 @@ def plot_fold_transit(time, flux, period, epoch, depth, dur, smooth=10,
 
     if plot:
         plt.figure(figsize=(8, 6))
-    
+
         plt.plot(phases * period, flux, 'k.', ms=3, label="Folded")
-    
+
         if smooth is not None:
             sort_phases = phases[sort_index]
             plt.plot(sort_phases[N:-N] * period, smoothed_signal[N:-N], 'r--',
                      lw=1.5, label="Box1DSmooth")
-    
+
         plt.legend(loc="upper right")
         plt.xlabel('Phased Times')
-    
+
         if transit_only:
             xmin = np.min(phases[intransit]) * period
             xmax = np.max(phases[intransit]) * period

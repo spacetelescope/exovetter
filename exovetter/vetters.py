@@ -308,14 +308,14 @@ class OddEven(BaseVetter):
 
     def plot(self):  # pragma: no cover
         odd_even.diagnostic_plot(
-                                    self.time,
-                                    self.flux,
-                                    self.period,
-                                    self.epoch,
-                                    self.duration * self.dur_frac,
-                                    self.odd_depth,
-                                    self.even_depth,
-                                )
+            self.time,
+            self.flux,
+            self.period,
+            self.epoch,
+            self.duration * self.dur_frac,
+            self.odd_depth,
+            self.even_depth,
+        )
 
 
 class TransitPhaseCoverage(BaseVetter):
@@ -371,10 +371,10 @@ class TransitPhaseCoverage(BaseVetter):
 
         tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(
             time, p_day, epoch, dur_hour, ndur=self.ndur, nbins=self.nbins)
-        
+
         if plot:
             transit_coverage.plot_coverage(self.hist, self.bins)
-            
+
         return {'transit_phase_coverage': tp_cover}
 
     def plot(self):  # pragma: no cover

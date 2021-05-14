@@ -42,9 +42,11 @@ def get_wasp18_lightcurve():
 
     return lc
 
+
 def test_name():
     v = vetters.OddEven()
     assert v.name() == "OddEven", v.name()
+
 
 def test_vetters():
 
@@ -63,9 +65,12 @@ def test_vetters():
         res = v.run(tce, lc)
         results[v.name()] = res
 
-    assert set("Lpp OddEven TransitPhaseCoverage VizTransits".split()) == set(results.keys())
+    assert set(
+        "Lpp OddEven TransitPhaseCoverage VizTransits".split()) == set(
+        results.keys())
     for k in results:
         assert isinstance(results[k], dict)
+
 
 def test_cent_vetter():
 
