@@ -502,6 +502,7 @@ class WqedLSF:
 
         return phase, amp_unc / amp
 
+
 def compute_phases(time, period, epoch, offset=0.5):
     """Calculate phases.
 

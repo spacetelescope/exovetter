@@ -54,7 +54,8 @@ def test_vetters():
     results = dict()
     vetter_list = [vetters.Lpp(),
                    vetters.OddEven(),
-                   vetters.TransitPhaseCoverage()
+                   vetters.TransitPhaseCoverage(),
+                   vetters.VizTransits()
                    ]
 
     results = dict()
@@ -62,7 +63,7 @@ def test_vetters():
         res = v.run(tce, lc)
         results[v.name()] = res
 
-    assert set("Lpp OddEven TransitPhaseCoverage".split()) == set(results.keys())
+    assert set("Lpp OddEven TransitPhaseCoverage VizTransits".split()) == set(results.keys())
     for k in results:
         assert isinstance(results[k], dict)
 
