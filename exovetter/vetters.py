@@ -16,6 +16,7 @@ from exovetter import lightkurve_utils
 from exovetter import utils
 from exovetter import const
 from exovetter import model
+from exovetter import viz_transits
 
 
 class BaseVetter(ABC):
@@ -504,3 +505,47 @@ class Centroid(BaseVetter):
 
     def plot(self):  # pragma: no cover
         self.run(self.tce, self.tpf, plot=True)
+
+class VizTransits(BaseVetter):
+    """Class to return the number of transits that exist.
+    It primarily plots all the transits on one figure along
+    with a folded transit.
+    """
+    
+    def __init__(self, lc_name="flux"):
+        self.tce = None
+        self.lc_name = lc_name
+        
+    def run(self, tce, lightcurve, max_transits = 10, transit_only=False,
+            smooth=10):
+        
+        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+            lightcurve, self.lc_name)  # noqa: E50
+        
+        period_days = tce["period"].to_value(u.day)
+        time_offset_q = getattr(exo_const, time_offset_str)
+        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+        duration_days = tce["duration"].to_value(u.day)
+        depth = tce['depth']
+        
+        
+        n_has_data = viz_transits.plot_all_transits(time, flux, period_days, 
+                                       epoch, 
+                                       duration_days, 
+                                       depth, max_transits = max_transits, 
+                                       transit_only=transit_only)
+        
+        viz_transits.plot_fold_transit(time, flux, period_days, 
+                                       epoch, depth, duration_days, 
+                                       smooth = smooth, 
+                                       transit_only=transit_only)
+        
+        return {'num_transits':n_has_data}
+    
+    def plot(self, tce, lightcurve, max_transits = 10, transit_only=False,
+            smooth=10):
+        
+        _ = self.run(tce, lightcurve, max_transits = max_transits, 
+                     transit_only = transit_only, smooth = smooth)
+        
+    

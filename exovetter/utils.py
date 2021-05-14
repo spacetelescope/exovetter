@@ -501,3 +501,29 @@ class WqedLSF:
         phase = 0.5 * (invcos + invsin)
 
         return phase, amp_unc / amp
+
+def compute_phases(time, period, epoch, offset=0.5):
+    """Calculate phases.
+
+    Parameters
+    ----------
+    time : float
+        Time
+
+    period : float
+        Period in units of time.
+
+    epoch : float
+        Time of the transit in units of the time.
+
+    offset : float
+        Fractional value the times of the epoch should land on.
+
+    Returns
+    -------
+    phases : float
+        Fractional phases of the times given the period, epoch and offset.
+
+    """
+    phases = np.fmod(time - epoch + (offset * period), period)
+    return phases / period
