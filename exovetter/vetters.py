@@ -165,7 +165,7 @@ class Lpp(BaseVetter):
     """Class to handle LPP Vetter functionality.
     """
 
-    def __init__(self, map_filename=None, lc_name="flux", plot=False):
+    def __init__(self, map_filename=None, lc_name="flux"):
         """
         Parameters
         ----------
@@ -210,7 +210,7 @@ class Lpp(BaseVetter):
         self.raw_lpp = None
         self.plot_data = None
 
-    def run(self, tce, lightcurve):
+    def run(self, tce, lightcurve, plot=False):
         self.tce = tce
         self.lc = lightcurve
 
@@ -509,12 +509,15 @@ class VizTransits(BaseVetter):
     with a folded transit.
     """
 
-    def __init__(self, lc_name="flux"):
+    def __init__(self, lc_name="flux", max_transits=10, transit_only=False,
+                 smooth=10,):
         self.tce = None
         self.lc_name = lc_name
+        self.max_transits = max_transits
+        self.transit_only = transit_only
+        self.smooth = smooth
 
-    def run(self, tce, lightcurve, max_transits=10, transit_only=False,
-            smooth=10, plot=False):
+    def run(self, tce, lightcurve, plot=False):
 
         time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
             lightcurve, self.lc_name)  # noqa: E50
@@ -528,20 +531,20 @@ class VizTransits(BaseVetter):
         n_has_data = viz_transits.plot_all_transits(time, flux, period_days,
                                                     epoch,
                                                     duration_days,
-                                                    depth, max_transits=max_transits,
-                                                    transit_only=transit_only,
+                                                    depth, max_transits=self.max_transits,
+                                                    transit_only=self.transit_only,
                                                     plot=plot)
 
         viz_transits.plot_fold_transit(time, flux, period_days,
                                        epoch, depth, duration_days,
-                                       smooth=smooth,
-                                       transit_only=transit_only,
+                                       smooth=self.smooth,
+                                       transit_only=self.transit_only,
                                        plot=plot)
 
         return {'num_transits': n_has_data}
 
-    def plot(self, tce, lightcurve, max_transits=10, transit_only=False,
-             smooth=10):
+    def plot(self, tce, lightcurve):
 
-        _ = self.run(tce, lightcurve, max_transits=max_transits,
-                     transit_only=transit_only, smooth=smooth, plot=True)
+        _ = self.run(tce, lightcurve, max_transits=self.max_transits,
+                     transit_only=self.transit_only, smooth=self.smooth,
+                     plot=True)

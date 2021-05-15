@@ -25,6 +25,10 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
         depth of possible transit, used to spread out each light curve.
     max_transits : integer, optional
         maximum number of transits to plot. The default is 10.
+    transit_only : T/F
+        if true, zooms the x axis around just 3 durations around the transit
+    plot : boolean
+        if true, it shows the plot, if false it does not
 
     Returns
     -------
@@ -38,11 +42,11 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
                                             num_durations=3, flags=None)
 
     xmin = 0
-    xmax = np.max(phases) * period
+    xmax = np.max(phases)
     figwid = 8
     if transit_only:
-        xmin = np.min(phases[intransit]) * period
-        xmax = np.max(phases[intransit]) * period
+        xmin = np.min(phases[intransit])
+        xmax = np.max(phases[intransit])
 
         if (xmax - xmin) > (0.5 * period):
             xmin = (0.25 * period) - 1.25 * dur
@@ -71,17 +75,10 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
 
             color = (0, 0.3 - 0.3 * (nt / nsteps), nt / nsteps)
 
-            plt.plot(
-                ph *
-                period,
-                fl +
-                step_size *
-                nt,
-                '.--',
-                c=color,
-                ms=5,
-                lw=1)
-            plt.annotate("Transit %i" % nt, (xmin, np.median(fl) + step_size * nt),
+            plt.plot(ph, fl + step_size * nt, '.--',
+                     c=color, ms=5, lw=1)
+            plt.annotate("Transit %i" % nt,
+                         (xmin, np.median(fl) + step_size * nt),
                          c=color)
 
         plt.xlim(xmin, xmax)
@@ -108,6 +105,8 @@ def plot_fold_transit(time, flux, period, epoch, depth, dur, smooth=10,
         epoch of transits in same units and offset as time.
     dur : float
         duration of the transit in same units as the time.
+    transit_only: True/False
+        Center the plot around the transit, only showing 3 durations
     smooth : integer, optional
         Approximately number of points you want across 3 in-transit durations
         for a
@@ -132,17 +131,17 @@ def plot_fold_transit(time, flux, period, epoch, depth, dur, smooth=10,
     if plot:
         plt.figure(figsize=(8, 6))
 
-        plt.plot(phases * period, flux, 'k.', ms=3, label="Folded")
+        plt.plot(phases, flux, 'k.', ms=3, label="Folded")
 
         if smooth is not None:
             sort_phases = phases[sort_index]
-            plt.plot(sort_phases[N:-N] * period, smoothed_signal[N:-N], 'r--',
+            plt.plot(sort_phases[N:-N], smoothed_signal[N:-N], 'r--',
                      lw=1.5, label="Box1DSmooth")
 
         plt.legend(loc="upper right")
         plt.xlabel('Phased Times')
 
         if transit_only:
-            xmin = np.min(phases[intransit]) * period
-            xmax = np.max(phases[intransit]) * period
+            xmin = np.min(phases[intransit])
+            xmax = np.max(phases[intransit])
             plt.xlim(xmin, xmax)
