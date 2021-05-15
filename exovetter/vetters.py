@@ -16,6 +16,7 @@ from exovetter import lightkurve_utils
 from exovetter import utils
 from exovetter import const
 from exovetter import model
+from exovetter import viz_transits
 
 
 class BaseVetter(ABC):
@@ -37,8 +38,8 @@ class BaseVetter(ABC):
 
     def name(self):
         name = str(type(self)).split('.')[-1][:-2]
-        return name 
-        
+        return name
+
     def __str__(self):
         try:
             if self.metrics is None:
@@ -83,8 +84,6 @@ class BaseVetter(ABC):
         pass
 
 
-
-
 class ModShift(BaseVetter):
     """Modshift vetter."""
 
@@ -98,7 +97,7 @@ class ModShift(BaseVetter):
         self.metrics = None
         self.lc_name = lc_name
 
-    def run(self, tce, lightcurve):
+    def run(self, tce, lightcurve, plot=False):
         """
         Runs modshift.compute_modeshift_metrics to populate the vetter object.
 
@@ -110,7 +109,7 @@ class ModShift(BaseVetter):
 
         lc : lightkurve object
             lightkurve object with the time and flux to use for vetting.
-        
+
         Returns
         ------------
         modshift : dict
@@ -143,11 +142,11 @@ class ModShift(BaseVetter):
             self.period_days,
             self.epoch_days,
             self.duration_hrs,
-            show_plot=False,
+            show_plot=plot,
         )
 
         self.modshift = metrics
-        
+
         return self.modshift
 
     def plot(self):
@@ -211,17 +210,16 @@ class Lpp(BaseVetter):
         self.raw_lpp = None
         self.plot_data = None
 
-    def run(self, tce, lightcurve):
+    def run(self, tce, lightcurve, plot=False):
         self.tce = tce
         self.lc = lightcurve
 
         self.lpp_data = lpp.Lppdata(self.tce, self.lc, self.lc_name)
 
-        self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric( # noqa
+        self.norm_lpp, self.raw_lpp, self.plot_data = lpp.compute_lpp_Transitmetric(  # noqa
             self.lpp_data, self.map_info
         )  # noqa: E501
 
- 
         return {
             "raw_lpp": self.raw_lpp,
             "norm_lpp": self.norm_lpp,
@@ -239,11 +237,11 @@ class Lpp(BaseVetter):
 
 
 class OddEven(BaseVetter):
-    """Class to calculate whether the depth of the odd transits is 
+    """Class to calculate whether the depth of the odd transits is
     different than the depth of the even transits
     """
 
-    def __init__(self, lc_name="flux", dur_frac=0.3):
+    def __init__(self, lc_name="flux", dur_frac=0.3, plot=False):
         """
         Parameters
         ----------
@@ -257,10 +255,10 @@ class OddEven(BaseVetter):
         ------------
         oe_sigma
             significance of difference of odd/even depth measurements
-            
+
         odd_depth : tuple
             depth and error on depth of the odd transits
-            
+
         even_depth : tuple
             depth and error on depth of the even transits
         """
@@ -270,7 +268,6 @@ class OddEven(BaseVetter):
         self.odd_depth = None
         self.even_depth = None
         self.oe_sigma = None
-
 
     def run(self, tce, lightcurve):
         """
@@ -282,7 +279,7 @@ class OddEven(BaseVetter):
         lightcurve : obj
             ``lightkurve`` object that contains the detrended lightcurve's
             time and flux arrays.
-        
+
 
         """
         self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(  # noqa
@@ -295,7 +292,7 @@ class OddEven(BaseVetter):
         self.duration = tce["duration"].to_value(u.day)
         self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
 
-        self.oe_sigma, self.odd_depth, self.even_depth = odd_even.calc_odd_even( # noqa
+        self.oe_sigma, self.odd_depth, self.even_depth = odd_even.calc_odd_even(  # noqa
             self.time,
             self.flux,
             self.period,
@@ -304,10 +301,10 @@ class OddEven(BaseVetter):
             ingress=None,
             dur_frac=self.dur_frac,
         )
-        
-        return {'oe_sigma' : self.oe_sigma,
-                'odd_depth' : self.odd_depth,
-                'even_depth' : self.even_depth}
+
+        return {'oe_sigma': self.oe_sigma,
+                'odd_depth': self.odd_depth,
+                'even_depth': self.even_depth}
 
     def plot(self):  # pragma: no cover
         odd_even.diagnostic_plot(
@@ -346,11 +343,10 @@ class TransitPhaseCoverage(BaseVetter):
 
         """
         self.lc_name = lc_name
-        self.nbins = nbins 
-        self.ndur = ndur 
+        self.nbins = nbins
+        self.ndur = ndur
 
-
-    def run(self, tce, lc):
+    def run(self, tce, lc, plot=False):
         """Run the vetter on the specified Threshold Crossing Event (TCE)
         and lightcurve to obtain metric.
 
@@ -373,15 +369,16 @@ class TransitPhaseCoverage(BaseVetter):
         time_offset_q = getattr(exo_const, time_offset_str)
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
 
-    
         tp_cover, self.hist, self.bins = transit_coverage.calc_coverage(
-            time, p_day, epoch, dur_hour, ndur=self.ndur, nbins=self.nbins
-        )
+            time, p_day, epoch, dur_hour, ndur=self.ndur, nbins=self.nbins)
+
+        if plot:
+            transit_coverage.plot_coverage(self.hist, self.bins)
+
         return {'transit_phase_coverage': tp_cover}
-    
+
     def plot(self):  # pragma: no cover
         transit_coverage.plot_coverage(self.hist, self.bins)
-
 
 
 class Sweet(BaseVetter):
@@ -504,3 +501,50 @@ class Centroid(BaseVetter):
 
     def plot(self):  # pragma: no cover
         self.run(self.tce, self.tpf, plot=True)
+
+
+class VizTransits(BaseVetter):
+    """Class to return the number of transits that exist.
+    It primarily plots all the transits on one figure along
+    with a folded transit.
+    """
+
+    def __init__(self, lc_name="flux", max_transits=10, transit_only=False,
+                 smooth=10,):
+        self.tce = None
+        self.lc_name = lc_name
+        self.max_transits = max_transits
+        self.transit_only = transit_only
+        self.smooth = smooth
+
+    def run(self, tce, lightcurve, plot=False):
+
+        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+            lightcurve, self.lc_name)  # noqa: E50
+
+        period_days = tce["period"].to_value(u.day)
+        time_offset_q = getattr(exo_const, time_offset_str)
+        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+        duration_days = tce["duration"].to_value(u.day)
+        depth = tce['depth']
+
+        n_has_data = viz_transits.plot_all_transits(time, flux, period_days,
+                                                    epoch,
+                                                    duration_days,
+                                                    depth, max_transits=self.max_transits,
+                                                    transit_only=self.transit_only,
+                                                    plot=plot)
+
+        viz_transits.plot_fold_transit(time, flux, period_days,
+                                       epoch, depth, duration_days,
+                                       smooth=self.smooth,
+                                       transit_only=self.transit_only,
+                                       plot=plot)
+
+        return {'num_transits': n_has_data}
+
+    def plot(self, tce, lightcurve):
+
+        _ = self.run(tce, lightcurve, max_transits=self.max_transits,
+                     transit_only=self.transit_only, smooth=self.smooth,
+                     plot=True)
