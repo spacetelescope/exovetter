@@ -533,13 +533,13 @@ class VizTransits(BaseVetter):
                                                     duration_days,
                                                     depth, max_transits=self.max_transits,
                                                     transit_only=self.transit_only,
-                                                    plot=plot)
+                                                    plot=plot, units="d")
 
         viz_transits.plot_fold_transit(time, flux, period_days,
                                        epoch, depth, duration_days,
                                        smooth=self.smooth,
                                        transit_only=self.transit_only,
-                                       plot=plot)
+                                       plot=plot, units="d")
 
         return {'num_transits': n_has_data}
 

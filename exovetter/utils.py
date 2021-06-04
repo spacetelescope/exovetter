@@ -523,8 +523,16 @@ def compute_phases(time, period, epoch, offset=0.5):
     Returns
     -------
     phases : float
-        Phases in untils of the period.
+        Phases in units of the period. All phases are positive in value.
 
     """
-    phases = np.fmod(time - epoch + (offset * period), period)
+    # Determine Epoch just less than the smallest time before folding
+    n_periods = np.abs(np.min(time) - epoch) / period
+    if epoch > np.min(time):
+        epoch0 = epoch - np.ceil(n_periods) * period
+    else:
+        epoch0 = epoch + np.floor(n_periods) * period
+    phases = np.fmod(time - epoch0 + (offset * period), period)
+    pmin = np.min(phases)
+
     return phases
