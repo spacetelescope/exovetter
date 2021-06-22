@@ -77,16 +77,16 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
     if plot:
         plt.figure(figsize=(figwid, nsteps))
 
-        for nt in np.arange(0, nsteps + 1, 1):
+        for i, nt in enumerate(np.unique(ntransit[intransit])): 
             ph = phases[ntransit == nt]
             fl = flux[ntransit == nt]
 
-            color = (0, 0.3 - 0.3 * (nt / nsteps), nt / nsteps)
+            color = (0, 0.3 - 0.3 * (i / nsteps), i / nsteps)
 
-            plt.plot(ph, fl + step_size * nt, '.--',
+            plt.plot(ph, fl + step_size * i, '.--',
                      c=color, ms=5, lw=1)
             plt.annotate("Transit %i" % nt,
-                         (xmin, np.median(fl) + step_size * nt),
+                         (xmin, np.median(fl) + step_size * i),
                          c=color)
 
         plt.xlim(xmin, xmax)
