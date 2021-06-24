@@ -289,6 +289,59 @@ def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
     return idx
 
 
+def get_mast_tce(name):
+    """
+    Populate a TCE object using the mast database
+
+    Parameters
+    ----------
+    name : str
+        Star name, TCE, or TOI
+
+    Returns
+    -------
+    tce : tce.Tce object
+     populates the object with period, epoch, epoch_offset, depth, duration
+
+    """
+    
+    import requests
+    from exovetter.tce import Tce
+    import astropy.units as u
+    from exovetter import const
+    
+    planeturl = "https://exo.mast.stsci.edu/api/v0.1/exoplanets/"
+    header = {}
+    
+    url = planeturl + name + "/properties/"
+
+    r = requests.get(url = url, headers = header)
+    if len(r.json()) < 1:
+        print("No TCE Information was returned from MAST.")
+        
+    tces = []
+    
+    for prop in r.json():
+        period = prop['orbital_period']
+        punit = prop['orbital_period_unit']
+        epoch = prop['transit_time']
+        epoch_offset_str = prop['transit_time_unit'].lower()
+        depth = prop['transit_depth']
+        duration = prop['transit_duration']
+        durunit = prop['transit_duration_unit']
+        
+        atce = Tce(period = period * u.__dict__[punit],
+                   epoch = epoch * u.d,
+                   epoch_offset = const.__dict__['string_to_offset'][epoch_offset_str],
+                   depth = depth * const.frac_amp,
+                   duration = duration * u.__dict__[durunit],
+                   target = name
+                   )
+        
+        tces.append(atce)
+
+    return tces
+
 class WqedLSF:
     """Least squares fit to an analytic function based on ``lsf.c`` in Wqed,
     which in turn was based on Bevington and Robinson.
@@ -536,3 +589,8 @@ def compute_phases(time, period, epoch, offset=0.5):
     pmin = np.min(phases)
 
     return phases
+
+
+    
+    
+    

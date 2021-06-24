@@ -58,9 +58,10 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
 
     offset = 0.25
     ntransit = np.floor((time - epoch + (offset * period)) / period)
-    pmin = np.min(ntransit)
-    n = np.ceil(np.abs(pmin / period))
-    ntransit[ntransit < 0] = ntransit[ntransit < 0] + (period * n)
+
+    #pmin = np.min(ntransit)
+    #n = np.ceil(np.abs(pmin / period))
+    #ntransit[ntransit < 0] = ntransit[ntransit < 0] + (period * n)
 
     n_has_data = len(np.unique(ntransit[intransit]))
 
@@ -69,15 +70,20 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
     if 3 * np.std(flux[~intransit]) > step_size:
         step_size = 3 * np.std(flux[~intransit])
 
-    nsteps = np.ceil(np.max(ntransit))
+    nsteps = len(np.unique(ntransit))  #np.ceil(np.max(ntransit))
 
     if nsteps > max_transits:
         nsteps = max_transits
 
     if plot:
         plt.figure(figsize=(figwid, nsteps))
-
-        for i, nt in enumerate(np.unique(ntransit[intransit])): 
+        transits  =  np.floor(np.unique(ntransit[intransit]))
+        print(transits[0:nsteps])
+        print(nsteps)
+        print(ntransit)
+        
+        for i, nt in enumerate(transits[0:nsteps]): 
+            
             ph = phases[ntransit == nt]
             fl = flux[ntransit == nt]
 
@@ -91,14 +97,8 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
 
         plt.xlim(xmin, xmax)
         plt.axvspan(
-            offset *
-            period -
-            0.5 *
-            dur,
-            offset *
-            period +
-            0.5 *
-            dur,
+            offset * period - 0.5 * dur,
+            offset * period + 0.5 * dur,
             alpha=0.15)
         plt.xlabel("Phased Time [%s]" % units)
 
