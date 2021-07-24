@@ -14,12 +14,11 @@ from exovetter import utils
 import exovetter.vetters as vet
 import lightkurve as lk
 
-candidate = "TOI 1013.01"
+candidate = "TOI 565.01"
 tce = utils.get_mast_tce(candidate)
-lc = lk.search_lightcurve(candidate, sector=33, exptime=120).download()
+lc = lk.search_lightcurve(candidate, exptime=120)[0].download()
+lc.plot()
+tpf = lk.search_targetpixelfile(candidate, exptime=120)[0].download()
 
-tpf = lk.search_targetpixelfile(candidate, sector=33, exptime=120).download()
-import pdb; pdb.set_trace()
 cent = vet.Centroid()
-
 cent.run(tce[0],tpf, plot=True)

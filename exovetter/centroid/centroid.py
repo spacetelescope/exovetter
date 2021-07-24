@@ -122,7 +122,7 @@ def getIngressEgressCadences(time, period_days, epoch_btjd, duration_days):
     return transits
 
 
-def measure_centroids(cube, cin, plot=False):
+def measure_centroids(cube, cin, plot=False, fixfit=True):
     """Private function of :func:`compute_diff_image_centroids`
 
     Computes OOT, ITR and diff images for a single transit event,
@@ -134,17 +134,43 @@ def measure_centroids(cube, cin, plot=False):
         3d numpy array: Timeseries of images.
     cin
         2-tuple) Cadences of start and end of transit.
+    plot
+        True if a plot should be produced
+    fixfit T/F
+        Set to true if oot and inTr fit should be fixed to central pixel.
     """
+
     oot, intrans, diff, ax = generateDiffImg(cube, cin, plot=plot)
 
+    # Constrain fit to within +-1 pixel for oot and intrans if desired.
+    nr, nc = oot.shape
+
+    if fixfit:
+        bounds = [
+            (nc / 2 - 1, nc / 2 + 1),
+            (nr / 2 - 1, nr / 2 + 1),
+            (0.2, 1),
+            (None, None),
+            (None, None),
+        ]
+
+    else:
+        bounds = [
+            (0, nc),
+            (0, nr),
+            (0.2, 1),
+            (None, None),
+            (None, None),
+        ]
+
     guess = pickInitialGuess(oot)
-    ootSoln = fpf.fastGaussianPrfFit(oot, guess)
+    ootSoln = fpf.fastGaussianPrfFit(oot, guess, bounds=bounds)
 
     guess = pickInitialGuess(diff)
     diffSoln = fpf.fastGaussianPrfFit(diff, guess)
 
     guess = pickInitialGuess(intrans)
-    intransSoln = fpf.fastGaussianPrfFit(intrans, guess)
+    intransSoln = fpf.fastGaussianPrfFit(intrans, guess, bounds=bounds)
 
     if not np.all(map(lambda x: x.success, [ootSoln, diffSoln, intransSoln])):
         print("WARN: Not all fits converged for [%i, %i]" % (cin[0], cin[1]))
@@ -155,7 +181,7 @@ def measure_centroids(cube, cin, plot=False):
             clr = "green"
 
         res = diffSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="^", color=clr, 
+        disp.plotCentroidLocation(res[0], res[1], marker="^", color=clr,
                                   label="diff")
 
         res = ootSoln.x
