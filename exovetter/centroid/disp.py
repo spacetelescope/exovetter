@@ -145,13 +145,13 @@ def plotCentroidLocation(col, row, **kwargs):
 
     Private function of `generateDiffImgPlot()`
     """
-    ms = kwargs.pop("ms", 8)
+    ms = kwargs.pop("ms", 9)
     clr = kwargs.pop("color", "g")
-    mec = kwargs.pop("mec", "w")
+    mec = kwargs.pop("mec", "white")
     mew = kwargs.pop("mew", "1")
     marker = kwargs.pop("marker", "o")
 
-    plt.plot([col], [row], ms=ms + 1, **kwargs)
+    #plt.plot([col], [row], ms=ms + 1, **kwargs)
 
     plt.plot([col], [row], marker=marker, color=clr, mec=mec,
-             mew=mew, ms=ms, **kwargs)
+             mew=mew, ms=ms, lw=0, **kwargs)

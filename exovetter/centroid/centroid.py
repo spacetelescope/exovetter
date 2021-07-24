@@ -69,7 +69,6 @@ def compute_diff_image_centroids(
         cents, fig = measure_centroids(cube, cin, plot=plot)
         centroids.append(cents)
         figs.append(fig)
-
     centroids = np.array(centroids)
     return centroids, figs
 
@@ -97,8 +96,11 @@ def measure_centroid_shift(centroids, plot=False):
     """
 
     # DIC - OOT
-    dcol = centroids[:, 5] - centroids[:, 0]
-    drow = centroids[:, 4] - centroids[:, 1]
+    # dcol = centroids[:, 5] - centroids[:, 0]
+    # drow = centroids[:, 4] - centroids[:, 1]
+    dcol = centroids[:, 4] - centroids[:, 0]
+    drow = centroids[:, 5] - centroids[:, 1]
+
     flags = centroids[:, -1].astype(bool)
 
     offset_pix, signif = covar.compute_offset_and_signif(
@@ -153,13 +155,17 @@ def measure_centroids(cube, cin, plot=False):
             clr = "green"
 
         res = diffSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="^", color=clr)
+        disp.plotCentroidLocation(res[0], res[1], marker="^", color=clr, 
+                                  label="diff")
 
         res = ootSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="o", color=clr)
+        disp.plotCentroidLocation(res[0], res[1], marker="o", color=clr,
+                                  label="OOT")
 
         res = intransSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="+", color=clr)
+        disp.plotCentroidLocation(res[0], res[1], marker="+", color=clr,
+                                  label="InT")
+        plt.legend(fontsize=12, framealpha=0.7, facecolor='silver')
 
     out = []
     out.extend(ootSoln.x[:2])
