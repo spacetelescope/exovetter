@@ -318,28 +318,32 @@ def get_mast_tce(name):
     r = requests.get(url = url, headers = header)
     if len(r.json()) < 1:
         print("No TCE Information was returned from MAST.")
+        return []
         
     tces = []
     
     for prop in r.json():
-        period = prop['orbital_period']
-        punit = prop['orbital_period_unit']
-        epoch = prop['transit_time']
-        epoch_offset_str = prop['transit_time_unit'].lower()
-        depth = prop['transit_depth']
-        duration = prop['transit_duration']
-        durunit = prop['transit_duration_unit']
-        
-        atce = Tce(period = period * u.__dict__[punit],
-                   epoch = epoch * u.d,
-                   epoch_offset = const.__dict__['string_to_offset'][epoch_offset_str],
-                   depth = depth * const.frac_amp,
-                   duration = duration * u.__dict__[durunit],
-                   target = name
-                   )
-        
-        tces.append(atce)
-
+        try:
+            period = prop['orbital_period']
+            punit = prop['orbital_period_unit']
+            epoch = prop['transit_time']
+            epoch_offset_str = 'mjd'
+            depth = prop['transit_depth']
+            duration = prop['transit_duration']
+            durunit = prop['transit_duration_unit']
+            
+            atce = Tce(period = period * u.__dict__[punit],
+                       epoch = epoch * u.d,
+                       epoch_offset = const.__dict__['string_to_offset'][epoch_offset_str],
+                       depth = depth * const.frac_amp,
+                       duration = duration * u.__dict__[durunit],
+                       target = name
+                       )
+            
+            tces.append(atce)
+        except:
+            pass
+            
     return tces
 
 class WqedLSF:

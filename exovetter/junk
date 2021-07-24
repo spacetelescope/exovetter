@@ -1,0 +1,89 @@
+#Code to plot and evaluate individual transits.
+import numpy as np
+import matplotlib.pyplot as plt
+from astropy.convolution import convolve, Box1DKernel
+from exovetter import utils
+
+
+def all_transits(time, flux, period, epoch, dur, max_transits = 10):
+    """
+
+    Parameters
+    ----------
+    time : numpy array
+        times of measurements
+    flux : numpy array
+        brightness changes
+    period : float
+        period in same units as time
+    epoch : float
+        epoch of transits in same units and offset as time.
+    dur : float
+        duration of the transit in same units as the time.
+    max_transits : integer, optional
+        maximum number of transits to plot. The default is 10.
+
+    Returns
+    -------
+    
+
+    """
+
+    intransit = utils.mark_transit_cadences(time, period, epoch, dur,
+                          num_durations=1, flags=None)
+    
+
+def plot_fold_transit(time,flux,period,epoch,depth,dur,smooth = None):
+    """
+    Bins set to None will show not show the binned points. Otherwise
+    the binning is chosen
+
+    Parameters
+    ----------
+    time : TYPE
+        DESCRIPTION.
+    flux : TYPE
+        DESCRIPTION.
+    period : TYPE
+        DESCRIPTION.
+    epoch : TYPE
+        DESCRIPTION.
+    depth : TYPE
+        DESCRIPTION.
+    duration : TYPE
+        DESCRIPTION.
+    smooth : integer, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    None.
+
+    """    
+    
+    
+    phases = utils.compute_phases(time, period, epoch, offset=0.25)
+    
+    
+    intransit = utils.mark_transit_cadences(time, period, epoch, dur,
+                          num_durations=1, flags=None)
+    
+    
+    if smooth is not None:
+        N = int(np.floor(len(phases[intransit])/smooth))
+        sort_index = np.argsort(phases)
+        smoothed_signal = convolve(flux[sort_index], Box1DKernel(N))
+
+    plt.figure(figsize=(10,6))
+    
+    plt.plot(phases*period, flux, 'k.', ms = 3, label="Folded")
+    
+    if smooth is not None:
+        sort_phases = phases[sort_index]
+        plt.plot(sort_phases[N:-N]*period, smoothed_signal[N:-N], 'r--',
+                 lw=1.5, label="Box1DSmooth")
+    
+    #med_flux = np.median(flux)
+    #plt.ylim(med_flux-1.7*depth, med_flux+1.2*depth)
+    plt.legend(loc="upper right")
+    plt.xlabel('Phased Times')
