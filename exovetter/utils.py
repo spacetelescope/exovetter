@@ -330,7 +330,11 @@ def get_mast_tce(name):
             epoch_offset_str = 'mjd'
             depth = prop['transit_depth']
             duration = prop['transit_duration']
+            if duration is None:
+                duration  = 0
             durunit = prop['transit_duration_unit']
+            if durunit is None:
+                durunit = "d"
             
             atce = Tce(period = period * u.__dict__[punit],
                        epoch = epoch * u.d,
@@ -342,6 +346,8 @@ def get_mast_tce(name):
             
             tces.append(atce)
         except:
+            print("An exception was thrown.")
+            prop
             pass
             
     return tces
