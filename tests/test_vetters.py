@@ -1,15 +1,14 @@
-from numpy.testing import assert_allclose
 import numpy as np
-from astropy.io import ascii
-from astropy import units as u
-import lightkurve as lk
 
+from exovetter.centroid import centroid as cent
 from exovetter import const as exo_const
 from exovetter import vetters
 from exovetter.tce import Tce
-from exovetter.centroid import centroid as cent
 
 from astropy.utils.data import get_pkg_data_filename
+from astropy import units as u
+from astropy.io import ascii
+import lightkurve as lk
 
 
 def get_wasp18_tce():
@@ -44,25 +43,33 @@ def get_wasp18_lightcurve():
     return lc
 
 
+def test_name():
+    v = vetters.OddEven()
+    assert v.name() == "OddEven", v.name()
+
+
 def test_vetters():
 
     tce = get_wasp18_tce()
     lc = get_wasp18_lightcurve()
 
-    metrics = dict()
+    results = dict()
     vetter_list = [vetters.Lpp(),
                    vetters.OddEven(),
-                   vetters.TransitPhaseCoverage()
+                   vetters.TransitPhaseCoverage(),
+                   vetters.VizTransits()
                    ]
 
+    results = dict()
     for v in vetter_list:
-        vetter = v
-        _ = vetter.run(tce, lc)
-        metrics.update(vetter.__dict__)
+        res = v.run(tce, lc)
+        results[v.name()] = res
 
-    assert_allclose(metrics["norm_lpp"], 7.93119, rtol=1e-3)
-    assert_allclose(metrics["tp_cover"], 1.0, rtol=1e-5)
-    assert_allclose(metrics["odd_depth"][0], 0.99, rtol=1e-1)
+    assert set(
+        "Lpp OddEven TransitPhaseCoverage VizTransits".split()) == set(
+        results.keys())
+    for k in results:
+        assert isinstance(results[k], dict)
 
 
 def test_cent_vetter():

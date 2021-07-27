@@ -83,7 +83,6 @@ def compute_diff_image_centroids(
         )
         centroids.append(cents)
         figs.append(fig)
-
     centroids = np.array(centroids)
     return centroids, figs
 
@@ -111,8 +110,11 @@ def measure_centroid_shift(centroids, plot=False):
     """
 
     # DIC - OOT
-    dcol = centroids[:, 5] - centroids[:, 0]
-    drow = centroids[:, 4] - centroids[:, 1]
+    # dcol = centroids[:, 5] - centroids[:, 0]
+    # drow = centroids[:, 4] - centroids[:, 1]
+    dcol = centroids[:, 4] - centroids[:, 0]
+    drow = centroids[:, 5] - centroids[:, 1]
+
     flags = centroids[:, -1].astype(bool)
 
     offset_pix, signif = covar.compute_offset_and_signif(
@@ -134,7 +136,7 @@ def getIngressEgressCadences(time, period_days, epoch_btjd, duration_days):
     return transits
 
 
-def measure_centroids(cube, cin, max_oot_shift_pix=1.5, plot=False):
+def measure_centroids(cube, cin, max_oot_shift_pix=0.5, plot=False):
     """Private function of :func:`compute_diff_image_centroids`
 
     Computes OOT, ITR and diff images for a single transit event,
@@ -146,17 +148,43 @@ def measure_centroids(cube, cin, max_oot_shift_pix=1.5, plot=False):
         3d numpy array: Timeseries of images.
     cin
         2-tuple) Cadences of start and end of transit.
+    max_oot_shift_pixel
+        (float) OOT centroid is constrained in the fit to be within this distance
+        of the centre of the postage stamp image
+    plot
+        True if a plot should be produced
+
     """
+
     oot, intrans, diff, ax = generateDiffImg(cube, cin, plot=plot)
 
+    # Constrain fit to within +-1 pixel for oot and intrans if desired.
+    nr, nc = oot.shape
+    
+    #Silently pin max shift to size of postage stamp
+    max_oot_shift_pix = min(max_oot_shift_pix, nc/2, nr/2)
+    
+    #Short names for easier reading
+    c2 = nc/2
+    r2 = nr/2
+    ms = max_oot_shift_pix
+    
+    bounds = [
+        (c2-ms, c2+ms),
+        (r2-ms, r2+ms),
+        (0.2, 1),
+        (None, None),
+        (None, None),
+    ]
+
     guess = pickInitialGuess(oot)
-    ootSoln = fpf.fastGaussianPrfFit(oot, guess, max_shift_pix=max_oot_shift_pix)
+    ootSoln = fpf.fastGaussianPrfFit(oot, guess, bounds=bounds)
 
     guess = pickInitialGuess(diff)
     diffSoln = fpf.fastGaussianPrfFit(diff, guess)
 
     guess = pickInitialGuess(intrans)
-    intransSoln = fpf.fastGaussianPrfFit(intrans, guess)
+    intransSoln = fpf.fastGaussianPrfFit(intrans, guess, bounds=bounds)
 
     if not np.all(map(lambda x: x.success, [ootSoln, diffSoln, intransSoln])):
         print("WARN: Not all fits converged for [%i, %i]" % (cin[0], cin[1]))
@@ -167,13 +195,17 @@ def measure_centroids(cube, cin, max_oot_shift_pix=1.5, plot=False):
             clr = "green"
 
         res = diffSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="^", color=clr)
+        disp.plotCentroidLocation(res[0], res[1], marker="^", color=clr,
+                                  label="diff")
 
         res = ootSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="o", color=clr)
+        disp.plotCentroidLocation(res[0], res[1], marker="o", color=clr,
+                                  label="OOT")
 
         res = intransSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="+", color=clr)
+        disp.plotCentroidLocation(res[0], res[1], marker="+", color=clr,
+                                  label="InT")
+        plt.legend(fontsize=12, framealpha=0.7, facecolor='silver')
 
     out = []
     out.extend(ootSoln.x[:2])

@@ -1,11 +1,10 @@
 from astropy.utils.data import get_pkg_data_filename
-import pytest
-from numpy.testing import assert_allclose
 from astropy import units as u
-from astropy.tests.helper import assert_quantity_allclose
 
 from exovetter import const
 from exovetter.tce import Tce
+import numpy as np
+import pytest
 
 
 def test_required_quantity_missing():
@@ -30,7 +29,7 @@ def test_misc_quantity():
               epoch_offset=0 * u.day, duration=1 * u.hr, depth=1 * const.ppk)
     tce["note"] = "This is a comment"
 
-    assert_quantity_allclose(tce["period"], 25 * u.day)
+    assert np.isclose(tce["period"], 25 * u.day)
     assert tce["kepid"] == 1234
     assert tce["note"] == "This is a comment"
 
@@ -41,7 +40,7 @@ def test_epoch():
 
     # BTJD is after BKJD
     epoch_btjd = tce.get_epoch(const.btjd)
-    assert_quantity_allclose(
+    np.isclose(
         epoch_btjd, (2_454_833 - 2_457_000 + 1000) * u.day)
 
 
@@ -50,6 +49,6 @@ def test_json_io():
     input_file = get_pkg_data_filename("data/tce-test.json")
     atce = Tce.from_json(input_file)
 
-    assert_allclose(atce["period"].value, 0.830002, atol=1e-7)
+    assert np.isclose(atce["period"].value, 0.830002, atol=1e-7)
     assert atce["period"].unit == "d"
     assert atce["sector"] == 14

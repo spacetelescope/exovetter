@@ -39,7 +39,7 @@ from scipy.special import erf
 import numpy as np
 
 
-def fastGaussianPrfFit(img, guess, max_shift_pix=None):
+def fastGaussianPrfFit(img, guess, bounds=None):
     """Fit a Symmetric Gaussian PSF to an image, really quickly
 
     Inputs
@@ -60,11 +60,10 @@ def fastGaussianPrfFit(img, guess, max_shift_pix=None):
             Height of gaussian. Beware this is not normalized
         sky
             Background level
-    max_shift_pix 
-        (float) Constrain fit to keep centroid within
-        this many pixels of the initial guess in any 
-        direction. Default is to keep centroid on the image
-
+    bounds
+        array of tuples indicating the bounds of the fit for
+        col, row, sigma, flux, sky.
+        Default allows fit to center anywhere on the image.
 
     Returns
     ------------
@@ -75,22 +74,16 @@ def fastGaussianPrfFit(img, guess, max_shift_pix=None):
     assert len(guess) == 5
 
     nr, nc = img.shape
-    if max_shift_pix is None:
-        col_constraint = (0, nc)
-        row_constraint = (0, nr)
-    else:
-        mx = max_shift_pix 
-        col_constraint = (guess[0] - mx, guess[0] + mx)
-        row_constraint = (guess[1] - mx, guess[1] + mx)
-
+    if bounds is None:
+        bounds = [
+            (0, nc),
+            (0, nr),
+            (0.2, 1),
+            (None, None),
+            (None, None),
+        ]
+        
     mask = None
-    bounds = [
-        col_constraint,
-        row_constraint,
-        (0.2, 1),
-        (None, None),
-        (None, None),
-    ]
     soln = spOpt.minimize(
         costFunc, guess, args=(img, mask), method="L-BFGS-B", bounds=bounds
     )
@@ -185,7 +178,7 @@ sqrt2 = np.sqrt(2)
 
 def phi(z):
     """Compute integral of gaussian function in the range (-Inf, z],
-    `z` is defined as (x - x0) / sigma, where x0 is the central value 
+    `z` is defined as (x - x0) / sigma, where x0 is the central value
     of the Gaussian.
 
     See `scipy.special.erf` for details
