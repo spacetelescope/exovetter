@@ -100,7 +100,7 @@ class Tce(dict):
         if (key in self.required_quantities and
                 not isinstance(value, u.Quantity)):
             raise TypeError(f"Special param {key} must be an astropy Quantity")
-        self.setdefault(key, value)
+        dict.__setitem__(self, key, value)
 
     def get_epoch(self, offset=None):
         """Get the epoch of the transit in the desired BJD-based time system.
