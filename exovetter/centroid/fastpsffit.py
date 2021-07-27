@@ -65,7 +65,6 @@ def fastGaussianPrfFit(img, guess, bounds=None):
         col, row, sigma, flux, sky.
         Default allows fit to center anywhere on the image.
 
-
     Returns
     ------------
     A scipy.optiminze.ResultsObject. The .x attribute contains the best
@@ -75,7 +74,6 @@ def fastGaussianPrfFit(img, guess, bounds=None):
     assert len(guess) == 5
 
     nr, nc = img.shape
-    mask = None
     if bounds is None:
         bounds = [
             (0, nc),
@@ -84,6 +82,8 @@ def fastGaussianPrfFit(img, guess, bounds=None):
             (None, None),
             (None, None),
         ]
+        
+    mask = None
     soln = spOpt.minimize(
         costFunc, guess, args=(img, mask), method="L-BFGS-B", bounds=bounds
     )

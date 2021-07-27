@@ -7,7 +7,14 @@ import numpy as np
 
 
 def compute_diff_image_centroids(
-        time, cube, period_days, epoch, duration_days, plot=False):
+        time, 
+        cube, 
+        period_days, 
+        epoch, 
+        duration_days, 
+        max_oot_shift_pix=1.5,
+        plot=False
+):
     """Compute difference image centroid shifts for every transit in a dataset.
 
     Given a data cube containing a time-series of images, and a transit
@@ -32,6 +39,8 @@ def compute_diff_image_centroids(
         (float) Epoch of transit centre in the same time system as `time`.
     duration_days
         (float) Duration of transit.
+    max_oot_shift_pix
+        (float) Passed to `fastpsffit.fastGaussianPrfFit()
 
     Returns
     ---------------
@@ -66,7 +75,12 @@ def compute_diff_image_centroids(
     centroids = []
     for i in range(len(transits)):
         cin = transits[i]
-        cents, fig = measure_centroids(cube, cin, plot=plot)
+        cents, fig = measure_centroids(
+            cube, 
+            cin, 
+            max_oot_shift_pix=max_oot_shift_pix,
+            plot=plot
+        )
         centroids.append(cents)
         figs.append(fig)
     centroids = np.array(centroids)
@@ -122,7 +136,7 @@ def getIngressEgressCadences(time, period_days, epoch_btjd, duration_days):
     return transits
 
 
-def measure_centroids(cube, cin, plot=False, fixfit=True):
+def measure_centroids(cube, cin, max_oot_shift_pix=0.5, plot=False):
     """Private function of :func:`compute_diff_image_centroids`
 
     Computes OOT, ITR and diff images for a single transit event,
@@ -134,34 +148,34 @@ def measure_centroids(cube, cin, plot=False, fixfit=True):
         3d numpy array: Timeseries of images.
     cin
         2-tuple) Cadences of start and end of transit.
+    max_oot_shift_pixel
+        (float) OOT centroid is constrained in the fit to be within this distance
+        of the centre of the postage stamp image
     plot
         True if a plot should be produced
-    fixfit T/F
-        Set to true if oot and inTr fit should be fixed to central pixel.
+
     """
 
     oot, intrans, diff, ax = generateDiffImg(cube, cin, plot=plot)
 
     # Constrain fit to within +-1 pixel for oot and intrans if desired.
     nr, nc = oot.shape
-
-    if fixfit:
-        bounds = [
-            (nc / 2 - 1, nc / 2 + 1),
-            (nr / 2 - 1, nr / 2 + 1),
-            (0.2, 1),
-            (None, None),
-            (None, None),
-        ]
-
-    else:
-        bounds = [
-            (0, nc),
-            (0, nr),
-            (0.2, 1),
-            (None, None),
-            (None, None),
-        ]
+    
+    #Silently pin max shift to size of postage stamp
+    max_oot_shift_pix = min(max_oot_shift_pix, nc/2, nr/2)
+    
+    #Short names for easier reading
+    c2 = nc/2
+    r2 = nr/2
+    ms = max_oot_shift_pix
+    
+    bounds = [
+        (c2-ms, c2+ms),
+        (r2-ms, r2+ms),
+        (0.2, 1),
+        (None, None),
+        (None, None),
+    ]
 
     guess = pickInitialGuess(oot)
     ootSoln = fpf.fastGaussianPrfFit(oot, guess, bounds=bounds)
