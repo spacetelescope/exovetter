@@ -52,3 +52,16 @@ def test_json_io():
     assert np.isclose(atce["period"].value, 0.830002, atol=1e-7)
     assert atce["period"].unit == "d"
     assert atce["sector"] == 14
+
+
+def test_setting_values():
+    tce = Tce(
+        period=1*u.day, 
+        epoch=1*u.day, 
+        duration=2*u.h, 
+        depth=1*const.ppm, 
+        epoch_offset=const.bkjd
+    )
+    
+    tce['duration']  = 5 * u.h
+    assert tce['duration'] == 5 * u.h, tce
