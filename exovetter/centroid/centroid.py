@@ -7,7 +7,14 @@ import numpy as np
 
 
 def compute_diff_image_centroids(
-        time, cube, period_days, epoch, duration_days, plot=False):
+        time, 
+        cube, 
+        period_days, 
+        epoch, 
+        duration_days, 
+        max_oot_shift_pix=1.5,
+        plot=False
+):
     """Compute difference image centroid shifts for every transit in a dataset.
 
     Given a data cube containing a time-series of images, and a transit
@@ -32,6 +39,8 @@ def compute_diff_image_centroids(
         (float) Epoch of transit centre in the same time system as `time`.
     duration_days
         (float) Duration of transit.
+    max_oot_shift_pix
+        (float) Passed to `fastpsffit.fastGaussianPrfFit()
 
     Returns
     ---------------
@@ -66,7 +75,12 @@ def compute_diff_image_centroids(
     centroids = []
     for i in range(len(transits)):
         cin = transits[i]
-        cents, fig = measure_centroids(cube, cin, plot=plot)
+        cents, fig = measure_centroids(
+            cube, 
+            cin, 
+            max_oot_shift_pix=max_oot_shift_pix,
+            plot=plot
+        )
         centroids.append(cents)
         figs.append(fig)
 
@@ -120,7 +134,7 @@ def getIngressEgressCadences(time, period_days, epoch_btjd, duration_days):
     return transits
 
 
-def measure_centroids(cube, cin, plot=False):
+def measure_centroids(cube, cin, max_oot_shift_pix=1.5, plot=False):
     """Private function of :func:`compute_diff_image_centroids`
 
     Computes OOT, ITR and diff images for a single transit event,
@@ -136,7 +150,7 @@ def measure_centroids(cube, cin, plot=False):
     oot, intrans, diff, ax = generateDiffImg(cube, cin, plot=plot)
 
     guess = pickInitialGuess(oot)
-    ootSoln = fpf.fastGaussianPrfFit(oot, guess)
+    ootSoln = fpf.fastGaussianPrfFit(oot, guess, max_shift_pix=max_oot_shift_pix)
 
     guess = pickInitialGuess(diff)
     diffSoln = fpf.fastGaussianPrfFit(diff, guess)
