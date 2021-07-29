@@ -18,14 +18,15 @@ def plot_modshift(phase, period_days, flux, model, conv, results):
 
     plt.figure(figsize=(8, 8))
     ax = plt.subplot(211)
-    plt.plot(phase, 1e3 * flux, "k.")
-    plt.plot(phase, 1e3 * model, "r-", label="Model")
-    plt.ylabel("Flux (ppk)")
+    plt.plot(phase, flux, "k.", label="Folded Data")
+    plt.plot(phase, model, "r-", label="Model")
+    plt.ylabel("Relative Flux")
+    plt.title("Model Shift")
 
     plt.legend()
 
     plt.subplot(212, sharex=ax)
-    x = np.linspace(-1 * period_days, period_days, len(conv)) * np.max(phase)
+    x = np.linspace(-1 * period_days, period_days, len(conv)) #* np.max(phase)
     plt.plot(x, conv, "b.", label="convolution")
     mark_events(results)
     mark_false_alarm_threshold(results)
