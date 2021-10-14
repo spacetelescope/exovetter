@@ -57,7 +57,7 @@ jobs:
     - name: Test with stable deps and coverage
       run: pytest --cov=./ --cov-report=xml --remote-data
 #    - name: Coverage report
-#      uses: codecov/codecov-action@v1
+#      uses: codecov/codecov-action@v2
 
 #  dev_deps_tests:
 #    runs-on: ubuntu-latest
