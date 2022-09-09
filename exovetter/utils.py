@@ -601,6 +601,27 @@ def compute_phases(time, period, epoch, offset=0.5):
     return phases
 
 
-    
+def calc_weighted_mean_and_error(data, error):
+    """
+
+    Parameters
+    ----------
+    data : array
+        array of values, typically flux. 
+    error : array
+       array of errors on the data
+
+    Returns
+    -------
+    avg : TYPE
+        weighted average of data
+    err : TYPE
+        error on weighted average
+
+    """
+    avg = np.average(data, weights=1./error**2)
+    err = 1./np.sqrt(np.sum(1./error**2))
+    return avg, err
+
     
     

@@ -7,7 +7,8 @@ build-backend = 'setuptools.build_meta'
 [project]
 name = "exovetter"
 version = "0.0.2"
-authors = [{ names = "Susan Mullally"}]
+description = "Transiting Exoplanet Vetting Package for TESS and Kepler"
+authors = [{ names = "Susan Mullally", email="smullally@stsci.edu"}]
 readme = "README.rst"
 license = {file="LICENSE"}
 requires-python = ">=3.7"
