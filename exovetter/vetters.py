@@ -551,7 +551,7 @@ class VizTransits(BaseVetter):
                      plot=True)
 
 from exovetter.tess_vetter import classes as tessclass
-from exovetter.tess_vetter import metrics as tessmetric
+from exovetter.tess_vetter import metrics as tessmetrics
 from exovetter.tess_vetter import plotting
 class TessTransitEventStats(BaseVetter):
     """
@@ -584,26 +584,62 @@ class TessTransitEventStats(BaseVetter):
             
         if self.error_name is not None:
             error = getattr(lightcurve, self.error_name).value
+            
         else:
             error = np.zeros(len(time))
             
+        #Remove nans, but the light curve should be detrended before it gets here.
+        idx = np.isnan(flux) | np.isnan(error)
+        time = time[~idx]
+        flux = flux[~idx]    
+        error = error[~idx]
+        raw = getattr(lightcurve, "raw").value
 
         period_days = tce["period"].to_value(u.day)
         time_offset_q = getattr(exo_const, time_offset_str)
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_days = tce["duration"].to_value(u.day)
         
-        tcelc = tessclass.TransitLightCurve(ticid, time, flux, flux, error,
+        tcelc = tessclass.TransitLightCurve(ticid, time, raw, flux, error,
                                             cadences, period_days, 
                                             epoch, duration_days)
+
+
+        print("Running Metrics")
+        tessmetrics.get_SES_MES(tcelc)
+        tessmetrics.get_single_events(tcelc)
+        tessmetrics.recompute_MES(tcelc)
+        print("Running Uniqueness Test")
+        tessmetrics.get_uniqueness(tcelc)
+        
+        results = {"chases":tcelc.chases,
+                   "rubble":tcelc.rubble,
+                   "Ntransits":tcelc.Nt,
+                   "transit_depth":tcelc.dep,
+                   "newMES":tcelc.new_MES,
+                   "newNtransits":tcelc.new_Nt,
+                   "uni_sig_pri":tcelc.sig_pri,
+                   "uni_sig_sec":tcelc.sig_sec,
+                   "uni_sig_ter":tcelc.sig_ter,
+                   "uni_oe_dep":tcelc.sig_oe,
+                   "uni_mean_med":tcelc.DMM,
+                   "uni_shape":tcelc.SHP,
+                   "uni_Fred":tcelc.Fred,
+                   "uni_sig_FA1":tcelc.FA1,
+                   "uni_sig_FA2":tcelc.FA2,
+                   "uni_phs_pri":tcelc.phs_pri,
+                   "uni_phs_sec":tcelc.phs_sec,
+                   "uni_phs_ter":tcelc.phs_ter,
+                   "uni_phs_pos":tcelc.phs_pos
+            }
+        
         if plot:
             plotting.tlc_plot(tcelc)
             plotting.mes_plot(tcelc)
 
+        return results, tcelc
 
-        return tcelc
-
-    def plot(self, tcelc):
+    def plot(self, tce, lightcurve):
 
         _ = self.run(tce, lightcurve, plot=True)
     

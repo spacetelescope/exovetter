@@ -1,7 +1,7 @@
 import numpy as np
 
 from scipy.special import erfcinv
-from utils import phasefold, get_SNR
+from exovetter.tess_vetter.utils import phasefold, get_SNR
 
 def get_SES_MES(tlc):
     n = len(tlc.t)

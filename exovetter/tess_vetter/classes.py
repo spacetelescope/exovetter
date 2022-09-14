@@ -1,7 +1,7 @@
 import numpy as np
 import batman
 from lmfit import Parameters
-from utils import phasefold, get_mean_and_error, get_SNR
+from exovetter.tess_vetter.utils import phasefold, get_mean_and_error, get_SNR
 
 class TransitLightCurve:
     def __init__(self, tic, t, r, y, dy, c, per, epo, dur):

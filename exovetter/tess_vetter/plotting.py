@@ -52,7 +52,8 @@ def tlc_plot(tlc):
 
 def mes_plot(tlc):
     """
-    Create a MES_Series plot centered on the transit
+    Create a MES_Series plot centered on the transit.
+    Plot a histogram of the transit depths series.
 
     Parameters
     ----------
@@ -71,6 +72,7 @@ def mes_plot(tlc):
     plt.xlim([-2*tlc.qtran, 2*tlc.qtran])
     plt.xlabel("Orbital phase", fontsize=12)
     plt.ylabel("MES", fontsize=12)
+    plt.title("MES Series Plot")
     
     plt.figure(figsize=(8,5))
     plt.hist(tlc.deps*1e6, bins=20, histtype="step")
