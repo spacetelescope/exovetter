@@ -2,6 +2,7 @@
 
 import pprint
 from abc import ABC, abstractmethod
+import numpy as np
 
 import astropy.units as u
 
@@ -548,3 +549,61 @@ class VizTransits(BaseVetter):
         _ = self.run(tce, lightcurve, max_transits=self.max_transits,
                      transit_only=self.transit_only, smooth=self.smooth,
                      plot=True)
+
+from exovetter.tess_vetter import classes as tessclass
+from exovetter.tess_vetter import metrics as tessmetric
+from exovetter.tess_vetter import plotting
+class TessTransitEventStats(BaseVetter):
+    """
+    Wrapper for Michelle's TESS-robovetter vetting metrics and fits.
+    Calculates masks for in and out of transit
+    Calculates a MES
+    Gives a transit fit parameters if requested
+    Does a uniquenesstest
+    Returns a plot if requested.
+    
+    """
+    
+    def __init__(self, lc_name="flux", error_name=None):
+        
+        self.tce = None
+        self.lc_name = lc_name
+        self.error_name = error_name
+
+    def run(self, tce, lightcurve, plot=False):
+
+        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+            lightcurve, self.lc_name)  # noqa: E50
+        
+        cadences = getattr(lightcurve, "cadenceno").value
+
+        try:
+            ticid = lightcurve.meta['TICID']
+        except KeyError:
+            ticid  = -1
+            
+        if self.error_name is not None:
+            error = getattr(lightcurve, self.error_name).value
+        else:
+            error = np.zeros(len(time))
+            
+
+        period_days = tce["period"].to_value(u.day)
+        time_offset_q = getattr(exo_const, time_offset_str)
+        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+        duration_days = tce["duration"].to_value(u.day)
+        
+        tcelc = tessclass.TransitLightCurve(ticid, time, flux, flux, error,
+                                            cadences, period_days, 
+                                            epoch, duration_days)
+        if plot:
+            plotting.tlc_plot(tcelc)
+            plotting.mes_plot(tcelc)
+
+
+        return tcelc
+
+    def plot(self, tcelc):
+
+        _ = self.run(tce, lightcurve, plot=True)
+    

@@ -8,9 +8,11 @@ from the class TransitLightCurve
 
 """
 
+import numpy as np
+
 from exovetter import utils
 
-def transit_lc_masks(time, flux, error, cadence, period, epoch, 
+def transit_lc_masks(time, flux, error, period, epoch, 
                      duration, plot=False):
     
     """
@@ -78,52 +80,99 @@ def transit_lc_masks(time, flux, error, cadence, period, epoch,
     
     
     if plot:
+        
         fig, ax = plt.subplots(2,2, figsize=(12,8))
         
         ax[0,0].plot(phases, flux, "k.", label="Phased Flux")
-        ax[0,0].plot(phases[in_transit], flux[in_transit],"C0.", label="1 transit duration"])
-        ax[0,0].plot(phases[fit_intransit], flux[fit_intransit], "C1.", label="4 transit durations"
+        ax[0,0].plot(phases[in_transit], flux[in_transit], "C0.", label="1 transit duration")
+        ax[0,0].plot(phases[fit_intransit], flux[fit_intransit], "C1.", label="4 transit durations")
         ax[0,0].set_xlim([-2.5*qtran, 2.5*qtran])
         ax[0,0].legend()
         
         ax[0,1].plot(time, flux, "k.", "Relative Flux")
         ax[0,1].plot(time[odd_intransit], flux[odd_intransit], "C0.", label="Odd transits")
         ax[0,1].plot(time[even_intransit],flux[even_intransit], "C1.", label="Even transits")
-        ax[0,0].set_xlim([epoch, epoch + 6*period)
+        ax[0,0].set_xlim(epoch, epoch + 6*period)
         ax[0,1].legend()
         
         ax[1,0].plot(phases, flux, "k.", "Relative Flux")
         ax[1,0].plot(phases[left_intransit], flux[left_intransit], "C0.", label="Left side of transits")
-        ax[1,0].plot(phases[right_intransit], flux[right_intran], "C1.", label="Right side of transits")
-        ax[1,0].set_xlim([-2*tlc.qtran, 2*tlc.qtran])
+        ax[1,0].plot(phases[right_intransit], flux[right_intransit], "C1.", label="Right side of transits")
+        ax[1,0].set_xlim([-2*qtran, 2*qtran])
         ax[1,0].legend()
         
         ax[1,1].plot(phases2, flux, "Phased Flux")
         ax[1,1].plot(phases2[odd_intransit], flux[odd_intransit], "C0.", label="Odd transits")
         ax[1,1].plot(phases2[even_intransit], flux[even_intransit], "C1.", label="Even transits")
-        ax[1,1].set_xlim([-2*tlc.qtran, 2*tlc.qtran])
+        ax[1,1].set_xlim([-2*qtran, 2*qtran])
         ax[1,1].legend()
-   
         
-   return results
+    return results
 
+def get_SNR(y, dy, zpt, zpt_err):
+    #Primary calculation for the MES
+    #y is the flux in transit and dy is the error when fully in transit.
+    #zpt and zpt_err is zero point and error we are working relative to.
+    #Original code this was the avg for the near_transit (+-1 dur each side) 
+    #weighted mean and error..
+    
+    avg, err = get_mean_and_error(y, dy)
+    dep = zpt - avg
+    err = np.sqrt(zpt_err**2 + err**2)
+    
+    mes = dep/err
+    
+    return mes
 
- def get_SES_MES(time, flux, error, period, epoch):
-    n = len(tlc.t)
-    dep_series = np.zeros(n)
-    err_series = np.zeros(n)
+def get_SES_MES_series(time, flux, error, period, epoch, duration):
+    """
+    Given a flux time series and event,
+    this returns the ses time series and mes time series
+
+    Parameters
+    ----------
+    time : TYPE
+        DESCRIPTION.
+    flux : TYPE
+        DESCRIPTION.
+    error : TYPE
+        DESCRIPTION.
+    period : TYPE
+        DESCRIPTION.
+    epoch : TYPE
+        DESCRIPTION.
+    duration : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    SES and MES time series
+    Note, Max of MES time series is what is known as the MES of the event.
+
+    """
+    n = len(time)
+    qtran = duration/period
+    
     SES_series = np.zeros(n)
     MES_series = np.zeros(n)
-    phase = phasefold(tlc.t, tlc.per, tlc.epo)
-    phase[phase < 0] += 1
+    
+    phases = utils.compute_phases(time, period, epoch, offset=0)
+    phases[phases < 0] += 1
+    
+    mask_dict =  transit_lc_masks(time, flux, error, period, epoch, 
+                     duration, plot=False)
+    
+    zpt, zpt_err = utils.calc_weighted_mean_and_error(flux[mask_dict['in_transit']], 
+                                                      error[mask_dict['in_transit']])
+    
     for i in range(n):
         # Get SES for this cadence - only use datapoints close in time
-        in_tran = (abs(tlc.t - tlc.t[i]) < 0.5*tlc.dur)
-        _, _, SES_series[i] = get_SNR(tlc.y[in_tran], tlc.dy[in_tran], tlc.zpt, tlc.zpt_err)
+        in_tran = (abs(time - time[i]) < 0.5*duration)
+        SES_series[i] = get_SNR(flux[in_tran], error[in_tran], zpt, zpt_err)
+        
         # Get MES for this cadence - use all datapoints close in phase
-        in_tran = (abs(phase - phase[i]) < 0.5*tlc.qtran) | (abs(phase - phase[i]) > 1-0.5*tlc.qtran)
-        dep_series[i], err_series[i], MES_series[i] = get_SNR(tlc.y[in_tran], tlc.dy[in_tran], tlc.zpt, tlc.zpt_err)
-    tlc.dep_series = dep_series
-    tlc.err_series = err_series
-    tlc.SES_series = SES_series
-    tlc.MES_series = MES_series
+        in_tran = (abs(phases - phases[i]) < 0.5*qtran) | (abs(phases - phases[i]) > 1-0.5*qtran)
+        MES_series[i] = get_SNR(flux[in_tran], error[in_tran], zpt, zpt_err)
+
+    SES_series = SES_series
+    MES_series = MES_series
