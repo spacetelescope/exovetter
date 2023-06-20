@@ -325,8 +325,9 @@ def plot_lpp_diagnostic(data, target, norm_lpp):
     ax2.plot(flux, 'k.', ms=5, label=f"LPP Norm = {norm_lpp:5.3f}")
     ax2.set_xlabel('Bin Number')
     ax2.legend()
-
-    plt.draw()
+    
+    fig.tight_layout()
+    plt.draw() #Why is this here? MD 2023
 
     return fig
 

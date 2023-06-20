@@ -25,7 +25,7 @@ def test_modshift():
     assert np.isclose(res["pri"], 0, atol=1) or \
         np.isclose(res["pri"], 99, atol=1), res
     assert np.isclose(res["sec"], 84 - epoch, atol=2), res
-    return res
+    #return res # commented out MD 2023
 
 
 def test_single_epoch_sigma():

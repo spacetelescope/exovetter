@@ -36,7 +36,7 @@ def test_one_lpp():
             flux_column="sap_flux")
     lc = lcf.remove_nans().remove_outliers()
     flat = lc.flatten(window_length=81)
-    flat.flux = flat.flux.value - 1.0
+    # flat.flux = flat.flux.value - 1.0 #No longer needed, subtraction already done MD 2023
 
     # Use default .mat file from SourceForge
     lpp = vetters.Lpp(lc_name="flux", map_filename=None)
