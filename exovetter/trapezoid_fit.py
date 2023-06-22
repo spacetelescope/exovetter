@@ -742,7 +742,8 @@ class TrapezoidFit:
 
         """
         import scipy.optimize as opt
-        from astropy.utils.compat.context import nullcontext
+        # from astropy.utils.compat.context import nullcontext # removed as depricated MD 2023
+        from contextlib import nullcontext # added instead of astropy's nullcontext ^
         from astropy.utils.misc import NumpyRNGContext
 
         if options is None:

@@ -115,7 +115,7 @@ def mark_transit_cadences(time, period_days, epoch_bkjd, duration_days,
     big_num = sys.float_info.max  # A large value that isn't NaN
     max_diff = 0.5 * duration_days * num_durations
 
-    idx = np.zeros_like(time, dtype=np.bool8)
+    idx = np.zeros_like(time, dtype=np.bool_) # Changed from np.bool8 to np.bool_ MD 2023  
     for tt in transit_times:
         diff = time - tt
         diff[flags] = big_num
@@ -437,7 +437,8 @@ class WqedLSF:
         covar = np.linalg.inv(A)
 
         wy = self.y / self.s
-        beta = np.dot(wy, df)
+        df = df.T # transposed to work with np.dot updates MD 2023
+        beta = np.dot(df, wy) # swapped order in dot product MD 2023
         params = np.dot(beta, covar)
 
         # Store results

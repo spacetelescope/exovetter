@@ -63,7 +63,8 @@ def sweet(time, flux, period, epoch, duration, plot=False):
 
     if plot:
         import matplotlib.pyplot as plt
-        plt.clf()
+        #plt.clf() # removed MD 2023
+        plt.figure(figsize=(7,7)) # Added MD 2023
 
     out = []
     for i, per in enumerate([period * 0.5, period, 2 * period]):
