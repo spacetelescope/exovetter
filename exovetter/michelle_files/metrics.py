@@ -49,9 +49,13 @@ def get_single_events(tlc, frac=0.6):
         # Find how much of the transit falls in gaps
         near_epoch = tlc.near_tran & (tlc.epochs == epoch)
         nobs = np.sum(near_epoch)
-        cadence = 30 if tlc.c[near_epoch][0] < 40000 else 10
+        #cadence = 30 if tlc.c[near_epoch][0] < 40000 else 10 #MD 2023 Commented out 
+
+        cadence = tlc.cadence_len
+        
         nexp = 2*tlc.dur*24*60/cadence
         rubble[i] = nobs/nexp
+
     tlc.deps = deps
     tlc.SES = SES
     tlc.chases = chases

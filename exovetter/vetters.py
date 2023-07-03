@@ -767,10 +767,13 @@ class TessTransitEventStats(BaseVetter):
     
     """
     
-    def __init__(self, lc_name="flux", error_name=None):
+    def __init__(self, lc_name="flux", raw_name=None, error_name=None, cadence_len=None):
+        '''Cadence needs to be defined'''
         
         self.tce = None
         self.lc_name = lc_name
+        self.raw_name = raw_name
+        self.cadence_len = cadence_len
         self.error_name = error_name
 
     def run(self, tce, lightcurve, plot=False):
@@ -778,7 +781,11 @@ class TessTransitEventStats(BaseVetter):
         time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
             lightcurve, self.lc_name)  # noqa: E50
         
-        cadences = getattr(lightcurve, "cadenceno").value
+        if self.cadence_len is None:
+            self.cadence_len = (lightcurve['time'][2]-lightcurve['time'][1]).to_value(u.minute)
+            print('Cadence length not specified, calculated from time array to be:', self.cadence_len, 'minutes')
+        
+        cadences = getattr(lightcurve, "cadenceno").value #MD Maybe can go away, at least it's gone from get_single_events
 
         try:
             ticid = lightcurve.meta['TICID']
@@ -786,7 +793,7 @@ class TessTransitEventStats(BaseVetter):
             ticid  = -1
             
         if self.error_name is not None:
-            error = getattr(lightcurve, self.error_name).value
+            error = np.asarray(getattr(lightcurve, self.error_name).value)
             
         else:
             error = np.zeros(len(time))
@@ -796,7 +803,7 @@ class TessTransitEventStats(BaseVetter):
         time = time[~idx]
         flux = flux[~idx]    
         error = error[~idx]
-        raw = getattr(lightcurve, "raw").value
+        raw = getattr(lightcurve, self.raw_name).value
 
         period_days = tce["period"].to_value(u.day)
         time_offset_q = getattr(exo_const, time_offset_str)
@@ -805,7 +812,7 @@ class TessTransitEventStats(BaseVetter):
         
         tcelc = tessclass.TransitLightCurve(ticid, time, raw, flux, error,
                                             cadences, period_days, 
-                                            epoch, duration_days)
+                                            epoch, duration_days, self.cadence_len)
 
 
         print("Running Metrics")

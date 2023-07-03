@@ -4,7 +4,8 @@ from lmfit import Parameters
 from exovetter.michelle_files.michelle_utils import phasefold, get_mean_and_error, get_SNR
 
 class TransitLightCurve:
-    def __init__(self, tic, t, r, y, dy, c, per, epo, dur):
+    def __init__(self, tic, t, r, y, dy, c, per, epo, dur, cadence_len):
+        #MD: Make cleaner
         self.tic = tic
         self.t = t
         self.r = r
@@ -14,6 +15,8 @@ class TransitLightCurve:
         self.per = per
         self.epo = epo
         self.dur = dur
+        self.cadence_len = cadence_len
+
         self.qtran = dur/per
         # Phase spans -0.5 to 0.5 with transit at 0
         self.phase = phasefold(t, per, epo)
