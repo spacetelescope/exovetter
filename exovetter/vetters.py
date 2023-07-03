@@ -754,6 +754,8 @@ class VizTransits(BaseVetter):
 from exovetter.michelle_files import classes as tessclass
 from exovetter.michelle_files import metrics as tessmetrics
 from exovetter.michelle_files import plotting
+
+import numpy as np #MD Can't belive the others don't depend on this, I guess all np stuff should be internal to michelle_files
 class TessTransitEventStats(BaseVetter):
     """
     Wrapper for Michelle's TESS-robovetter vetting metrics and fits.
