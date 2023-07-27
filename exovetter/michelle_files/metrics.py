@@ -33,6 +33,7 @@ def get_single_events(tlc, frac=0.6):
         get_SES_MES(tlc)
     # Search range for Chases metric is between 1.5 durations and 0.1 times the period from the transit centre
     near_tran = (abs(tlc.phase) > 1.5*tlc.qtran) & (abs(tlc.phase) < 0.1)
+    
     # Compute individual transit metrics
     for i in range(tlc.Nt):
         epoch = tlc.tran_epochs[i]
@@ -42,12 +43,14 @@ def get_single_events(tlc, frac=0.6):
         deps[i], _, SES[i] = get_SNR(tlc.y[in_epoch], tlc.dy[in_epoch], tlc.zpt, tlc.zpt_err)
         # Find the most significant nearby event
         near_epoch = near_tran & (tlc.epochs == epoch) & (np.abs(tlc.SES_series) > frac*SES[i])
+        
         if np.any(near_epoch):
             chases[i] = np.min(np.abs(tlc.t[near_epoch] - transit_time))/(0.1*tlc.per)
         else:
             chases[i] = 1
         # Find how much of the transit falls in gaps
         near_epoch = tlc.near_tran & (tlc.epochs == epoch)
+        
         nobs = np.sum(near_epoch)
         #cadence = 30 if tlc.c[near_epoch][0] < 40000 else 10 #MD 2023 Commented out 
 

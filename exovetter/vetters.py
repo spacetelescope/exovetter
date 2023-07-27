@@ -852,3 +852,88 @@ class TessTransitEventStats(BaseVetter):
     def plot(self, tce, lightcurve):
 
         _ = self.run(tce, lightcurve, plot=True)
+
+#_________________MY IMPLEMENTATION______________________
+
+class single_transit_vetter(BaseVetter):
+    """single transit vetter."""
+
+    def __init__(self, lc_name="flux", cadence_len=None, error_name=None):
+        """
+        Parameters
+        ----------
+        lc_name : str
+            Name of the flux array in the ``lightkurve`` object.
+
+        cadence_len : float
+            Cadence lengh in SOME UNITS OF TIME? Defaults to difference
+            in 2nd and 1st index of time in lightcurve if not defined.
+
+        error_name : Seems to be the name of the error column you want from the lightcurve object
+
+        """
+        self.lc_name = lc_name
+        self.cadence_len = cadence_len
+        self.error_name = error_name
+
+    def run(self, tce, lightcurve, plot=False):  
+        """
+        Runs single_transit.single_transit to populate the vetter object.
+        
+        """
+        #Returns a results dictionary with Ntransits, chases array, rubble array, zuma array,
+        from exovetter import single_transit
+
+        self.tce = tce
+        self.lc = lightcurve
+
+        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+            lightcurve, self.lc_name)
+        
+        if self.cadence_len is None:
+            self.cadence_len = (lightcurve['time'][2]-lightcurve['time'][1]).to_value(u.minute)
+            print('Cadence length not specified, calculated from time array to be:', self.cadence_len, 'minutes')
+        
+        period_days = tce["period"].to_value(u.day)
+
+        time_offset_q = getattr(exo_const, time_offset_str)
+        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+
+        duration_days = tce["duration"].to_value(u.day)
+        
+        if self.error_name is not None:
+            error = np.asarray(getattr(lightcurve, self.error_name).value)
+            
+        else:
+            error = np.zeros(len(time))
+
+        #Is this necessary?
+        idx = np.isnan(flux) | np.isnan(error)
+        time = time[~idx]
+
+        
+        self.Ntransits, phase, qtran, in_tran, tran_epochs, epochs = single_transit.transit_count(time, period_days, 
+                                                                                          epoch, duration_days)
+        
+        self.chases_array, self.rubble_array = single_transit.single_event_metrics(self.Ntransits, phase, qtran, 
+                                                                                   in_tran, tran_epochs, epochs, 
+                                                                                   epoch, period_days, flux,
+                                                                                   error, time, duration_days,
+                                                                                   self.cadence_len)
+        
+        # self.zuma_array = SOMEWHERE_THIS EXISTS?
+
+        self.metrics = {
+            "N_transits": self.Ntransits,
+            "chases": self.chases_array,
+            "rubble": self.rubble_array,
+            # "zuma": self.zuma_array,
+        }
+
+        if plot:
+            print('plotting')
+
+        return self.metrics
+
+    def plot(self):  # pragma: no cover
+        self.run(self.tce, self.lc, plot=True)
