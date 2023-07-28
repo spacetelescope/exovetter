@@ -854,6 +854,7 @@ class TessTransitEventStats(BaseVetter):
         _ = self.run(tce, lightcurve, plot=True)
 
 #_________________MY IMPLEMENTATION______________________
+from exovetter import transit_event_stats
 
 class single_transit_vetter(BaseVetter):
     """single transit vetter."""
@@ -878,11 +879,10 @@ class single_transit_vetter(BaseVetter):
 
     def run(self, tce, lightcurve, plot=False):  
         """
-        Runs single_transit.single_transit to populate the vetter object.
+        Runs transit_event_stats.single_transit to populate the vetter object.
         
         """
         #Returns a results dictionary with Ntransits, chases array, rubble array, zuma array,
-        from exovetter import single_transit
 
         self.tce = tce
         self.lc = lightcurve
@@ -912,10 +912,10 @@ class single_transit_vetter(BaseVetter):
         time = time[~idx]
 
         
-        self.Ntransits, phase, qtran, in_tran, tran_epochs, epochs = single_transit.transit_count(time, period_days, 
+        self.Ntransits, phase, qtran, in_tran, tran_epochs, epochs = transit_event_stats.transit_count(time, period_days, 
                                                                                           epoch, duration_days)
         
-        self.chases_array, self.rubble_array = single_transit.single_event_metrics(self.Ntransits, phase, qtran, 
+        self.chases_array, self.rubble_array = transit_event_stats.single_event_metrics(self.Ntransits, phase, qtran, 
                                                                                    in_tran, tran_epochs, epochs, 
                                                                                    epoch, period_days, flux,
                                                                                    error, time, duration_days,
@@ -931,7 +931,65 @@ class single_transit_vetter(BaseVetter):
         }
 
         if plot:
-            print('plotting')
+            print('No plotting implemented')
+
+        return self.metrics
+
+    def plot(self):  # pragma: no cover
+        self.run(self.tce, self.lc, plot=True)
+
+class snr_metrics(BaseVetter):
+    """snr metrics vetter."""
+
+    def __init__(self, lc_name="flux", error_name=None):
+        """
+        Parameters
+        ----------
+        lc_name : str
+            Name of the flux array in the ``lightkurve`` object.
+
+        error_name : Seems to be the name of the error column you want from the lightcurve object
+
+        """
+        self.lc_name = lc_name
+        self.error_name = error_name
+
+    def run(self, tce, lightcurve, plot=False):  
+        """
+        Runs transit_event_stats.snr_metrics to populate the vetter object.
+        
+        """
+        #Returns a results dictionary with SES array, MES array, and other stats
+
+        self.tce = tce
+        self.lc = lightcurve
+
+        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+            lightcurve, self.lc_name)
+        
+        period_days = tce["period"].to_value(u.day)
+
+        time_offset_q = getattr(exo_const, time_offset_str)
+        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+
+        duration_days = tce["duration"].to_value(u.day)
+        
+        if self.error_name is not None:
+            error = np.asarray(getattr(lightcurve, self.error_name).value)
+            
+        else:
+            error = np.zeros(len(time))
+
+        # #Is this necessary?
+        idx = np.isnan(flux) | np.isnan(error)
+        time = time[~idx]
+
+        snr_metrics_results = transit_event_stats.snr_metrics(time, period_days, epoch, duration_days, flux, error)
+
+        self.metrics = snr_metrics_results
+
+        if plot:
+            print('No plotting implemented')
 
         return self.metrics
 
