@@ -602,7 +602,7 @@ def compute_phases(time, period, epoch, offset=0.5):
     return phases
 
 
-#Michelle's utils: Should phasefold usage be replaced with compute_phases? or compute_phase?
+# Michelle's utils: Should phasefold usage be replaced with compute_phases? or compute_phase?
 def phasefold(t, per, epo):
     # Phase will span -0.5 to 0.5, with transit centred at phase 0
     phase = np.mod(t - epo, per)/per
@@ -619,6 +619,87 @@ def get_SNR(y, dy, zpt, zpt_err):
     dep = zpt - avg
     err = np.sqrt(zpt_err**2 + err**2)
     return dep, err, dep/err
+
+
+# Implementation of remove bad transits function
+def recompute_MES(tlc, chases=0.01, rubble=0.75):
+    if not hasattr(tlc, "SES"):
+        print("Warning! Individual transit metrics were not computed. Computing now...")
+        get_single_events(tlc) 
+    rubble_flag = (tlc.rubble <= rubble)
+    zuma_flag = (tlc.SES < 0)
+    if tlc.Nt <= 5:       
+        chases_flag = (tlc.chases < chases)
+        bad_epochs = (chases_flag | rubble_flag | zuma_flag)
+    else:
+        bad_epochs = (rubble_flag | zuma_flag)
+    use_tran = (tlc.in_tran & ~np.isin(tlc.epochs, tlc.tran_epochs[bad_epochs]))
+    if np.any(use_tran):
+        _, _, tlc.new_MES = get_SNR(tlc.y[use_tran], tlc.dy[use_tran], tlc.zpt, tlc.zpt_err)
+        tlc.new_Nt = len(tlc.tran_epochs[~bad_epochs])
+    else:
+        tlc.new_MES = 0
+        tlc.new_Nt = 0
+
+def remove_bad_transits_from_lightcurve(st_results, chases_threshold=0.01, rubble_threshold=0.75):
+    """Remove bad transits from a lc.
+
+    Parameters
+    ----------
+    lightcurve : lightkurve object
+            lightkurve object with the time and flux of the data to use for vetting. 
+
+    st_results : dictionary
+        Results dictionary from single_transit_vetter
+
+    chases_threshold : float
+        Threshold for chases, default 0.01
     
+    rubble_threshold : float
+        Threshold for rubble, default 0.75
+
+    Returns
+    -------
+    result_dict : dictionary
+        centroid result dictionary containing the following:
+                original_lc : original lightkurve object
+                transit_mask : array of True or False of which tranists are kept
+                lc_mask: array of True of False which can be applied to the original light curve to get the cleaned one
+                n_bad_transits : Int of number of points in the lightcurve which would be masked out
+                new_max_mes : Float of the max mes of the new lightcurve 
+
+    """
+
+
+    rubble_flag = (st_results['rubble'] <= rubble_threshold)
+    zuma_flag = (st_results['SES'] < 0)
+
+    if st_results['N_transits'] <= 5:       
+        chases_flag = (st_results['rubble'] < chases_threshold)
+        bad_epochs = (chases_flag | rubble_flag | zuma_flag)
+    else:
+        bad_epochs = (rubble_flag | zuma_flag)
     
+    use_tran = (st_results['in_tran'] & ~np.isin(st_results['epochs'], st_results['tran_epochs'][bad_epochs]))
+    
+    if np.any(use_tran):
+        _, _, new_MES = get_SNR(st_results['flux'][use_tran], st_results['error'][use_tran], st_results['zpt'], st_results['zpt_err'])
+        new_Nt = len(st_results['tran_epochs'][~bad_epochs])
+        
+    else:
+        new_MES = 0
+        new_Nt = 0
+        print('No transits found with given thresholds.') #Added print, MD 2023
+
+    n_bad_transits = st_results['N_transits'] - new_Nt
+    
+    result_dict = {
+            # "original_lc": lc,
+            "transit_mask": ~bad_epochs,
+            "lc_mask": ~np.isin(st_results['epochs'], st_results['tran_epochs'][bad_epochs]),
+            "n_bad_transits": n_bad_transits,
+            "new_max_mes": new_MES,
+            
+        }
+    return result_dict 
     

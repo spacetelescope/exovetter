@@ -78,9 +78,9 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
     if plot:
         plt.figure(figsize=(figwid, nsteps))
         transits  =  np.floor(np.unique(ntransit[intransit]))
-        print(transits[0:nsteps])
-        print(nsteps)
-        print(ntransit)
+        # print(transits[0:nsteps]) # Commented out MD 2023
+        # print(nsteps)
+        # print(ntransit)
         
         for i, nt in enumerate(transits[0:nsteps]): 
             

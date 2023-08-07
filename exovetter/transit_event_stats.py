@@ -62,7 +62,7 @@ def single_event_metrics(Nt, phase, qtran, in_tran, tran_epochs, epochs, epo, pe
 
     # Search range for Chases metric is between 1.5 durations and 0.1 times the period from the transit centre
     chases_near_tran = (abs(phase) > 1.5*qtran) & (abs(phase) < 0.1) 
-    #^It's taking the else path for chases so unsure if correct bc of those hardcoded values
+    #^It's taking the else path for chases so unsure if correct
     
     rubble_near_tran = (abs(phase) < qtran) #This is what is used in the TransitLightCurve class
 
@@ -103,7 +103,7 @@ def single_event_metrics(Nt, phase, qtran, in_tran, tran_epochs, epochs, epo, pe
         nexp = 2*duration_days*24*60/cadence
         rubble[i] = nobs/nexp
 
-    return chases, rubble
+    return chases, rubble, SES, zpt, zpt_err
 
 def snr_metrics(time, period_days, epoch, duration_days, flux, error, nTCE=20000):
     """Get snr metrics

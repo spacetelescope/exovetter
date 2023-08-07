@@ -691,6 +691,7 @@ class VizTransits(BaseVetter):
         self.smooth = smooth
         self.tce = None
         self.metrics = None
+        self.lc = None
 
     def run(self, tce, lightcurve, plot=False):
         """Runs viz_transits.plot_all_transits to populate the vetter object.
@@ -713,6 +714,10 @@ class VizTransits(BaseVetter):
             centroid result dictionary containing the following:
                 num_transits : Number of transits with data in transit (3*duration).
         """
+        
+        self.tce = tce
+        self.lc = lightcurve
+
 
         time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
             lightcurve, self.lc_name)  # noqa: E50
@@ -740,11 +745,14 @@ class VizTransits(BaseVetter):
 
         return self.metrics
 
-    def plot(self, tce, lightcurve):
+    def plot(self):  # pragma: no cover
+        self.run(self.tce, self.lc, plot=True)
+    
+    # def plot(self, tce, lightcurve): #OLD PLOT METHOD, MD 2023
 
-        _ = self.run(tce, lightcurve, max_transits=self.max_transits,
-                     transit_only=self.transit_only, smooth=self.smooth,
-                     plot=True)
+    #     _ = self.run(tce, lightcurve, max_transits=self.max_transits,
+    #                  transit_only=self.transit_only, smooth=self.smooth,
+    #                  plot=True)
 
 
 
@@ -755,7 +763,7 @@ from exovetter.michelle_files import classes as tessclass
 from exovetter.michelle_files import metrics as tessmetrics
 from exovetter.michelle_files import plotting
 
-import numpy as np #MD Can't belive the others don't depend on this, I guess all np stuff should be internal to michelle_files
+import numpy as np 
 class TessTransitEventStats(BaseVetter):
     """
     Wrapper for Michelle's TESS-robovetter vetting metrics and fits.
@@ -856,7 +864,7 @@ class TessTransitEventStats(BaseVetter):
 #_________________MY IMPLEMENTATION______________________
 from exovetter import transit_event_stats
 
-class single_transit_vetter(BaseVetter):
+class SingleTransit(BaseVetter):
     """single transit vetter."""
 
     def __init__(self, lc_name="flux", cadence_len=None, error_name=None):
@@ -887,7 +895,7 @@ class single_transit_vetter(BaseVetter):
         self.tce = tce
         self.lc = lightcurve
 
-        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
+        time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(
             lightcurve, self.lc_name)
         
         if self.cadence_len is None:
@@ -902,31 +910,40 @@ class single_transit_vetter(BaseVetter):
         duration_days = tce["duration"].to_value(u.day)
         
         if self.error_name is not None:
-            error = np.asarray(getattr(lightcurve, self.error_name).value)
+            self.error = np.asarray(getattr(lightcurve, self.error_name).value)
             
         else:
-            error = np.zeros(len(time))
+            self.error = np.zeros(len(time))
+            print('No error specified, assuming 0 error')
 
         #Is this necessary?
-        idx = np.isnan(flux) | np.isnan(error)
+        idx = np.isnan(self.flux) | np.isnan(self.error)
         time = time[~idx]
 
         
-        self.Ntransits, phase, qtran, in_tran, tran_epochs, epochs = transit_event_stats.transit_count(time, period_days, 
-                                                                                          epoch, duration_days)
+        self.Ntransits, phase, qtran, self.in_tran, self.tran_epochs, self.epochs = transit_event_stats.transit_count(time, period_days, 
+                                                                                                                      epoch, duration_days)
         
-        self.chases_array, self.rubble_array = transit_event_stats.single_event_metrics(self.Ntransits, phase, qtran, 
-                                                                                   in_tran, tran_epochs, epochs, 
-                                                                                   epoch, period_days, flux,
-                                                                                   error, time, duration_days,
-                                                                                   self.cadence_len)
+        self.chases_array, self.rubble_array, self.SES, self.zpt, self.zpt_err = transit_event_stats.single_event_metrics(self.Ntransits, phase, qtran, 
+                                                                                                                          self.in_tran, self.tran_epochs, self.epochs, 
+                                                                                                                          epoch, period_days, self.flux,
+                                                                                                                          self.error, time, duration_days,
+                                                                                                                          self.cadence_len)
         
-        # self.zuma_array = SOMEWHERE_THIS EXISTS?
+        # self.zuma_array = SOMEWHERE_THIS EXISTS? or is it where SES < 0?
 
         self.metrics = {
             "N_transits": self.Ntransits,
             "chases": self.chases_array,
             "rubble": self.rubble_array,
+            "SES": self.SES,
+            "in_tran": self.in_tran,
+            "epochs": self.epochs,
+            "tran_epochs": self.tran_epochs,
+            "flux": self.flux,
+            "error": self.error,
+            "zpt": self.zpt,
+            "zpt_err": self.zpt_err
             # "zuma": self.zuma_array,
         }
 
@@ -938,7 +955,7 @@ class single_transit_vetter(BaseVetter):
     def plot(self):  # pragma: no cover
         self.run(self.tce, self.lc, plot=True)
 
-class snr_metrics(BaseVetter):
+class SnrMetrics(BaseVetter):
     """snr metrics vetter."""
 
     def __init__(self, lc_name="flux", error_name=None):
@@ -979,6 +996,7 @@ class snr_metrics(BaseVetter):
             
         else:
             error = np.zeros(len(time))
+            print('No error specified, assuming 0 error')
 
         # #Is this necessary?
         idx = np.isnan(flux) | np.isnan(error)
