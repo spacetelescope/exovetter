@@ -23,7 +23,7 @@ class BaseVetter(ABC):
 
     Each vetting test should be a subclass of this class.
 
-    Parameters
+    Inputs
     ----------
     kwargs
         (dict) Store the configuration parameters common to all
