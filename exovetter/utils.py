@@ -599,7 +599,6 @@ def compute_phases(time, period, epoch, offset=0.5):
     else:
         epoch0 = epoch + np.floor(n_periods) * period
     phases = np.fmod(time - epoch0 + (offset * period), period)
-    pmin = np.min(phases)
 
     return phases
 
