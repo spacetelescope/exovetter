@@ -25,8 +25,8 @@ class BaseVetter(ABC):
 
     Parameters
     ----------
-    kwargs : dict
-        Store the configuration parameters common to all
+    kwargs
+        (dict) Store the configuration parameters common to all
         Threshold Crossing Events (TCEs).
         For example, for the Odd-even test, it might specify the significance
         of the depth difference that causes a TCE to fail.

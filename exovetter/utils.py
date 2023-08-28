@@ -1,5 +1,3 @@
-"""Utility functions."""
-
 import sys
 import warnings
 
@@ -158,17 +156,21 @@ def plateau(array, threshold):
     same threshold from below.
 
     Inputs:
-    array       (1d numpy array)
-    threshold   (float or array) If threshold is a single number, any point
-                above that value is above threshold. If it's an array,
-                it must have the same length as the first argument, and
-                an array[i] > threshold[i] to be included as a plateau
+    ---------
+    array       
+        (1d numpy array)
+    threshold   
+        (float or array) If threshold is a single number, any point
+        above that value is above threshold. If it's an array,
+        it must have the same length as the first argument, and
+        an array[i] > threshold[i] to be included as a plateau
 
     Returns:
+    ----------
     Numpy 2d array with 2 columns.
 
-
     Notes:
+    -----------
     To find the length of the plateaus, use
     out[:,1] - out[:,0]
 
