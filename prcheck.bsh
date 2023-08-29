@@ -1,0 +1,192 @@
+#!/bin/bash 
+
+# Quick script to check everything is ready for a PR push
+#TODO: turn this into functions
+
+srcdir=exovetter
+testdir=tests 
+docdir=docs
+
+
+function test_pyflakes
+{
+    fail=0
+    for dir in $@
+    do
+        pyflakes $dir > log.txt
+        if [ -s log.txt ]
+        then
+            cat log.txt
+            rm log.txt
+            fail=1
+        fi
+    done
+
+    if [ $fail -gt 0 ]
+    then
+        echo "FAIL: pyflakes violations found"
+        exit 1
+    fi
+    echo "PASS: No pyflakes violations found"
+}
+
+
+function test_pycodestyle
+{
+    fail=0
+    for dir in $@
+    do
+        pycodestyle $dir > log.txt
+        if [ -s log.txt ]
+        then
+            cat log.txt
+            rm log.txt
+            fail=1
+        fi
+    done
+
+    if [ $fail -gt 0 ]
+    then
+        echo "FAIL: pycodestyle violations found"
+        exit 1
+    fi
+    echo "PASS: No pycodestyle violations found"
+}
+
+
+function test_paths_exist
+{
+    fail=0
+    for dir in $@
+    do
+        if [ ! -e $dir ]
+        then
+            echo "Path $dir not found. Are you in top level directory"
+            fail=1
+        fi
+    done 
+    
+    if [ $fail -gt 0 ]
+    then
+        echo "FAIL: Not all paths found"
+        exit 1
+    fi
+    echo "PASS: All paths found"
+}
+
+
+function test_uncommitted
+{
+    fail=0
+    for dir in $@
+    do
+        uncommit=`git diff --numstat $dir  | wc -l`
+        if [ $uncommit -gt  0 ]
+        then
+            echo "FAIL: $uncommit files in $dir need to be checked in"
+            fail=1
+        fi
+    done 
+    
+    if [[ $fail -gt 0 ]]
+    then
+        echo "FAIL: Modified files found"
+        git diff --numstat | cat
+        exit 1
+    fi
+    echo "PASS: All files added to git are checked in"
+}
+
+
+function test_untracked
+{
+    fail=0
+    for dir in $@
+    do
+        untracked=`git status $dir --porcelain | grep '??' | grep -E '.py$' | wc -l`
+        if [ $untracked -gt 0 ]
+        then
+            git status $dir --porcelain | grep '??' | grep -E '.py$'
+            echo "$untracked python files found in $dir"
+            fail=1
+        fi
+    
+    done 
+    
+    if [[ $fail -gt 0 ]]
+    then
+        echo "FAIL: Untracked python files found"
+        exit 1
+    fi
+    echo "PASS: All python files known to git"
+}
+
+
+function run_unit_tests
+{
+    #Unit tests
+    py.test $testdir > test.log
+    if [[ $? -gt 0 ]]
+    then 
+        cat test.log 
+        echo "FAIL: Unit tests not passing"
+        exit 
+    fi
+    echo "PASS: All tests passed"
+}
+
+
+function test_debug_statements
+{
+    fail=0
+    for dir in $@
+    do
+        count=`find $dir -name '*.py' | xargs grep '^\s*debug()' | wc -l`
+        if [[ $count -gt 0 ]]
+        then
+            find $dir -name '*.py' | xargs grep -n 'debug()'
+            fail=1
+        fi
+    done 
+    
+    if [[ $fail -gt 0 ]]
+    then
+        echo "FAIL: Debug statements lurking in code"
+        exit 1
+    fi
+    echo "PASS: No Debug statements found"
+}
+
+function test_sphinx
+{
+    for dir in $@
+    do
+        sphinx-build -b html -d _build/doctrees -W $dir _build/html --keep-going > /dev/null
+        fail=$?
+        rm -r _build/html 
+        
+        if [[ $fail -gt 0 ]]
+        then
+            echo "Sphinx build issued warnings for $dir" 
+            exit 1
+        fi 
+    done
+    echo "PASS: Sphinx build looks OK"
+}
+
+
+test_paths_exist $srcdir $testdir
+test_pyflakes $srcdir $testdir 
+test_debug_statements $srcdir $testdir
+test_uncommitted $srcdir $testdir 
+test_untracked $srcdir $testdir
+test_sphinx $docdir
+run_unit_tests $testdir
+echo "SUCCESS"
+
+# 
+# 
+# 
+# 
+# 
+# 

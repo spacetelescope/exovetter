@@ -10,4 +10,4 @@ exovetter
   install
   vetters
   vetters_low_level
-  utils
+  lcutils
