@@ -596,7 +596,7 @@ class Centroid(BaseVetter):
         self.tpf = None
         self.metrics = None
 
-    def run(self, tce, lk_tpf, plot=False):
+    def run(self, tce, lk_tpf, plot=False, unpermitted_transits=[]):
         """Runs ent.compute_diff_image_centroids and cent.measure_centroid_shift
         to populate the vetter object.
 
@@ -609,9 +609,12 @@ class Centroid(BaseVetter):
         lk_tpf: obj
             ``lightkurve`` target pixel file object with pixels in column lc_name
 
-        plot: bool
+        plot : bool
             option to show plot when initialy populating the metrics.
             Same as using the plot() method.
+
+        unpermitted_transits : list
+            List of 0 indexed transit integers to not calculate on.
 
         Returns
         ------------
@@ -635,9 +638,19 @@ class Centroid(BaseVetter):
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_days = tce["duration"].to_value(u.day)
 
+        # Testing removing bad transit MD 2023
+        # if bad_epochs is not None:
+        #     test_Nt, test_phase, test_qtran, test_in_tran, test_tran_epochs, test_epochs = transit_event_stats.transit_count(time, period_days, epoch, duration_days)
+        #     bad_transit_data_mask = ~np.isin(test_epochs, test_tran_epochs[bad_epochs])
+        #     time = time[bad_transit_data_mask]
+        #     cube = cube[bad_transit_data_mask]
+
+        # End testing
+
         centroids, figs = cent.compute_diff_image_centroids(
-            time, cube, period_days, epoch, duration_days, plot=plot
-        )
+            time, cube, period_days, epoch, duration_days, 
+            unpermitted_transits, plot=plot)
+
         offset, signif, fig = cent.measure_centroid_shift(centroids, plot)
         figs.append(fig)
 
@@ -659,7 +672,7 @@ class VizTransits(BaseVetter):
     """
 
     def __init__(self, lc_name="flux", max_transits=10, transit_only=False, 
-                 smooth=10,):
+                 smooth=10, transit_plot=False, folded_plot=False):
         """
         Parameters
         ----------
@@ -675,6 +688,12 @@ class VizTransits(BaseVetter):
         smooth : type
             description
 
+        transit_plot : bool
+            Whether or not to show the transit plot
+
+        folded_plot : book
+            Wheter or not to show the folded plot
+
          Attributes
         ----------
         tce : tce object
@@ -688,6 +707,8 @@ class VizTransits(BaseVetter):
         self.lc_name = lc_name
         self.max_transits = max_transits
         self.transit_only = transit_only
+        self.transit_plot = transit_plot
+        self.folded_plot = folded_plot
         self.smooth = smooth
         self.tce = None
         self.metrics = None
@@ -706,7 +727,7 @@ class VizTransits(BaseVetter):
             lightkurve object with the time and flux of the data to use for vetting.
 
         plot: bool
-            option to show folded or unfolded plot.
+            option to show folded and unfolded plot. If true both will show.
 
         Returns
         ------------
@@ -715,9 +736,16 @@ class VizTransits(BaseVetter):
                 num_transits : Number of transits with data in transit (3*duration).
         """
         
+        # Added plotting options MD 2023
+        if plot == True:
+            run_transit_plot = True
+            run_folded_plot = True
+        else:
+            run_transit_plot = self.transit_plot
+            run_folded_plot = self.folded_plot
+
         self.tce = tce
         self.lc = lightcurve
-
 
         time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
             lightcurve, self.lc_name)  # noqa: E50
@@ -733,19 +761,20 @@ class VizTransits(BaseVetter):
                                                     duration_days,
                                                     depth, max_transits=self.max_transits,
                                                     transit_only=self.transit_only,
-                                                    plot=plot, units="d")
+                                                    plot=run_transit_plot, units="d")
 
         viz_transits.plot_fold_transit(time, flux, period_days,
                                        epoch, depth, duration_days,
                                        smooth=self.smooth,
                                        transit_only=self.transit_only,
-                                       plot=plot, units="d")
+                                       plot=run_folded_plot, units="d")
 
         self.metrics = {"num_transits": n_has_data}
 
         return self.metrics
 
     def plot(self):  # pragma: no cover
+        # This will always show both. If you want one or the other do run with whichever one initialized
         self.run(self.tce, self.lc, plot=True)
     
     # def plot(self, tce, lightcurve): #OLD PLOT METHOD, MD 2023
@@ -753,263 +782,3 @@ class VizTransits(BaseVetter):
     #     _ = self.run(tce, lightcurve, max_transits=self.max_transits,
     #                  transit_only=self.transit_only, smooth=self.smooth,
     #                  plot=True)
-
-
-
-#__________________________________________________
-
-#SUSAN'S WRAPPER FOR MICHELLE'S VETTERS
-from exovetter.michelle_files import classes as tessclass
-from exovetter.michelle_files import metrics as tessmetrics
-from exovetter.michelle_files import plotting
-
-import numpy as np 
-class TessTransitEventStats(BaseVetter):
-    """
-    Wrapper for Michelle's TESS-robovetter vetting metrics and fits.
-    Calculates masks for in and out of transit
-    Calculates a MES
-    Gives a transit fit parameters if requested
-    Does a uniquenesstest
-    Returns a plot if requested.
-    
-    """
-    
-    def __init__(self, lc_name="flux", raw_name=None, error_name=None, cadence_len=None):
-        '''Cadence needs to be defined'''
-        
-        self.tce = None
-        self.lc_name = lc_name
-        self.raw_name = raw_name
-        self.cadence_len = cadence_len
-        self.error_name = error_name
-
-    def run(self, tce, lightcurve, plot=False):
-
-        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
-            lightcurve, self.lc_name)  # noqa: E50
-        
-        if self.cadence_len is None:
-            self.cadence_len = (lightcurve['time'][2]-lightcurve['time'][1]).to_value(u.minute)
-            print('Cadence length not specified, calculated from time array to be:', self.cadence_len, 'minutes')
-        
-        cadences = getattr(lightcurve, "cadenceno").value #MD Maybe can go away, at least it's gone from get_single_events
-
-        try:
-            ticid = lightcurve.meta['TICID']
-        except KeyError:
-            ticid  = -1
-            
-        if self.error_name is not None:
-            error = np.asarray(getattr(lightcurve, self.error_name).value)
-            
-        else:
-            error = np.zeros(len(time))
-            
-        #Remove nans, but the light curve should be detrended before it gets here.
-        idx = np.isnan(flux) | np.isnan(error)
-        time = time[~idx]
-        flux = flux[~idx]    
-        error = error[~idx]
-        raw = getattr(lightcurve, self.raw_name).value
-
-        period_days = tce["period"].to_value(u.day)
-        time_offset_q = getattr(exo_const, time_offset_str)
-        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-        duration_days = tce["duration"].to_value(u.day)
-        
-        tcelc = tessclass.TransitLightCurve(ticid, time, raw, flux, error,
-                                            cadences, period_days, 
-                                            epoch, duration_days, self.cadence_len)
-
-
-        print("Running Metrics")
-        tessmetrics.get_SES_MES(tcelc)
-        tessmetrics.get_single_events(tcelc)
-        tessmetrics.recompute_MES(tcelc)
-        print("Running Uniqueness Test")
-        tessmetrics.get_uniqueness(tcelc)
-        
-        results = {"chases":tcelc.chases,
-                   "rubble":tcelc.rubble,
-                   "Ntransits":tcelc.Nt,
-                   "transit_depth":tcelc.dep,
-                   "newMES":tcelc.new_MES,
-                   "newNtransits":tcelc.new_Nt,
-                   "uni_sig_pri":tcelc.sig_pri,
-                   "uni_sig_sec":tcelc.sig_sec,
-                   "uni_sig_ter":tcelc.sig_ter,
-                   "uni_oe_dep":tcelc.sig_oe,
-                   "uni_mean_med":tcelc.DMM,
-                   "uni_shape":tcelc.SHP,
-                   "uni_Fred":tcelc.Fred,
-                   "uni_sig_FA1":tcelc.FA1,
-                   "uni_sig_FA2":tcelc.FA2,
-                   "uni_phs_pri":tcelc.phs_pri,
-                   "uni_phs_sec":tcelc.phs_sec,
-                   "uni_phs_ter":tcelc.phs_ter,
-                   "uni_phs_pos":tcelc.phs_pos
-            }
-        
-        if plot:
-            plotting.tlc_plot(tcelc)
-            plotting.mes_plot(tcelc)
-
-        return results, tcelc
-
-    def plot(self, tce, lightcurve):
-
-        _ = self.run(tce, lightcurve, plot=True)
-
-#_________________MY IMPLEMENTATION______________________
-from exovetter import transit_event_stats
-
-class SingleTransit(BaseVetter):
-    """single transit vetter."""
-
-    def __init__(self, lc_name="flux", cadence_len=None, error_name=None):
-        """
-        Parameters
-        ----------
-        lc_name : str
-            Name of the flux array in the ``lightkurve`` object.
-
-        cadence_len : float
-            Cadence lengh in SOME UNITS OF TIME? Defaults to difference
-            in 2nd and 1st index of time in lightcurve if not defined.
-
-        error_name : Seems to be the name of the error column you want from the lightcurve object
-
-        """
-        self.lc_name = lc_name
-        self.cadence_len = cadence_len
-        self.error_name = error_name
-
-    def run(self, tce, lightcurve, plot=False):  
-        """
-        Runs transit_event_stats.single_transit to populate the vetter object.
-        
-        """
-        #Returns a results dictionary with Ntransits, chases array, rubble array, zuma array,
-
-        self.tce = tce
-        self.lc = lightcurve
-
-        time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(
-            lightcurve, self.lc_name)
-        
-        if self.cadence_len is None:
-            self.cadence_len = (lightcurve['time'][2]-lightcurve['time'][1]).to_value(u.minute)
-            print('Cadence length not specified, calculated from time array to be:', self.cadence_len, 'minutes')
-        
-        period_days = tce["period"].to_value(u.day)
-
-        time_offset_q = getattr(exo_const, time_offset_str)
-        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-
-        duration_days = tce["duration"].to_value(u.day)
-        
-        if self.error_name is not None:
-            self.error = np.asarray(getattr(lightcurve, self.error_name).value)
-            
-        else:
-            self.error = np.zeros(len(time))
-            print('No error specified, assuming 0 error')
-
-        #Is this necessary?
-        idx = np.isnan(self.flux) | np.isnan(self.error)
-        time = time[~idx]
-
-        
-        self.Ntransits, phase, qtran, self.in_tran, self.tran_epochs, self.epochs = transit_event_stats.transit_count(time, period_days, 
-                                                                                                                      epoch, duration_days)
-        
-        self.chases_array, self.rubble_array, self.SES, self.zpt, self.zpt_err = transit_event_stats.single_event_metrics(self.Ntransits, phase, qtran, 
-                                                                                                                          self.in_tran, self.tran_epochs, self.epochs, 
-                                                                                                                          epoch, period_days, self.flux,
-                                                                                                                          self.error, time, duration_days,
-                                                                                                                          self.cadence_len)
-        
-        # self.zuma_array = SOMEWHERE_THIS EXISTS? or is it where SES < 0?
-
-        self.metrics = {
-            "N_transits": self.Ntransits,
-            "chases": self.chases_array,
-            "rubble": self.rubble_array,
-            "SES": self.SES,
-            "in_tran": self.in_tran,
-            "epochs": self.epochs,
-            "tran_epochs": self.tran_epochs,
-            "flux": self.flux,
-            "error": self.error,
-            "zpt": self.zpt,
-            "zpt_err": self.zpt_err
-            # "zuma": self.zuma_array,
-        }
-
-        if plot:
-            print('No plotting implemented')
-
-        return self.metrics
-
-    def plot(self):  # pragma: no cover
-        self.run(self.tce, self.lc, plot=True)
-
-class SnrMetrics(BaseVetter):
-    """snr metrics vetter."""
-
-    def __init__(self, lc_name="flux", error_name=None):
-        """
-        Parameters
-        ----------
-        lc_name : str
-            Name of the flux array in the ``lightkurve`` object.
-
-        error_name : Seems to be the name of the error column you want from the lightcurve object
-
-        """
-        self.lc_name = lc_name
-        self.error_name = error_name
-
-    def run(self, tce, lightcurve, plot=False):  
-        """
-        Runs transit_event_stats.snr_metrics to populate the vetter object.
-        
-        """
-        #Returns a results dictionary with SES array, MES array, and other stats
-
-        self.tce = tce
-        self.lc = lightcurve
-
-        time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
-            lightcurve, self.lc_name)
-        
-        period_days = tce["period"].to_value(u.day)
-
-        time_offset_q = getattr(exo_const, time_offset_str)
-        epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-
-        duration_days = tce["duration"].to_value(u.day)
-        
-        if self.error_name is not None:
-            error = np.asarray(getattr(lightcurve, self.error_name).value)
-            
-        else:
-            error = np.zeros(len(time))
-            print('No error specified, assuming 0 error')
-
-        # #Is this necessary?
-        idx = np.isnan(flux) | np.isnan(error)
-        time = time[~idx]
-
-        snr_metrics_results = transit_event_stats.snr_metrics(time, period_days, epoch, duration_days, flux, error)
-
-        self.metrics = snr_metrics_results
-
-        if plot:
-            print('No plotting implemented')
-
-        return self.metrics
-
-    def plot(self):  # pragma: no cover
-        self.run(self.tce, self.lc, plot=True)

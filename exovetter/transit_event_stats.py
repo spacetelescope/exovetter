@@ -5,43 +5,48 @@ from scipy.special import erfcinv
 
 from exovetter import utils
 
-def transit_count(time, period_days, epoch, duration_days):
+def transit_count(time, period, epoch, duration):
     """Get single transit statistics (adopted from Michelle's get_single_events)
     
     Parameters
     ----------
     time : numpy array
         times
-    period_days : float
-        period in days
+    period : float
+        transit period in same units as time
     epoch : `~astropy.units.Quantity`
-        epoch of the transit in days
-    duration_days : float
-        duration of transit in days
+        epoch of the transit in same units as time
+    duration : float
+        duration of transit in same units as time
 
     Returns
     -------
     Nt : int
-        number of transits
-    phase :
-        blah
-    qtran :
-        blah
-    in_tran : blah
-        blah
-    tran_epochs : blah
-        blah
-    epochs :
-        blah
+        number of transits given the time array
+    phase : array of floats
+        phases from -0.5 to 0.5 with transit centered at 0
+    qtran : float
+        fraction of period that is in transit
+    in_tran : array of floats
+        Values of phase which are within half of a transit duration on either side of the transit  
+    tran_epochs : array of ints
+        Epochs where the time array is in transit given by the input duration
+    epochs : array of ints
+        Transit epochs the length of the time array
     """
-    
-    qtran = duration_days/period_days
-    phase = utils.phasefold(time, period_days, epoch)
-    epochs = np.round((time - epoch)/period_days)
+
+    if not np.all(np.isfinite(time)):
+        raise ValueError('time must contain all finite values')
+
+    qtran = duration/period
+    phase = utils.compute_phases(time, period, epoch, offset=0.5) -0.5 # This code requires phases from -0.5 to 0.5 with transit centered at 0 
+    # OLD WAY TO GET THE SAME THING utils.phasefold(time, period_days, epoch)
+    epochs = np.round((time - epoch)/period)
     in_tran = (abs(phase) < 0.5*qtran)
     tran_epochs = np.unique(epochs[in_tran])
     Nt = len(tran_epochs)
 
+    # Keep Nt, epochs. Others compute in single_event_metrics
     return Nt, phase, qtran, in_tran, tran_epochs, epochs
 
 def single_event_metrics(Nt, phase, qtran, in_tran, tran_epochs, epochs, epo, period_days, flux, error, time, duration_days, cadence_len, frac=0.6):
@@ -54,6 +59,11 @@ def single_event_metrics(Nt, phase, qtran, in_tran, tran_epochs, epochs, epo, pe
     -------
 
     """
+
+    if not np.all(np.isfinite(flux)):
+        raise ValueError('flux must contain all finite values')
+    if len(time) != len(flux):
+        raise ValueError('time and flux must be of same length')
 
     deps = np.zeros(Nt)
     SES = np.zeros(Nt)
@@ -78,6 +88,19 @@ def single_event_metrics(Nt, phase, qtran, in_tran, tran_epochs, epochs, epo, pe
         _, _, SES_series[i] = utils.get_SNR(flux[in_tran_SES], error[in_tran_SES], zpt, zpt_err)
 
     # Compute individual transit metrics
+    # Rubble
+    for i in range(Nt):
+        epoch = tran_epochs[i]
+        in_epoch = in_tran & (epochs == epoch)
+    
+        # Find how much of the transit falls in gaps
+        near_epoch = rubble_near_tran & (epochs == epoch)
+        nobs = np.sum(near_epoch)
+        
+        nexp = 2*duration_days*24*60/cadence_len
+        rubble[i] = nobs/nexp
+    
+    # Chases
     for i in range(Nt):
         epoch = tran_epochs[i]
         in_epoch = in_tran & (epochs == epoch)
@@ -93,15 +116,6 @@ def single_event_metrics(Nt, phase, qtran, in_tran, tran_epochs, epochs, epo, pe
             chases[i] = np.min(np.abs(time[near_epoch] - transit_time))/(0.1*period_days)
         else:
             chases[i] = 1
-        # Find how much of the transit falls in gaps
-        near_epoch = rubble_near_tran & (epochs == epoch)
-        nobs = np.sum(near_epoch)
-        #cadence = 30 if tlc.c[near_epoch][0] < 40000 else 10 #MD 2023 Commented out 
-
-        cadence = cadence_len
-        
-        nexp = 2*duration_days*24*60/cadence
-        rubble[i] = nobs/nexp
 
     return chases, rubble, SES, zpt, zpt_err
 
@@ -210,7 +224,7 @@ def snr_metrics(time, period_days, epoch, duration_days, flux, error, nTCE=20000
     # Get secondary significance - at least 2 transit durations from primary
     mask = (abs(phase_non_zero - phs_pri) < 2*qtran) | (abs(phase_non_zero - phs_pri) > 1-2*qtran)
     if not np.any(~mask):
-        print('CANT GET TERTIARY SIGNIFICANCE, NO UNI_SIG_SEC, UNI_PHS_SEC, UNI_SIG_TER, UNI_PHS_TER, OR UNI_PHS_POS RESULTS')
+        print('SNR metrics: could not get tertiary significance, no uni_sig_sec, uni_phs_sec, uni_sig_ter, uni_phs_ter, or uni_phs_pos results')
         results_dict = {
         "SES_array": SES_series,
         "MES_array": MES_series,
@@ -252,7 +266,7 @@ def snr_metrics(time, period_days, epoch, duration_days, flux, error, nTCE=20000
     # Get tertiary significance - at least 2 transit durations from primary and secondary
     mask = mask | (abs(phase_non_zero - phs_sec) < 2*qtran)
     if not np.any(~mask):
-        print('CANT GET TERTIARY SIGNIFICANCE, NO UNI_SIG_TER, UNI_PHS_TER, OR UNI_PHS_POS RESULTS') 
+        print('SNR metrics: could not get tertiary significance, no uni_sig_ter, uni_phs_ter, or uni_phs_pos results') 
         results_dict = {
         "SES_array": SES_series,
         "MES_array": MES_series,
@@ -283,7 +297,7 @@ def snr_metrics(time, period_days, epoch, duration_days, flux, error, nTCE=20000
     # Get positive significance - at least 3 transit durations from primary and secondary
     mask = (abs(phase_non_zero - phs_pri) < 3*qtran) | (abs(phase_non_zero - phs_pri) > 1-3*qtran) | (abs(phase_non_zero - phs_sec) < 3*qtran)
     if not np.any(~mask):
-        print('CANT GET POSITIVE SIGNIFICANCE, NO UNI_PHS_POS RESULT') 
+        print('SNR metrics: could not get positive significance, no uni_phs_pos result') 
         results_dict = {
         "SES_array": SES_series,
         "MES_array": MES_series,

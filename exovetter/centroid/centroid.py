@@ -11,7 +11,8 @@ def compute_diff_image_centroids(
         cube, 
         period_days, 
         epoch, 
-        duration_days, 
+        duration_days,
+        unpermitted_transits, 
         max_oot_shift_pix=1.5,
         plot=False
 ):
@@ -38,7 +39,7 @@ def compute_diff_image_centroids(
     epoch
         (float) Epoch of transit centre in the same time system as `time`.
     duration_days
-        (float) Duration of transit.
+        (float) Duration of transit. 
     max_oot_shift_pix
         (float) Passed to `fastpsffit.fastGaussianPrfFit()
 
@@ -74,15 +75,24 @@ def compute_diff_image_centroids(
     figs = []
     centroids = []
     for i in range(len(transits)):
-        cin = transits[i]
-        cents, fig = measure_centroids(
-            cube, 
-            cin, 
-            max_oot_shift_pix=max_oot_shift_pix,
-            plot=plot
-        )
-        centroids.append(cents)
-        figs.append(fig)
+        if i not in unpermitted_transits:
+            cin = transits[i]
+            cents, fig = measure_centroids(
+                cube, 
+                cin, 
+                max_oot_shift_pix=max_oot_shift_pix,
+                plot=plot
+            )
+
+            if plot == True:
+                fig.suptitle('Transit '+str(i)) # Added MD 2023
+
+            centroids.append(cents)
+            figs.append(fig)
+            
+            
+    print('number of figs', len(figs))
+    print('number of centroids', len(centroids))
     centroids = np.array(centroids)
     return centroids, figs
 

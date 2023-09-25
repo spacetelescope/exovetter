@@ -67,8 +67,8 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
 
     #step_size = 6*np.std(flux[~intransit])
     step_size = depth * 1.25
-    if 3 * np.std(flux[~intransit]) > step_size:
-        step_size = 3 * np.std(flux[~intransit])
+    if 3 * np.std(flux[~intransit]) > step_size: 
+        step_size = 10 * np.std(flux[~intransit]) # This used to be 3 MD 2023
 
     nsteps = len(np.unique(ntransit))  #np.ceil(np.max(ntransit))
 
@@ -78,10 +78,10 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
     if plot:
         plt.figure(figsize=(figwid, nsteps))
         transits  =  np.floor(np.unique(ntransit[intransit]))
-        # print(transits[0:nsteps]) # Commented out MD 2023
+        # print(transits[0:nsteps])
         # print(nsteps)
         # print(ntransit)
-        
+
         for i, nt in enumerate(transits[0:nsteps]): 
             
             ph = phases[ntransit == nt]
@@ -91,9 +91,10 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
 
             plt.plot(ph, fl + step_size * i, '.--',
                      c=color, ms=5, lw=1)
+
             plt.annotate("Transit %i" % nt,
                          (xmin, np.median(fl) + step_size * i),
-                         c=color)
+                         c=color) # Pretty sure this should be % i+1? Although no clue why nt starts at 12
 
         plt.xlim(xmin, xmax)
         plt.axvspan(
@@ -101,6 +102,8 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
             offset * period + 0.5 * dur,
             alpha=0.15)
         plt.xlabel("Phased Time [%s]" % units)
+
+    
 
     return n_has_data
 
