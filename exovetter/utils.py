@@ -600,8 +600,3 @@ def compute_phases(time, period, epoch, offset=0.5):
     pmin = np.min(phases)
 
     return phases
-
-
-    
-    
-    

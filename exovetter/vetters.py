@@ -596,7 +596,7 @@ class Centroid(BaseVetter):
         self.tpf = None
         self.metrics = None
 
-    def run(self, tce, lk_tpf, plot=False):
+    def run(self, tce, lk_tpf, plot=False, unpermitted_transits=[]):
         """Runs ent.compute_diff_image_centroids and cent.measure_centroid_shift
         to populate the vetter object.
 
@@ -609,9 +609,12 @@ class Centroid(BaseVetter):
         lk_tpf: obj
             ``lightkurve`` target pixel file object with pixels in column lc_name
 
-        plot: bool
+        plot : bool
             option to show plot when initialy populating the metrics.
             Same as using the plot() method.
+
+        unpermitted_transits : list
+            List of 0 indexed transit integers to not calculate on.
 
         Returns
         ------------
@@ -635,9 +638,19 @@ class Centroid(BaseVetter):
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_days = tce["duration"].to_value(u.day)
 
+        # Testing removing bad transit MD 2023
+        # if bad_epochs is not None:
+        #     test_Nt, test_phase, test_qtran, test_in_tran, test_tran_epochs, test_epochs = transit_event_stats.transit_count(time, period_days, epoch, duration_days)
+        #     bad_transit_data_mask = ~np.isin(test_epochs, test_tran_epochs[bad_epochs])
+        #     time = time[bad_transit_data_mask]
+        #     cube = cube[bad_transit_data_mask]
+
+        # End testing
+
         centroids, figs = cent.compute_diff_image_centroids(
-            time, cube, period_days, epoch, duration_days, plot=plot
-        )
+            time, cube, period_days, epoch, duration_days, 
+            unpermitted_transits, plot=plot)
+
         offset, signif, fig = cent.measure_centroid_shift(centroids, plot)
         figs.append(fig)
 
@@ -659,7 +672,7 @@ class VizTransits(BaseVetter):
     """
 
     def __init__(self, lc_name="flux", max_transits=10, transit_only=False, 
-                 smooth=10,):
+                 smooth=10, transit_plot=False, folded_plot=False):
         """
         Parameters
         ----------
@@ -675,6 +688,12 @@ class VizTransits(BaseVetter):
         smooth : type
             description
 
+        transit_plot : bool
+            Whether or not to show the transit plot
+
+        folded_plot : book
+            Wheter or not to show the folded plot
+
          Attributes
         ----------
         tce : tce object
@@ -688,9 +707,12 @@ class VizTransits(BaseVetter):
         self.lc_name = lc_name
         self.max_transits = max_transits
         self.transit_only = transit_only
+        self.transit_plot = transit_plot
+        self.folded_plot = folded_plot
         self.smooth = smooth
         self.tce = None
         self.metrics = None
+        self.lc = None
 
     def run(self, tce, lightcurve, plot=False):
         """Runs viz_transits.plot_all_transits to populate the vetter object.
@@ -705,7 +727,7 @@ class VizTransits(BaseVetter):
             lightkurve object with the time and flux of the data to use for vetting.
 
         plot: bool
-            option to show folded or unfolded plot.
+            option to show folded and unfolded plot. If true both will show.
 
         Returns
         ------------
@@ -713,6 +735,17 @@ class VizTransits(BaseVetter):
             centroid result dictionary containing the following:
                 num_transits : Number of transits with data in transit (3*duration).
         """
+        
+        # Added plotting options MD 2023
+        if plot == True:
+            run_transit_plot = True
+            run_folded_plot = True
+        else:
+            run_transit_plot = self.transit_plot
+            run_folded_plot = self.folded_plot
+
+        self.tce = tce
+        self.lc = lightcurve
 
         time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
             lightcurve, self.lc_name)  # noqa: E50
@@ -728,20 +761,24 @@ class VizTransits(BaseVetter):
                                                     duration_days,
                                                     depth, max_transits=self.max_transits,
                                                     transit_only=self.transit_only,
-                                                    plot=plot, units="d")
+                                                    plot=run_transit_plot, units="d")
 
         viz_transits.plot_fold_transit(time, flux, period_days,
                                        epoch, depth, duration_days,
                                        smooth=self.smooth,
                                        transit_only=self.transit_only,
-                                       plot=plot, units="d")
+                                       plot=run_folded_plot, units="d")
 
         self.metrics = {"num_transits": n_has_data}
 
         return self.metrics
 
-    def plot(self, tce, lightcurve):
+    def plot(self):  # pragma: no cover
+        # This will always show both. If you want one or the other do run with whichever one initialized
+        self.run(self.tce, self.lc, plot=True)
+    
+    # def plot(self, tce, lightcurve): #OLD PLOT METHOD, MD 2023
 
-        _ = self.run(tce, lightcurve, max_transits=self.max_transits,
-                     transit_only=self.transit_only, smooth=self.smooth,
-                     plot=True)
+    #     _ = self.run(tce, lightcurve, max_transits=self.max_transits,
+    #                  transit_only=self.transit_only, smooth=self.smooth,
+    #                  plot=True)

@@ -78,9 +78,11 @@ def sweet(time, flux, period, epoch, duration, plot=False):
         if plot:
             srt = np.argsort(phase)
             plt.subplot(3, 1, i + 1)
-            plt.plot(phase, flux, 'ko')
+            plt.plot(phase, flux, 'ko', ms=2.5)
             plt.plot(phase[srt], f_obj.get_best_fit_model(phase[srt]), '-')
             plt.ylabel("P=%g" % (per))
+            if i==0:
+                plt.title('SWEET: Folded at 1, 1/2, and 1/4 times the period') # Added MD 2023
 
     result = np.array(out)
 
