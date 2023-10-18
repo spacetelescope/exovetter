@@ -18,7 +18,9 @@ from exovetter import const
 from exovetter import model
 from exovetter import viz_transits
 
-__all__ = ['BaseVetter', 'ModShift', 'Lpp']
+__all__ = ['BaseVetter', 'ModShift', 'Lpp', 'OddEven', 
+           'TransitPhaseCoverage', 'Sweet', 'Centroid',
+           'VizTransits']
 
 class BaseVetter(ABC):
     """Base class for vetters.
