@@ -13,9 +13,6 @@ These provide low-level functionality for ``exovetter``.
 .. automodapi:: exovetter.model
     :no-inheritance-diagram:
 
-.. automodapi:: exovetter.lcutils
-    :no-inheritance-diagram:
-
 .. automodapi:: exovetter.lightkurve_utils
     :no-inheritance-diagram:
 
