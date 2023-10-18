@@ -5,7 +5,9 @@ import warnings
 
 import numpy as np
 
-__all__ = []
+__all__ = ['sine', 'estimate_scatter', 'mark_transit_cadences', 'median_detrend', 
+           'set_median_flux_to_zero', 'set_median_flux_to_one', 'sigmaClip', 
+           'get_mast_tce', 'WqedLSF', 'compute_phases']
 
 def sine(x, order, period=1):
     """Sine function for SWEET vetter."""
@@ -151,6 +153,7 @@ def median_detrend(flux, nPoints):
 
 
 def plateau(array, threshold):
+    # Note this docstring needs to be updated
     """Find plateaus in an array, i.e continuous regions that exceed threshold
 
     Given an array of numbers, return a 2d array such that
