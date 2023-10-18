@@ -10,14 +10,12 @@ on:
 
 jobs:
   pep_and_audit:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Fetch tags
-      run: git fetch --prune --unshallow --tags
+      uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     - name: Lint with pyflakes
@@ -36,38 +34,33 @@ jobs:
     #    python -m pip install --upgrade bandit
     #    bandit -r . -c .bandit.yaml
 
-  # Python 3.7 + Numpy 1.19 resulted in NaN results, so we downgrade Numpy.
   initial_tests:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Fetch tags
-      run: git fetch --prune --unshallow --tags
+      uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.7'
+        python-version: '3.11'
     - name: Install and build
       run: |
         sudo apt-get install libxml2-utils
         python -m pip install --upgrade pip setuptools
-        python -m pip install 'numpy<1.19'
         python -m pip install -e .[test,all]
     - name: Test with stable deps and coverage
-      run: pytest --cov=./ --cov-report=xml --remote-data
+      run: pytest --remote-data
+#      run: pytest --cov=./ --cov-report=xml --remote-data
 #    - name: Coverage report
-#      uses: codecov/codecov-action@v2
+#      uses: codecov/codecov-action@v3
 
 #  dev_deps_tests:
 #    runs-on: ubuntu-latest
 #    steps:
 #    - name: Checkout code
-#      uses: actions/checkout@v2
-#    - name: Fetch tags
-#      run: git fetch --prune --unshallow --tags
+#      uses: actions/checkout@v4
 #    - name: Set up Python
-#      uses: actions/setup-python@v2
+#      uses: actions/setup-python@v4
 #      with:
 #        python-version: '3.x'
 #    - name: Install and build
