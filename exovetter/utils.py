@@ -5,6 +5,7 @@ import warnings
 
 import numpy as np
 
+__all__ = []
 
 def sine(x, order, period=1):
     """Sine function for SWEET vetter."""
