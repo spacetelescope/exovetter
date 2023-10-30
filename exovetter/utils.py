@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 
 __all__ = ['sine', 'estimate_scatter', 'mark_transit_cadences', 'median_detrend', 
-           'set_median_flux_to_zero', 'set_median_flux_to_one', 'sigmaClip', 
+           'plateau', 'set_median_flux_to_zero', 'set_median_flux_to_one', 'sigmaClip', 
            'get_mast_tce', 'WqedLSF', 'compute_phases']
 
 def sine(x, order, period=1):
@@ -118,7 +118,8 @@ def mark_transit_cadences(time, period_days, epoch_bkjd, duration_days,
     big_num = sys.float_info.max  # A large value that isn't NaN
     max_diff = 0.5 * duration_days * num_durations
 
-    idx = np.zeros_like(time, dtype=np.bool_) # Changed from np.bool8 to np.bool_ MD 2023  
+    idx = np.zeros_like(time, dtype=np.bool_) 
+    # Changed from np.bool8 to np.bool_ for py 3.11  
     for tt in transit_times:
         diff = time - tt
         diff[flags] = big_num
@@ -153,26 +154,32 @@ def median_detrend(flux, nPoints):
 
 
 def plateau(array, threshold):
-    # Note this docstring needs to be updated
-    """Find plateaus in an array, i.e continuous regions that exceed threshold
+    """Find plateaus in an array, i.e continuous regions that exceed threshold.
 
     Given an array of numbers, return a 2d array such that
     out[:,0] marks the indices where the array crosses threshold from
     below, and out[:,1] marks the next time the array crosses that
     same threshold from below.
 
-    Inputs:
-    array       (1d numpy array)
-    threshold   (float or array) If threshold is a single number, any point
-                above that value is above threshold. If it's an array,
-                it must have the same length as the first argument, and
-                an array[i] > threshold[i] to be included as a plateau
+    Parameters
+    ----------
+    array : array_like
+        Numpy 1D array 
 
-    Returns:
-    Numpy 2d array with 2 columns.
+    threshold : float or array_like
+        If threshold is a single number, any point 
+        above that value is above threshold. If it's an array,
+        it must have the same length as the first argument, and
+        an array[i] > threshold[i] to be included as a plateau
+    
+    Returns
+    -------
+    loc : array_like
+        Numpy 2d array with 2 columns.
 
 
-    Notes:
+    Notes
+    -----
     To find the length of the plateaus, use
     out[:,1] - out[:,0]
 
@@ -184,7 +191,7 @@ def plateau(array, threshold):
     to ensure floating point arithmetic prevents two numbers being
     exactly equal.
     """
-
+    
     arr = array.astype(np.float32)
     arr = arr - threshold + 1e-12
     arrPlus = np.roll(arr, 1)

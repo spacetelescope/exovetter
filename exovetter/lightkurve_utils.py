@@ -2,7 +2,7 @@
 
 import astropy
 
-__all__ = ['unpack_lk_version']
+__all__ = ['unpack_lk_version', 'unpack_tpf']
 
 
 def unpack_lk_version(lightcurve, flux_name):

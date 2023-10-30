@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from astropy.convolution import convolve, Box1DKernel
 from exovetter import utils
 
+__all__ = ['plot_all_transits', 'plot_fold_transit']
 
 def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
                       transit_only=False, plot=True, units="d"):
@@ -68,9 +69,9 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
     #step_size = 6*np.std(flux[~intransit])
     step_size = depth * 1.25
     if 3 * np.std(flux[~intransit]) > step_size: 
-        step_size = 10 * np.std(flux[~intransit]) # This used to be 3 MD 2023
+        step_size = 10 * np.std(flux[~intransit])
 
-    nsteps = len(np.unique(ntransit))  #np.ceil(np.max(ntransit))
+    nsteps = len(np.unique(ntransit))  # np.ceil(np.max(ntransit))
 
     if nsteps > max_transits:
         nsteps = max_transits
