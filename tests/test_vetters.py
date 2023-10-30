@@ -133,4 +133,7 @@ def test_string_dunder():
     w = ModifiedVetter()
     w_str = str(w)
     expected = "<test_vetters.ModifiedVetter"
+    print(w_str, "THIS IS 'w_str'")
+    print(expected, "THIS IS 'expected'")
+    print("We are asserting w_str.startswith(expected), w_str")
     assert w_str.startswith(expected), w_str
