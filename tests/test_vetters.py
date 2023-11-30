@@ -91,7 +91,7 @@ def test_cent_vetter():
     epoch = tce.get_epoch(time_offset_q).to_value(u.day)
     duration_days = tce["duration"].to_value(u.day)
 
-    centroids, figs = cent.compute_diff_image_centroids(
+    centroids, figs, kept_transits = cent.compute_diff_image_centroids(
         time, cube, period_days, epoch, duration_days, plot=False, remove_transits=[]
     )
     offset, signif, fig = cent.measure_centroid_shift(centroids, plot=False)
