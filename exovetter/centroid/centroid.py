@@ -12,7 +12,7 @@ def compute_diff_image_centroids(
         period_days, 
         epoch, 
         duration_days,
-        unpermitted_transits, 
+        remove_transits, 
         max_oot_shift_pix=1.5,
         plot=False
 ):
@@ -40,6 +40,8 @@ def compute_diff_image_centroids(
         (float) Epoch of transit centre in the same time system as `time`.
     duration_days
         (float) Duration of transit. 
+    remove_transits
+        (list) List of 0 indexed transit integers to not calculate on.
     max_oot_shift_pix
         (float) Passed to `fastpsffit.fastGaussianPrfFit()
 
@@ -74,8 +76,9 @@ def compute_diff_image_centroids(
 
     figs = []
     centroids = []
+
     for i in range(len(transits)):
-        if i not in unpermitted_transits:
+        if i not in remove_transits:
             cin = transits[i]
             cents, fig = measure_centroids(
                 cube, 
@@ -85,25 +88,27 @@ def compute_diff_image_centroids(
             )
 
             if plot == True:
-                fig.suptitle('Transit '+str(i)) # Added MD 2023
+                fig.suptitle('Transit '+str(i))
 
             centroids.append(cents)
             figs.append(fig)
             
-            
-    print('number of figs', len(figs))
-    print('number of centroids', len(centroids))
     centroids = np.array(centroids)
-    return centroids, figs
+    all_transits = list(np.arange(len(transits)))
+    kept_transits = [x for x in all_transits if x not in remove_transits]
+    return centroids, figs, kept_transits
 
 
-def measure_centroid_shift(centroids, plot=False):
+def measure_centroid_shift(centroids, kept_transits, plot=False):
     """Measure the average offset of the DIC centroids from the OOT centroids.
 
     Inputs
     ----------
     centroids
         (2d np array) Output of :func:`compute_diff_image_centroids`
+
+    kept_transits
+        (list) List of 0 indexed transit integers to calculate on.
 
     Returns
     -----------
@@ -132,7 +137,7 @@ def measure_centroid_shift(centroids, plot=False):
 
     fig = None
     if plot:
-        fig = covar.diagnostic_plot(dcol, drow, flags)
+        fig = covar.diagnostic_plot(dcol, drow, kept_transits, flags)
     return offset_pix, signif, fig
 
 

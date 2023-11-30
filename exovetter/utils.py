@@ -327,6 +327,7 @@ def get_mast_tce(name):
     url = planeturl + name + "/properties/"
 
     r = requests.get(url = url, headers = header)
+    
     if len(r.json()) < 1:
         print("No TCE Information was returned from MAST.")
         return []
@@ -341,6 +342,7 @@ def get_mast_tce(name):
             epoch_offset_str = 'mjd'
             depth = prop['transit_depth']
             duration = prop['transit_duration']
+            catalog_name = prop['catalog_name']
             if duration is None:
                 duration  = 0
             durunit = prop['transit_duration_unit']
@@ -352,7 +354,8 @@ def get_mast_tce(name):
                        epoch_offset = const.__dict__['string_to_offset'][epoch_offset_str],
                        depth = depth * const.frac_amp,
                        duration = duration * u.__dict__[durunit],
-                       target = name
+                       target = name,
+                       catalog_name = catalog_name
                        )
             
             tces.append(atce)
