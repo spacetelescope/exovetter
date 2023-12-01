@@ -45,7 +45,7 @@ import numpy as np
 """
 
 
-def diagnostic_plot(x, y, flag=None):
+def diagnostic_plot(x, y, kept_transits, flag=None):
 
     if flag is None:
         flag = np.zeros(len(x))
@@ -57,7 +57,8 @@ def diagnostic_plot(x, y, flag=None):
     mu_y = np.mean(y[~idx])
     sma, smi = compute_eigen_vectors(x[~idx], y[~idx])
 
-    plt.clf()
+    # plt.clf()
+    plt.figure()
     plt.gcf().set_size_inches((10, 8))
     plt.plot(x, y, "ko", mec="w", label="Centroids", zorder=+5)
     if np.any(idx):
@@ -71,7 +72,8 @@ def diagnostic_plot(x, y, flag=None):
 
     # prob = compute_prob_of_points(x, y, sma, smi)
     for i in range(len(x)):
-        plt.text(x[i], y[i], " %i" % (i), zorder=+5)
+
+        plt.text(x[i], y[i], " %i" % (kept_transits[i]), zorder=+5)
 
     sigma_a = np.linalg.norm(sma)
     sigma_b = np.linalg.norm(smi)

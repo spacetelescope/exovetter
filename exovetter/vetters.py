@@ -4,6 +4,7 @@ import pprint
 from abc import ABC, abstractmethod
 
 import astropy.units as u
+import numpy as np
 
 from exovetter.centroid import centroid as cent
 from exovetter import transit_coverage
@@ -17,6 +18,7 @@ from exovetter import utils
 from exovetter import const
 from exovetter import model
 from exovetter import viz_transits
+from exovetter import leo
 
 __all__ = ['BaseVetter', 'ModShift', 'Lpp', 'OddEven', 
            'TransitPhaseCoverage', 'Sweet', 'Centroid',
@@ -600,7 +602,7 @@ class Centroid(BaseVetter):
         self.tpf = None
         self.metrics = None
 
-    def run(self, tce, lk_tpf, plot=False, unpermitted_transits=[]):
+    def run(self, tce, lk_tpf, plot=False, remove_transits=None):
         """Runs ent.compute_diff_image_centroids and cent.measure_centroid_shift
         to populate the vetter object.
 
@@ -617,7 +619,7 @@ class Centroid(BaseVetter):
             option to show plot when initialy populating the metrics.
             Same as using the plot() method.
 
-        unpermitted_transits : list
+        remove_transits : list
             List of 0 indexed transit integers to not calculate on.
 
         Returns
@@ -642,20 +644,14 @@ class Centroid(BaseVetter):
         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
         duration_days = tce["duration"].to_value(u.day)
 
-        # Testing removing bad transit MD 2023
-        # if bad_epochs is not None:
-        #     test_Nt, test_phase, test_qtran, test_in_tran, test_tran_epochs, test_epochs = transit_event_stats.transit_count(time, period_days, epoch, duration_days)
-        #     bad_transit_data_mask = ~np.isin(test_epochs, test_tran_epochs[bad_epochs])
-        #     time = time[bad_transit_data_mask]
-        #     cube = cube[bad_transit_data_mask]
-
-        # End testing
-
-        centroids, figs = cent.compute_diff_image_centroids(
+        if remove_transits is None: # reformat to be a blank list
+            remove_transits = []
+        
+        centroids, figs, kept_transits = cent.compute_diff_image_centroids(
             time, cube, period_days, epoch, duration_days, 
-            unpermitted_transits, plot=plot)
-
-        offset, signif, fig = cent.measure_centroid_shift(centroids, plot)
+            remove_transits, plot=plot)
+        
+        offset, signif, fig = cent.measure_centroid_shift(centroids, kept_transits, plot)
         figs.append(fig)
 
         # TODO: If plot=True, figs is a list of figure handles.
@@ -786,3 +782,171 @@ class VizTransits(BaseVetter):
     #     _ = self.run(tce, lightcurve, max_transits=self.max_transits,
     #                  transit_only=self.transit_only, smooth=self.smooth,
     #                  plot=True)
+
+class LeoVetter(BaseVetter):
+    """Leo based vetter"""
+
+    def __init__(self, lc_name="flux", flux_err=None, frac=0.7, max_chases_phase=0.1):
+        """
+        Parameters
+        ----------
+        lc_name : str
+            Name of the flux array in the ``lightkurve`` object.
+
+        flux_err : string
+            If none provided, defaults to flux_err column of lightkurve. LeoVetter requires realistic flux errors to give meaningful results.
+
+        frac : float
+            fraction of SES for a transit which triggers the chases false alarm statistic (default 0.7)
+        
+        max_chases_phase : float
+            maximum  to allow the chases search to run on (default 0.1)
+
+        Attributes
+        ----------
+        tce : tce object
+            tce object is a dictionary that contains information about the tce
+            to vet, like period, epoch, duration, depth.
+
+        lc : lightkurve object
+            lightkurve object with the time and flux of the data to use for vetting.
+
+        metrics : dict
+            LeoVetter result dictionary populated by :meth:`run`.
+        """
+
+        self.tce = None
+        self.lc_name = lc_name
+        self.flux_err= flux_err
+        self.frac= frac
+        self.max_chases_phase = max_chases_phase
+        self.metrics = None
+
+    def run(self, tce, lightcurve, plot=False):
+        """
+        Runs leo vetters to populate the vetter object.
+
+        Parameters
+        ----------
+        tce : tce object
+            Dictionary that contains information about the tce
+            to vet, like period, epoch, duration, depth
+
+        lightcurve : lightkurve object
+            lightkurve object with the time and flux to use for vetting.
+
+        plot: bool
+            Option to show plot when initialy populating the metrics.
+            Same as using the plot() method.
+
+        Attributes
+        ----------
+        MES_series : dep_series/err_series 
+        N_transit : Number of transits
+        SES : Single Event Statistic
+        SES_series : Single Event Statistic series for every timestamp
+        chases : range for chases metric is between 1.5 transit durations and user specified max_chases_phase
+        err_series : Error of MES
+        rubble : rubble statistic
+        sig_w : White noise following Hartman & Bakos (2016)
+        sig_r : Red noise following Hartman & Bakos (2016)
+        err : Signal-to-pink-noise following Pont et al. (2006)
+        MES : Multiple Event Statistic calculated from mean depth of in transit points
+        SHP : MES shape metric
+        CHI :
+        med_chases : median of chases
+        mean_chases : mean of chases
+        max_SES : maximum of SES 
+        DMM : 
+
+        Returns
+        ------------
+        metrics : dict
+            Result dictionary containing sig_w, sig_r, err, 
+            MES, SHP, CHI, med_chases, mean_chases, max_SES, DMM  
+        """
+
+        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(  # noqa
+            lightcurve, self.lc_name
+        )
+
+        self.period = tce["period"].to_value(u.day)
+        self.duration = tce["duration"].to_value(u.day)
+        time_offset_q = getattr(exo_const, time_offset_str)
+        self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+
+        # epo needs to be the time of first transit in TESS BJD
+        if self.epoch >= self.time[0]:
+            N = np.floor((self.epoch-self.time[0])/self.period)
+            self.epo = self.epoch - N*self.period
+        else:
+            N = np.ceil((self.time[0]-self.epoch)/self.period)
+            self.epo = self.epoch + N*self.period
+
+        # create flux_err array defaulted to flux_err col of lc
+        if self.flux_err is None:
+            print("No flux error given, defaulting to 'flux_err' column of light curve")
+            self.flux_err = lightcurve['flux_err']
+        else:
+            self.flux_err = lightcurve[self.flux_err]
+
+        # get initial values needed to run transit_event vetter
+        leo_vetter = leo.Leo(self.time, self.period, self.epo, self.duration, self.flux, self.flux_err, self.frac, self.max_chases_phase)
+
+        # calculate SES
+        leo_vetter.get_SES_MES()
+
+        # calculated rubble, chases, etc
+        leo_vetter.get_chases()
+
+        # All available attributes (removed some which aren't very useful)
+        self.MES_series = leo_vetter.MES_series 
+        self.N_transit = leo_vetter.N_transit 
+        self.SES = leo_vetter.SES 
+        self.SES_series = leo_vetter.SES_series 
+        self.chases = leo_vetter.chases 
+        #self.dep = leo_vetter.dep 
+        #self.dep_series = leo_vetter.dep_series 
+        #self.epochs = leo_vetter.epochs 
+        self.err_series = leo_vetter.err_series 
+        #self.fit_tran = leo_vetter.fit_tran 
+        #self.in_tran = leo_vetter.in_tran
+        #self.n_in =  leo_vetter.n_in 
+        #self.near_tran = leo_vetter.near_tran 
+        #self.phase = leo_vetter.phase 
+        #self.qtran = leo_vetter.qtran 
+        self.rubble = leo_vetter.rubble
+        #self.tran_epochs = leo_vetter.tran_epochs 
+        #self.zpt = leo_vetter.zpt
+        self.sig_w = leo_vetter.sig_w
+        self.sig_r = leo_vetter.sig_r
+        self.err = leo_vetter.err
+        self.MES = leo_vetter.MES
+        self.SHP = leo_vetter.SHP
+        self.CHI = leo_vetter.CHI
+        self.med_chases = leo_vetter.med_chases
+        self.mean_cases = leo_vetter.mean_chases
+        self.max_SES = leo_vetter.max_SES
+        self.DMM = leo_vetter.DMM
+
+        # Important metrics to directly return
+        self.metrics = {
+            "sig_w": self.sig_w,
+            "sig_r": self.sig_r,
+            "err": self.err,
+            "MES": self.MES,
+            "SHP": self.SHP,
+            "CHI": self.CHI,
+            "med_chases": self.med_chases,
+            "mean_chases": self.mean_cases,
+            "max_SES": self.max_SES,
+            "DMM": self.DMM,
+        }
+
+        if plot:
+            leo_vetter.plot()
+
+        return self.metrics
+
+    def plot(self):  # pragma: no cover
+        self.run(self.tce, self.lc, plot=True)
