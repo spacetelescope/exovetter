@@ -1,4 +1,4 @@
-"""Module ot handle SWEET vetter."""
+"""Module to handle SWEET vetter."""
 
 import os
 

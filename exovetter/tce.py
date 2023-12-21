@@ -130,9 +130,17 @@ class Tce(dict):
         """
         if 'epoch' not in self or 'epoch_offset' not in self:
             raise KeyError('epoch and epoch_offset must be defined first')
+        
+        print('with epoch=', self["epoch"], 'and epoch_offset=', self["epoch_offset"])
         epoch = self["epoch"] - self["epoch_offset"]
+
+        print('offset subtracted to get ', epoch)
+        
         if offset is not None:
+            print('with offset=', offset, 'added to this new epoch ', epoch, ' to get ', epoch + offset, ' the final returned epoch')
             epoch = epoch + offset
+            
+
         return epoch
 
     def validate(self):
