@@ -128,7 +128,7 @@ class Leo:
             # Get running mean and uncertainty of out-of-transit fluxes, binned over transit timescale
             in_bin = in_tran & ~self.near_tran
             bin_flux[i] = weighted_mean(self.flux[in_bin], self.flux_err[in_bin])
-            bin_flux_err[i] = weighted_err(self.flux[in_bin], self.flux_err[in_bin])
+            bin_flux_err[i] = weighted_err(self.flux[in_bin], self.flux_err[in_bin]).value
         # Estimate white and red noise following Hartman & Bakos (2016)
         mask = ~np.isnan(bin_flux) & ~self.near_tran
         std = weighted_std(self.flux[mask], self.flux_err[mask])
@@ -137,7 +137,7 @@ class Leo:
             std
             * np.sqrt(np.nanmean(bin_flux_err[mask] ** 2))
             / np.sqrt(np.nanmean(self.flux_err[mask] ** 2))
-        )
+        ).value
         self.sig_w = std
         sig_r2 = bin_std**2 - expected_bin_std**2
         self.sig_r = np.sqrt(sig_r2) if sig_r2 > 0 else 0

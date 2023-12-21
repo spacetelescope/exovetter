@@ -22,7 +22,7 @@ from exovetter import leo
 
 __all__ = ['BaseVetter', 'ModShift', 'Lpp', 'OddEven', 
            'TransitPhaseCoverage', 'Sweet', 'Centroid',
-           'VizTransits']
+           'VizTransits', 'LeoVetter']
 
 class BaseVetter(ABC):
     """Base class for vetters.
@@ -104,6 +104,9 @@ class ModShift(BaseVetter):
         ----------
         time : array
             Time values of the TCE, populated by :meth:`run`.
+
+        lc_name : str
+            Input ``lc_name``.
 
         flux : array
             Flux values of the TCE, populated by :meth:`run`.
@@ -468,7 +471,7 @@ class TransitPhaseCoverage(BaseVetter):
         Returns
         ------------
         metrics : dict
-            odd_even result dictionary containing the following:
+            transit_coverage result dictionary containing the following:
                 transit_phase_coverage : Fraction of coverage
         """
         time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(
@@ -735,8 +738,7 @@ class VizTransits(BaseVetter):
             centroid result dictionary containing the following:
                 num_transits : Number of transits with data in transit (3*duration).
         """
-        
-        # Added plotting options MD 2023
+
         if plot == True:
             run_transit_plot = True
             run_folded_plot = True
@@ -777,14 +779,14 @@ class VizTransits(BaseVetter):
         # This will always show both. If you want one or the other do run with whichever one initialized
         self.run(self.tce, self.lc, plot=True)
     
-    # def plot(self, tce, lightcurve): #OLD PLOT METHOD, MD 2023
+    # def plot(self, tce, lightcurve): # old plot method
 
     #     _ = self.run(tce, lightcurve, max_transits=self.max_transits,
     #                  transit_only=self.transit_only, smooth=self.smooth,
     #                  plot=True)
 
 class LeoVetter(BaseVetter):
-    """Leo based vetter"""
+    """Leo based vetter (see https://github.com/mkunimoto/LEO-vetter)"""
 
     def __init__(self, lc_name="flux", flux_err=None, frac=0.7, max_chases_phase=0.1):
         """
@@ -882,7 +884,7 @@ class LeoVetter(BaseVetter):
         else:
             N = np.ceil((self.time[0]-self.epoch)/self.period)
             self.epo = self.epoch + N*self.period
-
+        
         # create flux_err array defaulted to flux_err col of lc
         if self.flux_err is None:
             print("No flux error given, defaulting to 'flux_err' column of light curve")
