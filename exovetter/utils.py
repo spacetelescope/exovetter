@@ -7,7 +7,7 @@ import numpy as np
 
 __all__ = ['sine', 'estimate_scatter', 'mark_transit_cadences', 'median_detrend', 
            'plateau', 'set_median_flux_to_zero', 'set_median_flux_to_one', 'sigmaClip', 
-           'get_mast_tce', 'WqedLSF', 'compute_phases']
+           'get_mast_tce', 'WqedLSF', 'compute_phases', 'assert_epoch']
 
 def sine(x, order, period=1):
     """Sine function for SWEET vetter."""
@@ -614,3 +614,33 @@ def compute_phases(time, period, epoch, offset=0.5):
     pmin = np.min(phases)
 
     return phases
+
+def first_epoch(epoch, period, lc):
+    """Returns epoch of the first time in a lc file. Usefull when pulling down TCEs from MAST.
+
+    Parameters
+    ----------
+    epoch : float
+        Time of transit from a given TCE in same time system as lc.
+
+    period : float
+        Period in units of time.
+
+    lc : lightkurve object
+        lightkurve object with flux and time.
+
+    Returns
+    -------
+    first_epoch : float
+        Epoch of first transit in lc in the time system of the lc. 
+
+    """
+    # TODO might need to assert epoch.value is within lc.time.value
+    if epoch.value >= lc.time.value[0]:
+        N = np.floor((epoch.value-lc.time.value[0])/period.value)
+        first_epoch = epoch - N*period
+    else:
+        N = np.ceil((lc.time.value[0]-epoch.value)/period.value)
+        first_epoch = epoch + N*period
+
+    return first_epoch

@@ -94,8 +94,12 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
                      c=color, ms=5, lw=1)
 
             plt.annotate("Transit %i" % nt,
-                         (xmin, np.median(fl) + step_size * i),
-                         c=color) # Pretty sure this should be % i+1? Although no clue why nt starts at 12
+            (xmin, np.median(fl) + step_size * (i+0.15)), c=color)
+            # Added buffer between transit and annotation
+            
+            # plt.annotate("Transit %i" % nt,
+            #              (xmin, np.median(fl) + step_size * i),
+            #              c=color)
 
         plt.xlim(xmin, xmax)
         plt.axvspan(

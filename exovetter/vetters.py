@@ -682,11 +682,11 @@ class VizTransits(BaseVetter):
         lc_name : str
             Name of the flux array in the ``lightkurve`` object.
 
-        max_transits : type
-            description
+        max_transits : bool
+            Total number of transits to plot.
 
-        transit_only : type
-            description
+        transit_only : bool
+            Zoom in on the transit
 
         smooth : type
             description
@@ -877,7 +877,8 @@ class LeoVetter(BaseVetter):
         time_offset_q = getattr(exo_const, time_offset_str)
         self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
 
-        # epo needs to be the time of first transit in TESS BJD
+        # epo needs to be the time of first transit in TESS BJD 
+        # (above converted to BTJD but here check it is actually at the beggining of the time series)
         if self.epoch >= self.time[0]:
             N = np.floor((self.epoch-self.time[0])/self.period)
             self.epo = self.epoch - N*self.period

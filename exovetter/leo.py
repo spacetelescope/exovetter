@@ -81,6 +81,7 @@ class Leo:
         self.near_tran = abs(self.phase) < self.qtran
         # Actual number of transits accounting for gaps
         self.epochs = np.round((time - epo) / per)
+
         self.tran_epochs = np.unique(self.epochs[self.in_tran])
         self.N_transit = len(self.tran_epochs)
         # Cadences within 2 transit durations
@@ -223,4 +224,4 @@ class Leo:
         self.DMM = np.nanmean(deps) / np.nanmedian(deps)
 
     def plot (self):
-        print('Implement plotting')
+        print('Plotting not yet implemented')
