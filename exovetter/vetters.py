@@ -286,7 +286,7 @@ class Lpp(BaseVetter):
             self.lpp_data, self.map_info
         )  # noqa: E501
 
-        if plot:  # Added to allow plotting with run MD 2023
+        if plot:
             target = self.tce.get("target_name", "Target")
             lpp.plot_lpp_diagnostic(self.plot_data, target, self.norm_lpp)
 

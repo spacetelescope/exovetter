@@ -7,7 +7,7 @@ import numpy as np
 
 __all__ = ['sine', 'estimate_scatter', 'mark_transit_cadences', 'median_detrend', 
            'plateau', 'set_median_flux_to_zero', 'set_median_flux_to_one', 'sigmaClip', 
-           'get_mast_tce', 'WqedLSF', 'compute_phases', 'assert_epoch']
+           'get_mast_tce', 'WqedLSF', 'compute_phases', 'first_epoch']
 
 def sine(x, order, period=1):
     """Sine function for SWEET vetter."""
