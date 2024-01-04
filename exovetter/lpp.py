@@ -327,7 +327,7 @@ def plot_lpp_diagnostic(data, target, norm_lpp):
     ax2.legend()
     
     fig.tight_layout()
-    plt.draw() #Why is this here? MD 2023
+    plt.draw()
 
     return fig
 
