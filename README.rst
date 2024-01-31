@@ -5,7 +5,7 @@ exovetter: Exoplanet Vetting
     :target: https://exovetter.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://github.com/spacetelescope/exovetter/workflows/CI/badge.svg/?event=pull_request
+.. image:: https://github.com/spacetelescope/exovetter/workflows/CI/badge.svg?event=pull_request
     :target: https://github.com/spacetelescope/exovetter/actions
     :alt: Github Actions CI Status
 
