@@ -102,7 +102,7 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
     bModel = bModel[:, 1] / bModel[:, 2]  # Avg flux per bin
 
     # Scale model so integral from 0.. period is 1
-    integral = -1 * spint.trapz(bModel, bphase)
+    integral = -1 * spint.trapezoid(bModel, bphase) # spint.trapz is deprecated
     bModel /= integral
 
     conv = compute_convolution_for_binned_data(bphase, bflux, bModel)
