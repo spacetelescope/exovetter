@@ -339,7 +339,8 @@ def get_mast_tce(name):
             period = prop['orbital_period']
             punit = prop['orbital_period_unit']
             epoch = prop['transit_time']
-            epoch_offset_str = 'mjd'
+            #epoch_offset_str = 'mjd'
+            epoch_offset_str = prop['transit_time_unit'].lower()
             depth = prop['transit_depth']
             duration = prop['transit_duration']
             catalog_name = prop['catalog_name']
@@ -349,6 +350,8 @@ def get_mast_tce(name):
             if durunit is None:
                 durunit = "d"
             
+            #print(" Whatever const.__dict__['string_to_offset'] is ", const.__dict__['string_to_offset'])
+            #print('prop: ', prop)
             atce = Tce(period = period * u.__dict__[punit],
                        epoch = epoch * u.d,
                        epoch_offset = const.__dict__['string_to_offset'][epoch_offset_str],

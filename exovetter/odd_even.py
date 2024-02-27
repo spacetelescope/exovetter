@@ -107,7 +107,7 @@ def diagnostic_plot(time, flux, period, epoch,
 
     plt.legend(loc="upper left")
     plt.xlim(0.25 - wf * dur_phase, 0.25 + wf * dur_phase)
-    plt.xlabel('odd transit')
+    plt.xlabel('odd transit (phase)')
     plt.title(f'Depth:{odd_depth[0]:.2f} +- {odd_depth[1]:.2f}',
               fontsize=10)
 
@@ -123,7 +123,7 @@ def diagnostic_plot(time, flux, period, epoch,
 
     plt.legend(loc="upper left")
     plt.xlim(0.75 - wf * dur_phase, 0.75 + wf * dur_phase)
-    plt.xlabel('even transit')
+    plt.xlabel('even transit (phase)')
 
     plt.title(f'Depth:{even_depth[0]:.2f} +- {even_depth[1]:.2f}',
               fontsize=10)

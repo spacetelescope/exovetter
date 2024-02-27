@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 
 import astropy.units as u
 import numpy as np
+import pandas as pd
+import time
 
 from exovetter.centroid import centroid as cent
 from exovetter import transit_coverage
@@ -22,7 +24,7 @@ from exovetter import leo
 
 __all__ = ['BaseVetter', 'ModShift', 'Lpp', 'OddEven', 
            'TransitPhaseCoverage', 'Sweet', 'Centroid',
-           'VizTransits', 'LeoVetter']
+           'VizTransits', 'LeoTransitEvents', 'run_all']
 
 class BaseVetter(ABC):
     """Base class for vetters.
@@ -606,7 +608,7 @@ class Centroid(BaseVetter):
         self.metrics = None
 
     def run(self, tce, lk_tpf, plot=False, remove_transits=None):
-        """Runs ent.compute_diff_image_centroids and cent.measure_centroid_shift
+        """Runs cent.compute_diff_image_centroids and cent.measure_centroid_shift
         to populate the vetter object.
 
         Parameters
@@ -785,171 +787,169 @@ class VizTransits(BaseVetter):
     #                  transit_only=self.transit_only, smooth=self.smooth,
     #                  plot=True)
 
-class LeoVetter(BaseVetter):
-    """Leo based vetter (see https://github.com/mkunimoto/LEO-vetter)"""
 
-    def __init__(self, lc_name="flux", flux_err=None, frac=0.7, max_chases_phase=0.1):
+class LeoTransitEvents(BaseVetter):
+    """Exovetter implementation of the individual transit events vetter in the LEO package: https://github.com/mkunimoto/LEO-vetter"""
+
+    def __init__(self, lc_name="flux", flux_err_name="flux_err", chases_rubble_frac=0.7, max_chases_phase=0.1):
         """
         Parameters
         ----------
         lc_name : str
             Name of the flux array in the ``lightkurve`` object.
 
-        flux_err : string
-            If none provided, defaults to flux_err column of lightkurve. LeoVetter requires realistic flux errors to give meaningful results.
+        flux_err_name : str
+            Name of the flux error array in the ``lightkurve`` object. Defaults to 'flux_err'
 
-        frac : float
-            fraction of SES for a transit which triggers the chases false alarm statistic (default 0.7)
-        
+        chases_rubble_frac : float
+            fraction of SES for a transit which triggers the chases false alarm statistic. Defaults to 0.7
+
         max_chases_phase : float
-            maximum  to allow the chases search to run on (default 0.1)
+            Maximum to allow the chases search to run on. Default 0.1
 
-        Attributes
+         Attributes
         ----------
         tce : tce object
             tce object is a dictionary that contains information about the tce
             to vet, like period, epoch, duration, depth.
 
-        lc : lightkurve object
-            lightkurve object with the time and flux of the data to use for vetting.
-
         metrics : dict
-            LeoVetter result dictionary populated by :meth:`run`.
+            LeoTransitEvents result dictionary populated by :meth:`run`.
         """
 
-        self.tce = None
         self.lc_name = lc_name
-        self.flux_err= flux_err
-        self.frac= frac
+        self.flux_err_name = flux_err_name
+        self.chases_rubble_frac = chases_rubble_frac
         self.max_chases_phase = max_chases_phase
         self.metrics = None
 
     def run(self, tce, lightcurve, plot=False):
-        """
-        Runs leo vetters to populate the vetter object.
+        """Runs leo.ses_mes and leo.chases_rubble to populate the vetter object.
 
         Parameters
         ----------
         tce : tce object
-            Dictionary that contains information about the tce
-            to vet, like period, epoch, duration, depth
+            tce object is a dictionary that contains information about the tce
+            to vet, like period, epoch, duration, depth.
 
         lightcurve : lightkurve object
-            lightkurve object with the time and flux to use for vetting.
+            lightkurve object with the time and flux of the data to use for vetting.
 
         plot: bool
-            Option to show plot when initialy populating the metrics.
-            Same as using the plot() method.
-
-        Attributes
-        ----------
-        MES_series : dep_series/err_series 
-        N_transit : Number of transits
-        SES : Single Event Statistic
-        SES_series : Single Event Statistic series for every timestamp
-        chases : range for chases metric is between 1.5 transit durations and user specified max_chases_phase
-        err_series : Error of MES
-        rubble : rubble statistic
-        sig_w : White noise following Hartman & Bakos (2016)
-        sig_r : Red noise following Hartman & Bakos (2016)
-        err : Signal-to-pink-noise following Pont et al. (2006)
-        MES : Multiple Event Statistic calculated from mean depth of in transit points
-        SHP : MES shape metric
-        CHI :
-        med_chases : median of chases
-        mean_chases : mean of chases
-        max_SES : maximum of SES 
-        DMM : 
+            Not yet implemented
 
         Returns
         ------------
         metrics : dict
-            Result dictionary containing sig_w, sig_r, err, 
-            MES, SHP, CHI, med_chases, mean_chases, max_SES, DMM  
+            leo transit events result dictionary containing the following:
+                sig_w : White noise following Hartman & Bakos (2016)
+                sig_r : Red noise following Hartman & Bakos (2016)
+                err : Signal-to-pink-noise following Pont et al. (2006)
+                SES_series : Single Event Statistic series for every timestamp
+                dep_series : 
+                err_series : Error of MES
+                MES_series : dep_series/err_series
+                MES : Multiple Event Statistic calculated from mean depth of in transit points
+                SHP : MES shape metric
+                CHI : 
+                med_chases : median of chases
+                mean_chases : mean of chases
+                max_SES : maximum of SES 
+                DMM : 
+                chases : chases statistic, range for chases metric is between 1.5 and max_chases_phase transit durations
+                rubble : rubble statistic
         """
 
-        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(  # noqa
-            lightcurve, self.lc_name
-        )
+        # get time series, flux series, and time representation the lightcurve is in 
+        self.time, self.flux, time_offset_str = lightkurve_utils.unpack_lk_version(lightcurve, self.lc_name)
+        self.flux_err = lightcurve[self.flux_err_name].value
 
+        # get the conversion value to move from BJD to the lightcurve time representation
+        time_offset_q = getattr(exo_const, time_offset_str)
+
+        # get_epoch first converts to BJD using the TCE's epoch_offset value then moves it into whatever time representation the lightcurve is in using time_offset_q
+        self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+        
+        # for LeoTransitEvents this must be TIME OF FIRST TRANSIT IN BTJD
+        # TODO DO SOMETHING TO SELF.EPOCH TO PUT IT IN THAT
+        # if time_offset_str isn't BTJD do put it in BTJD
+        
         self.period = tce["period"].to_value(u.day)
         self.duration = tce["duration"].to_value(u.day)
-        time_offset_q = getattr(exo_const, time_offset_str)
-        self.epoch = tce.get_epoch(time_offset_q).to_value(u.day)
 
-        # epo needs to be the time of first transit in TESS BJD 
-        # (above converted to BTJD but here check it is actually at the beggining of the time series)
-        if self.epoch >= self.time[0]:
-            N = np.floor((self.epoch-self.time[0])/self.period)
-            self.epo = self.epoch - N*self.period
-        else:
-            N = np.ceil((self.time[0]-self.epoch)/self.period)
-            self.epo = self.epoch + N*self.period
+        # Convert to numpy arrays and floats for performance:
+        self.time = np.asarray(self.time)
+        self.flux = np.asarray(self.flux)
+        self.flux_err = np.asarray(self.flux_err)
+
+        # Compute SES MES metrics and put into a dictionary
+        ses_mes_results = leo.ses_mes(self.time, self.period, self.epoch, self.duration, self.flux, self.flux_err)
+
+        # Compute Chases and Rubble
+        chases_rubble_results = leo.chases_rubble(self.time, self.period, self.epoch, self.duration, self.flux, self.flux_err, ses_mes_results, self.chases_rubble_frac, self.max_chases_phase)
         
-        # create flux_err array defaulted to flux_err col of lc
-        if self.flux_err is None:
-            print("No flux error given, defaulting to 'flux_err' column of light curve")
-            self.flux_err = lightcurve['flux_err']
-        else:
-            self.flux_err = lightcurve[self.flux_err]
-
-        # get initial values needed to run transit_event vetter
-        leo_vetter = leo.Leo(self.time, self.period, self.epo, self.duration, self.flux, self.flux_err, self.frac, self.max_chases_phase)
-
-        # calculate SES
-        leo_vetter.get_SES_MES()
-
-        # calculated rubble, chases, etc
-        leo_vetter.get_chases()
-
-        # All available attributes (removed some which aren't very useful)
-        self.MES_series = leo_vetter.MES_series 
-        self.N_transit = leo_vetter.N_transit 
-        self.SES = leo_vetter.SES 
-        self.SES_series = leo_vetter.SES_series 
-        self.chases = leo_vetter.chases 
-        #self.dep = leo_vetter.dep 
-        #self.dep_series = leo_vetter.dep_series 
-        #self.epochs = leo_vetter.epochs 
-        self.err_series = leo_vetter.err_series 
-        #self.fit_tran = leo_vetter.fit_tran 
-        #self.in_tran = leo_vetter.in_tran
-        #self.n_in =  leo_vetter.n_in 
-        #self.near_tran = leo_vetter.near_tran 
-        #self.phase = leo_vetter.phase 
-        #self.qtran = leo_vetter.qtran 
-        self.rubble = leo_vetter.rubble
-        #self.tran_epochs = leo_vetter.tran_epochs 
-        #self.zpt = leo_vetter.zpt
-        self.sig_w = leo_vetter.sig_w
-        self.sig_r = leo_vetter.sig_r
-        self.err = leo_vetter.err
-        self.MES = leo_vetter.MES
-        self.SHP = leo_vetter.SHP
-        self.CHI = leo_vetter.CHI
-        self.med_chases = leo_vetter.med_chases
-        self.mean_cases = leo_vetter.mean_chases
-        self.max_SES = leo_vetter.max_SES
-        self.DMM = leo_vetter.DMM
-
-        # Important metrics to directly return
-        self.metrics = {
-            "sig_w": self.sig_w,
-            "sig_r": self.sig_r,
-            "err": self.err,
-            "MES": self.MES,
-            "SHP": self.SHP,
-            "CHI": self.CHI,
-            "med_chases": self.med_chases,
-            "mean_chases": self.mean_cases,
-            "max_SES": self.max_SES,
-            "DMM": self.DMM,
-        }
-
-        if plot:
-            leo_vetter.plot()
+        # Combine both results dictionaries into a metrics dictionary to return
+        self.metrics = ses_mes_results | chases_rubble_results
 
         return self.metrics
 
-    def plot(self):  # pragma: no cover
-        self.run(self.tce, self.lc, plot=True)
+        if plot:
+            pass
+
+    def plot(self):
+        pass
+
+
+def run_all(tces, lcs, vetters=[ModShift(), Lpp(), OddEven(), TransitPhaseCoverage(), Sweet(), LeoTransitEvents()]):
+    # TODO CENTROID IS WEIRD BC IT NEEDS A TPF
+    """Runs vetters and packs results into a dataframe.
+
+    Parameters
+    ----------
+    tces: list of tce objects to vet on
+
+    lc: list of lightkurve objects to vet on
+    
+    vetters : list
+        List of vetter classes to run
+
+    Returns
+    ------------
+    results : dataframe
+        Pandas dataframe of all the numerical results from the vetters
+          
+    """
+    run_start = time.time()
+    results_dicts = [] # initialize a list to pack results from each tce into
+    tce_names = []
+
+    for tce, lc in zip(tces, lcs):
+        print('Vetting', tce['target'], ':')
+        tce_names.append(tce['target'])
+        results_list = [] # initialize a list to pack result dictionaries into
+        
+        # run each vetter
+        for vetter in vetters:
+            time_start = time.time()
+            vetter_results = vetter.run(tce, lc)
+            time_end = time.time()
+            
+            print(vetter.__class__.__name__, 'finished in', time_end - time_start, 's.')
+            results_list.append(vetter_results)
+        
+        # put all values from each results dictionary into a single dictionary
+        results_dict = {k: v for d in results_list for k, v in d.items()}
+        
+        # delete dictionary entries that are huge arrays and add the dictionary to the final list
+        if results_dict.get('plot_data'):
+            del results_dict['plot_data']
+            results_dicts.append(results_dict)
+        
+        print()
+
+    results_df = pd.DataFrame(results_dicts) # Put the values from each result dictionary into a dataframe
+    results_df.insert(loc=0, column='tce', value=tce_names)
+    print('Execution time:', (time.time() - run_start), 's')
+
+    return results_df
+        
