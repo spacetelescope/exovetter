@@ -45,7 +45,8 @@ jobs:
         python-version: '3.11'
     - name: Install and build
       run: |
-        sudo apt-get install libxml2-utils --fix-missing
+        apt-get update
+        sudo apt-get install libxml2-utils
         python -m pip install --upgrade pip setuptools
         python -m pip install -e .[test,all]
     - name: Test with stable deps and coverage
