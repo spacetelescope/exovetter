@@ -7,6 +7,8 @@ import astropy.units as u
 import numpy as np
 import pandas as pd
 import time
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 from exovetter.centroid import centroid as cent
 from exovetter import transit_coverage
@@ -696,7 +698,7 @@ class VizTransits(BaseVetter):
         transit_plot : bool
             Whether or not to show the transit plot
 
-        folded_plot : book
+        folded_plot : bool
             Wheter or not to show the folded plot
 
          Attributes
@@ -900,7 +902,7 @@ class LeoTransitEvents(BaseVetter):
         pass
 
 
-def run_all(tces, lcs, vetters=[ModShift(), Lpp(), OddEven(), TransitPhaseCoverage(), Sweet(), LeoTransitEvents()]):
+def run_all(tces, lcs, vetters=[VizTransits(), ModShift(), Lpp(), OddEven(), TransitPhaseCoverage(), Sweet(), LeoTransitEvents()], plot=False, verbose=False):
     # TODO CENTROID IS WEIRD BC IT NEEDS A TPF
     """Runs vetters and packs results into a dataframe.
 
@@ -913,29 +915,77 @@ def run_all(tces, lcs, vetters=[ModShift(), Lpp(), OddEven(), TransitPhaseCovera
     vetters : list
         List of vetter classes to run
 
+    plot : bool
+        Toggle diagnostic plots
+    
+    verbose : bool
+        Toggle timing info and other print statements
+
     Returns
     ------------
     results : dataframe
         Pandas dataframe of all the numerical results from the vetters
           
     """
-    run_start = time.time()
+
     results_dicts = [] # initialize a list to pack results from each tce into
     tce_names = []
+    run_start = time.time()
 
     for tce, lc in zip(tces, lcs):
-        print('Vetting', tce['target'], ':')
+        if verbose:
+            print('Vetting', tce['target'], ':')
+
         tce_names.append(tce['target'])
         results_list = [] # initialize a list to pack result dictionaries into
         
-        # run each vetter
+        # run each vetter, if plotting is true fill the figures into a list to save later
+        plot_figures = []
         for vetter in vetters:
-            time_start = time.time()
-            vetter_results = vetter.run(tce, lc)
-            time_end = time.time()
-            
-            print(vetter.__class__.__name__, 'finished in', time_end - time_start, 's.')
-            results_list.append(vetter_results)
+            if vetter.__class__.__name__ != 'VizTransits': # viz_transits generates 2 figures so have to exclude
+                time_start = time.time()
+                vetter_results = vetter.run(tce, lc)
+                
+                if plot:
+                    vetter.plot()
+                    vetter_plot = plt.gcf()
+                    vetter_plot.suptitle(tce['target']+' '+vetter.__class__.__name__)
+                    vetter_plot.tight_layout()
+                    plt.close()
+                    plot_figures.append(vetter_plot)
+
+                if verbose:
+                    time_end = time.time()
+                    print(vetter.__class__.__name__, 'finished in', time_end - time_start, 's.')
+                
+                results_list.append(vetter_results)
+        
+        if verbose: # add some whitespace for readability
+            print()
+
+        if plot: # save a pdf of each figure made for that vetter
+            diagnostic_plot = PdfPages(tce['target']+'.pdf')
+
+            # run viz_transits TODO need viztransit init parameters to be settable in run_all() options
+            transit = VizTransits(transit_plot=True, folded_plot=False).run(tce, lc)
+            transit_plot = plt.gcf()
+            transit_plot.suptitle(tce['target']+' Transits')
+            transit_plot.tight_layout()
+            plt.close()
+            diagnostic_plot.savefig(transit_plot)
+
+            folded = VizTransits(transit_plot=False, folded_plot=True).run(tce, lc)
+            folded_plot = plt.gcf()
+            folded_plot.suptitle(tce['target']+' Folded Transits')
+            folded_plot.tight_layout()
+            plt.close()
+            diagnostic_plot.savefig(folded_plot)
+
+            # Save each diagnostic plot ran on that tce/lc
+            for plot in plot_figures:
+                diagnostic_plot.savefig(plot)
+
+            diagnostic_plot.close()
         
         # put all values from each results dictionary into a single dictionary
         results_dict = {k: v for d in results_list for k, v in d.items()}
@@ -944,12 +994,11 @@ def run_all(tces, lcs, vetters=[ModShift(), Lpp(), OddEven(), TransitPhaseCovera
         if results_dict.get('plot_data'):
             del results_dict['plot_data']
             results_dicts.append(results_dict)
-        
-        print()
 
     results_df = pd.DataFrame(results_dicts) # Put the values from each result dictionary into a dataframe
     results_df.insert(loc=0, column='tce', value=tce_names)
-    print('Execution time:', (time.time() - run_start), 's')
+    if verbose:
+        print('Execution time:', (time.time() - run_start), 's')
 
     return results_df
         

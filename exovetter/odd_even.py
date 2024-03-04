@@ -82,11 +82,13 @@ def diagnostic_plot(time, flux, period, epoch,
     """
     import matplotlib.pyplot as plt
 
+    # TODO ylim=depth +- 4*scatter of out of transit points
+
     offset = 0.25
     twicephase = compute_phases(time, 2 * period, epoch, offset=offset)
     dur_phase = duration / (2 * period)
-    half_durphase = dur_phase / 2
-    wf = 4  # plotting width fraction
+    half_durphase = dur_phase / 2 
+    wf = 5  # plotting width fraction
     w = 2  # line width
 
     if np.isnan(odd_depth[1]):

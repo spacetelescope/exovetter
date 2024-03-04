@@ -362,8 +362,8 @@ def get_mast_tce(name):
                        )
             
             tces.append(atce)
-        except:
-            print("An exception was thrown.")
+        except SyntaxError:
+            print("Incorrect syntax")
             prop
             pass
             

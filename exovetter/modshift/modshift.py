@@ -22,14 +22,14 @@ The algorithm is as follows:
 import numpy as np
 from scipy import special as spspec
 from scipy import integrate as spint
+import exovetter.utils as utils
 
 import exovetter.modshift.plotmodshift as plotmodshift
 
 __all__ = ['compute_modshift_metrics', 'fold_and_bin_data',
            'compute_false_alarm_threshold', 'compute_event_significances',
            'find_indices_of_key_locations', 'mark_phase_range',
-           'estimate_scatter', 'compute_convolution_for_binned_data',
-           'compute_phase']
+           'estimate_scatter', 'compute_convolution_for_binned_data']
 
 
 def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
@@ -110,7 +110,8 @@ def compute_modshift_metrics(time, flux, model, period_days, epoch_days,
         raise ValueError('conv and bphase must be of same length')
     results = find_indices_of_key_locations(bphase, conv, duration_hrs)
 
-    phi_days = compute_phase(time, period_days, epoch_days)
+    #phi_days = compute_phase(time, period_days, epoch_days)
+    phi_days = utils.compute_phases(time, period_days, epoch_days, offset=0)
     sigma = estimate_scatter(
         phi_days, flux, results["pri"], results["sec"], 2 * duration_hrs)
     results.update(compute_event_significances(conv, sigma, results))
@@ -164,7 +165,8 @@ def fold_and_bin_data(time, flux, period, epoch, num_bins):
     i = np.arange(num_bins + 1)
     bins = i / float(num_bins) * period  # 0..period in numBin steps
 
-    phase = compute_phase(time, period, epoch)
+    # phase = compute_phase(time, period, epoch)
+    phase = utils.compute_phases(time, period, epoch, offset=0)
     srt = np.argsort(phase)
     phase = phase[srt]
     flux = flux[srt]
@@ -445,12 +447,12 @@ def compute_convolution_for_binned_data(phase, flux, model):
 
     return conv[:-1]
 
+# Removed in order to use utils.compute_phases()
+# def compute_phase(time, period, epoch, offset=0):
+#     """Compute phase."""
+#     # Make sure the epoch is before the first data point for folding
+#     delta = epoch - np.min(time)
+#     if delta > 0:
+#         epoch -= np.ceil(delta / period) * period
 
-def compute_phase(time, period, epoch, offset=0):
-    """Compute phase."""
-    # Make sure the epoch is before the first data point for folding
-    delta = epoch - np.min(time)
-    if delta > 0:
-        epoch -= np.ceil(delta / period) * period
-
-    return np.fmod(time - epoch + offset * period, period)
+#     return np.fmod(time - epoch + offset * period, period)

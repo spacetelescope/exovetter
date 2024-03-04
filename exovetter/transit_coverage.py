@@ -72,7 +72,7 @@ def compute_phases(time, period, epoch, offset=0.5):
         Fractional phases of the times given the period, epoch and offset.
 
     """
-    phases = np.fmod(time - epoch + (offset * period), period)
+    phases = np.fmod(time - epoch + (offset * period), period) # consider using utils.compute_phases()
     return phases / period
 
 

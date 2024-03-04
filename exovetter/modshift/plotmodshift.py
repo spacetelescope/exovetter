@@ -25,7 +25,8 @@ def plot_modshift(phase, period_days, flux, model, conv, results):
     plt.legend()
 
     plt.subplot(212, sharex=ax)
-    x = np.linspace(-1 * period_days, period_days, len(conv)) * np.max(phase)
+    #plt.subplot(212)
+    x = np.linspace(-1 * period_days, period_days, len(conv)) # * np.max(phase) # Remove conversion to time
     plt.plot(x, conv, "b.", label="convolution")
     mark_events(results)
     mark_false_alarm_threshold(results)

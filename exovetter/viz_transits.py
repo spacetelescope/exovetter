@@ -28,7 +28,7 @@ def plot_all_transits(time, flux, period, epoch, dur, depth, max_transits=20,
         maximum number of transits to plot. The default is 10.
     transit_only : T/F
         if true, zooms the x axis around just 3 durations around the transit
-    plot : boolean
+    plot : bool
         if true, it shows the plot, if false it does not
     units : string
         default is 'd'. Time Units to put on the plot.
