@@ -300,7 +300,7 @@ def sigmaClip(y, nSigma, maxIter=1e4, initialClip=None):
     return idx
 
 
-def get_mast_tce(name):
+def get_mast_tce(name, catalogs=None):
     """
     Populate a TCE object using the mast database
 
@@ -308,6 +308,9 @@ def get_mast_tce(name):
     ----------
     name : str
         Star name, TCE, or TOI
+    
+    catalog : list of str
+        Name of catalog(s) to use
 
     Returns
     -------
@@ -320,6 +323,7 @@ def get_mast_tce(name):
     from exovetter.tce import Tce
     import astropy.units as u
     from exovetter import const
+    import numpy as np
     
     planeturl = "https://exo.mast.stsci.edu/api/v0.1/exoplanets/"
     header = {}
@@ -336,6 +340,8 @@ def get_mast_tce(name):
     
     for prop in r.json():
         try:
+            if catalogs is not None and np.invert(any(ele in prop['catalog_name'] for ele in catalogs)): # if current prop catalog isnt in input list don't add it
+                continue
             period = prop['orbital_period']
             punit = prop['orbital_period_unit']
             epoch = prop['transit_time']
@@ -350,8 +356,6 @@ def get_mast_tce(name):
             if durunit is None:
                 durunit = "d"
             
-            #print(" Whatever const.__dict__['string_to_offset'] is ", const.__dict__['string_to_offset'])
-            #print('prop: ', prop)
             atce = Tce(period = period * u.__dict__[punit],
                        epoch = epoch * u.d,
                        epoch_offset = const.__dict__['string_to_offset'][epoch_offset_str],
@@ -366,7 +370,9 @@ def get_mast_tce(name):
             print("Incorrect syntax")
             prop
             pass
-            
+
+    if catalogs is not None and len(tces) < 1:
+        print('no tces from input catalog(s) found')     
     return tces
 
 class WqedLSF:
