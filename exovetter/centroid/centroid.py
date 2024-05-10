@@ -259,21 +259,30 @@ def measure_centroids(cube, cin, max_oot_shift_pix=0.5, starloc_pix = None, plot
         if diffSoln.success:
             clr = "green"
 
+        fig = plt.gcf()
+        axlist = fig.axes 
+        #assert len(axlist) == 3, axlist
+
         res = diffSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="^", color=clr,
-                                  label="diff")
+        for ax in axlist:
+            if ax.get_label() == '<colorbar>':
+                continue
 
-        res = ootSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="o", color=clr,
-                                  label="OOT")
+            plt.sca(ax)
+            disp.plotCentroidLocation(res[0], res[1], marker="^", color=clr,
+                                    label="diff")
 
-        res = intransSoln.x
-        disp.plotCentroidLocation(res[0], res[1], marker="+", color=clr,
-                                  label="InT")
-        
-        if starloc_pix is not None:
-            disp.plotCentroidLocation(starloc_pix[0], starloc_pix[1], marker="*",
-                                      color='red', label="Cat", ms=10)
+            res1 = ootSoln.x
+            disp.plotCentroidLocation(res1[0], res1[1], marker="o", color=clr,
+                                    label="OOT")
+
+            res2 = intransSoln.x
+            disp.plotCentroidLocation(res2[0], res2[1], marker="+", color=clr,
+                                    label="InT")
+            
+            if starloc_pix is not None:
+                disp.plotCentroidLocation(starloc_pix[0], starloc_pix[1], marker="*",
+                                        color='red', label="Cat", ms=10)
             
         plt.legend(fontsize=12, framealpha=0.7, facecolor='silver')
 
@@ -288,7 +297,7 @@ def measure_centroids(cube, cin, max_oot_shift_pix=0.5, starloc_pix = None, plot
         flag = 2
     out.append(flag)
 
-    return out, ax
+    return out, fig
 
 
 def generateDiffImg(cube, transits, starloc_pix = None, plot=False):
