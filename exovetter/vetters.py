@@ -617,7 +617,7 @@ class Centroid(BaseVetter):
         self.diff_plots = diff_plots
         self.centroid_plots = centroid_plots
 
-    def run(self, tce, lk_tpf, plot=False, remove_transits=None):
+    def run(self, tce, lk_tpf, starloc_pix = None, plot=False, remove_transits=None):
         """Runs cent.compute_diff_image_centroids and cent.measure_centroid_shift
         to populate the vetter object.
 
@@ -665,12 +665,16 @@ class Centroid(BaseVetter):
 
         if remove_transits is None: # reformat to be a blank list
             remove_transits = []
-        
+    
         centroids, figs, kept_transits = cent.compute_diff_image_centroids(
             time, cube, period_days, epoch, duration_days, 
-            remove_transits, plot=self.diff_plots)
+            remove_transits, starloc_pix=starloc_pix, plot=self.diff_plots)
         
-        offset, signif, fig = cent.measure_centroid_shift(centroids, kept_transits, self.centroid_plots)
+        if (starloc_pix is not None) and (len(starloc_pix) == 2):
+            offset, signif, fig = cent.measure_centroid_shift_cat(centroids, kept_transits, starloc_pix, self.centroid_plots)
+        else:
+            offset, signif, fig = cent.measure_centroid_shift(centroids, kept_transits, self.centroid_plots)
+
         figs.append(fig)
 
         # TODO: If plot=True, figs is a list of figure handles.
