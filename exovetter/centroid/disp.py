@@ -8,15 +8,15 @@ import numpy as np
 
 def plotTransit(fig, oot, during, diff, **kwargs):
 
-    fig.add_subplot(131)
+    ax1 = fig.add_subplot(131)
     plotImage(oot, **kwargs)
     plt.title("OOT")
 
-    fig.add_subplot(132)
+    ax2 = fig.add_subplot(132)
     plotImage(during, **kwargs)
     plt.title("In-transit")
 
-    fig.add_subplot(133)
+    ax3 = fig.add_subplot(133)
     plotDiffImage(diff, **kwargs)
     plt.title("Difference")
 
