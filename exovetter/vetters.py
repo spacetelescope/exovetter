@@ -585,7 +585,7 @@ class Sweet(BaseVetter):
 class Centroid(BaseVetter):
     """Class to handle centroid vetting"""
 
-    def __init__(self, lc_name="flux", diff_plots=False, centroid_plots=False):
+    def __init__(self, lc_name="flux", diff_plots=False, centroid_plots=False, starloc_pix=None):
         """
         Parameters
         ----------
@@ -616,8 +616,9 @@ class Centroid(BaseVetter):
         self.metrics = None
         self.diff_plots = diff_plots
         self.centroid_plots = centroid_plots
+        self.starloc_pix = starloc_pix
 
-    def run(self, tce, lk_tpf, starloc_pix = None, plot=False, remove_transits=None):
+    def run(self, tce, lk_tpf, plot=False, remove_transits=None):
         """Runs cent.compute_diff_image_centroids and cent.measure_centroid_shift
         to populate the vetter object.
 
@@ -668,10 +669,10 @@ class Centroid(BaseVetter):
     
         centroids, figs, kept_transits = cent.compute_diff_image_centroids(
             time, cube, period_days, epoch, duration_days, 
-            remove_transits, starloc_pix=starloc_pix, plot=self.diff_plots)
+            remove_transits, starloc_pix=self.starloc_pix, plot=self.diff_plots)
         
-        if (starloc_pix is not None) and (len(starloc_pix) == 2):
-            offset, signif, fig = cent.measure_centroid_shift_cat(centroids, kept_transits, starloc_pix, self.centroid_plots)
+        if (self.starloc_pix is not None) and (len(self.starloc_pix) == 2):
+            offset, signif, fig = cent.measure_centroid_shift_cat(centroids, kept_transits, self.starloc_pix, self.centroid_plots)
         else:
             offset, signif, fig = cent.measure_centroid_shift(centroids, kept_transits, self.centroid_plots)
 

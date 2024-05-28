@@ -78,13 +78,13 @@ def compute_diff_image_centroids(
     transits = getIngressEgressCadences(
         time, period_days, epoch, duration_days)
 
-    figs = []
+    axs = []
     centroids = []
 
     for i in range(len(transits)):
         if i not in remove_transits:
             cin = transits[i]
-            cents, fig = measure_centroids(
+            cents, ax = measure_centroids(
                 cube, 
                 cin, 
                 max_oot_shift_pix=max_oot_shift_pix,
@@ -93,15 +93,15 @@ def compute_diff_image_centroids(
             )
 
             if plot == True:
-                fig.suptitle('Transit '+str(i))
+                plt.gcf().suptitle('Transit '+str(i))
 
             centroids.append(cents)
-            figs.append(fig)
+            axs.append(ax)
             
     centroids = np.array(centroids)
     all_transits = list(np.arange(len(transits)))
     kept_transits = [x for x in all_transits if x not in remove_transits]
-    return centroids, figs, kept_transits
+    return centroids, axs, kept_transits
 
 
 def measure_centroid_shift(centroids, kept_transits, plot=False):
@@ -297,7 +297,7 @@ def measure_centroids(cube, cin, max_oot_shift_pix=0.5, starloc_pix = None, plot
         flag = 2
     out.append(flag)
 
-    return out, fig
+    return out, ax
 
 
 def generateDiffImg(cube, transits, starloc_pix = None, plot=False):
