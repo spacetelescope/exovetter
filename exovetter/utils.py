@@ -3,7 +3,6 @@
 import sys
 import warnings
 from exovetter import lightkurve_utils
-from exovetter import utils
 from exovetter import const as exo_const
 import astropy.units as u
 from exovetter import vetters as vet
