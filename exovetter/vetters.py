@@ -12,6 +12,7 @@ import os
 # from matplotlib.backends.backend_pdf import PdfPages
 
 from exovetter.centroid import centroid as cent
+from exovetter.centroid import sector_centroid as sect
 from exovetter import transit_coverage
 from exovetter import modshift
 from exovetter import odd_even
@@ -689,6 +690,120 @@ class Centroid(BaseVetter):
         self.run(self.tce, self.tpf, plot=True)
 
 
+class CentroidSectors(BaseVetter):
+    """Class to handle centroid vetting with multiple tpfs- WARNING currently does not handle the rotation between sectors!"""
+
+    def __init__(self, lc_name="flux", diff_plots=False, centroid_plots=False):
+        """
+        Parameters
+        ----------
+        lc_name : str
+            Name of the flux array in the ``lightkurve`` object.
+
+        diff_plots : bool
+            Show centroid difference plots per sector
+
+        centroid_plots : bool
+            Show centroid summary plot
+
+        Attributes
+        ----------
+        tce : tce object
+            tce object is a dictionary that contains information about the tce
+            to vet, like period, epoch, duration, depth.
+
+        tpfs : obj
+            ``lightkurve`` TargetPixelFileCollection objects with a series of tpfs
+
+        metrics : dict
+            Centroid result dictionary populated by :meth:`run`."""
+
+        self.lc_name = lc_name
+        self.tce = None
+        self.tpfs = None
+        self.metrics = None
+        self.diff_plots = diff_plots
+        self.centroid_plots = centroid_plots
+
+    def run(self, tce, lk_tpfs, sigma=None, plot=False):
+        """Runs cent.compute_diff_image_centroids and cent.measure_centroid_shift
+        to populate the vetter object.
+
+        Parameters
+        ----------
+        tce : tce object
+            tce object is a dictionary that contains information about the tce
+            to vet, like period, epoch, duration, depth.
+
+        lk_tpf : obj
+            ``lightkurve`` target pixel file object with pixels in column lc_name
+
+        sigma : float
+            sigma value for rejecting a transit image from the average stack 
+
+        plot : bool
+            option to show plot when initialy populating the metrics.
+            Same as using the plot() method.
+
+        Returns
+        ------------
+        metrics : dict
+            centroid result dictionary containing the following:
+                offset : (float) Size of offset in pixels (or whatever unit centroids is in)
+                significance : (float) The statistical significance of the transit.
+                Values close to 1 mean the transit is likely on the target star.
+                Values less than ~1e-3 suggest the target is not the source of the transit.
+        """
+
+        if plot:
+            self.diff_plots = True
+            self.centroid_plots = True
+
+        self.tce = tce
+        self.tpfs = lk_tpfs
+        self.sigma = sigma
+        period_days = tce["period"].to_value(u.day)
+        duration_days = tce["duration"].to_value(u.day)
+
+        sectors_oot = []
+        sectors_intrans = []
+        sectors_diff = []
+        sectors = []
+
+        for tpf in self.tpfs:
+            sector = tpf.sector
+            sectors.append(sector)
+
+            time, cube, time_offset_str = lightkurve_utils.unpack_tpf(tpf, self.lc_name)
+            time_offset_q = getattr(exo_const, time_offset_str)
+            epoch = tce.get_epoch(time_offset_q).to_value(u.day)
+            
+            # This does it across times defined as transits: 
+            #centroids, figs, kept_transits = cent.compute_diff_image_centroids(time, cube, period_days, epoch, duration_days, remove_transits, starloc_pix=self.starloc_pix, plot=self.diff_plots)
+        
+            # we basically want tpfs cent.compute_diff_image_centroids to spit out the cube vals for each transit in a sector:
+            
+            #CUBE NEEDS TO BE ROTATED
+            avg_oot, avg_intrans, avg_diff = sect.get_tpf_avgs(time, cube, period_days, epoch, duration_days, sector, sigma=self.sigma)
+
+            sectors_oot.append(avg_oot)
+            sectors_intrans.append(avg_intrans)
+            sectors_diff.append(avg_diff)
+        
+        # then run cent.compute_diff_image_centroids with "N transits" with N=number of sectors
+        
+        centroids, kept_sectors = sect.compute_diff_image_centroids(sectors_oot, sectors_intrans, sectors_diff, sectors=sectors, max_oot_shift_pix=1.5, plot=self.diff_plots)
+
+        offset, signif, fig = cent.measure_centroid_shift(centroids, kept_sectors, self.centroid_plots)
+
+        self.metrics = dict(offset=offset, significance=signif)
+
+        return self.metrics
+
+    def plot(self):  # pragma: no cover
+        self.run(self.tce, self.tpf, plot=True)
+
+
 class VizTransits(BaseVetter):
     """Class to return the number of transits that exist.
     It primarily plots all the transits on one figure along
@@ -946,167 +1061,3 @@ def run_all(tce, lc, vetters=[VizTransits(), ModShift(), Lpp(), OddEven(), Trans
     results = run_vetters.run_all(tce, lc, vetters, remove_metrics, plot, plot_dir, plot_name, verbose)
 
     return results
-
-    # results_list = []
-
-    # if plot == False:
-    #     for vetter in vetters:
-    #         vetter_results = vetter.run(tce, lc, plot=False) # dictionary returned from each vetter
-    #         results_list.append(vetter_results)
-
-    # else:
-    #     
-    #     if plot_name is None:
-    #         plot_name = tce['target'] 
-    #     diagnostic_plot = PdfPages(plot_dir+plot_name+'.pdf') # initialize a pdf to save each figure into
-    #     plot_figures = []
-
-    #     for vetter in vetters:
-    #         vetter_results = vetter.run(tce, lc, plot=True)
-    #         plot_figures.append(plt.gcf())
-    #         plt.close()
-    #         results_list.append(vetter_results)
-
-    #     # Save each diagnostic plot ran on that tce/lc
-    #     for plot in plot_figures:
-    #         diagnostic_plot.savefig(plot)
-
-    #     diagnostic_plot.close()
-
-    # results_dict = {k: v for d in results_list for k, v in d.items()}
-
-    # # delete dictionary entries that are huge arrays to save space
-    # for key in remove_metrics:
-    #     if results_dict.get(key):
-    #         del results_dict[key]
-
-    # return results_dict
-        
-    # OLDER CODE
-        # if plot:
-        #     if vetter.__class__.__name__ != 'VizTransits' and vetter.__class__.__name__ != 'LeoTransitEvents': 
-        #         # viz_transits generates 2 figures so it's handled later, LeoTransitEvents just doesn't have a plot
-        #         vetter.plot()
-        #         vetter_plot = plt.gcf()
-        #         vetter_plot.suptitle(tce['target']+' '+vetter.__class__.__name__)
-        #         vetter_plot.tight_layout()
-        #         plt.close()
-        #         plot_figures.append(vetter_plot)
-
-        # if verbose:
-        #     time_end = py_time.time()
-        #     print(vetter.__class__.__name__, 'finished in', time_end - time_start, 's.')
-        
-        # results_list.append(vetter_results)
-    
-
-    # results_dicts = [] # initialize a list to pack results from each tce into
-    # tce_names = []
-    # run_start = py_time.time()
-
-    # if plot_dir is None:
-    #     plot_dir = os.getcwd()
-    
-    # if plot or verbose: 
-    #     for tce in tces:
-    #         if 'target' not in tce.keys():
-    #             print("ERROR: Please supply a 'target' key to all input tces to use the plot or verbose parameters")
-    #             return
-
-    # for tce, lc in zip(tces, lcs):
-    #     if verbose:
-    #         print('Vetting', tce['target'], ':')
-
-    #     tce_names.append(tce['target'])
-    #     results_list = [] # initialize a list to pack result dictionaries into
-        
-    #     # run each vetter, if plotting is true fill the figures into a list to save later
-    #     plot_figures = []
-    #     for vetter in vetters:
-    #         time_start = py_time.time()
-    #         vetter_results = vetter.run(tce, lc)
-            
-    #         if plot:
-    #             if vetter.__class__.__name__ != 'VizTransits' and vetter.__class__.__name__ != 'LeoTransitEvents': 
-    #                 # viz_transits generates 2 figures so it's handled later, LeoTransitEvents just doesn't have a plot
-    #                 vetter.plot()
-    #                 vetter_plot = plt.gcf()
-    #                 vetter_plot.suptitle(tce['target']+' '+vetter.__class__.__name__)
-    #                 vetter_plot.tight_layout()
-    #                 plt.close()
-    #                 plot_figures.append(vetter_plot)
-
-    #         if verbose:
-    #             time_end = py_time.time()
-    #             print(vetter.__class__.__name__, 'finished in', time_end - time_start, 's.')
-            
-    #         results_list.append(vetter_results)
-        
-    #     if verbose: # add some whitespace for readability
-    #         print()
-
-    #     if plot: # save a pdf of each figure made for that vetter
-    #         diagnostic_plot = PdfPages(plot_dir+tce['target']+'.pdf') # initialize a pdf to save each figure into
-
-    #         # plot the lightcurve with epochs oeverplotted
-    #         time, flux, time_offset_str = lightkurve_utils.unpack_lk_version(lc, "flux")  # noqa: E50
-    #         period = tce["period"].to_value(u.day)
-    #         dur = tce["duration"].to_value(u.day)
-
-    #         time_offset_q = getattr(exo_const, time_offset_str)
-    #         epoch = tce.get_epoch(time_offset_q).to_value(u.day)
-    #         intransit = utils.mark_transit_cadences(time, period, epoch, dur, num_durations=3, flags=None)
-
-    #         fig, ax1 = plt.subplots(nrows=1, ncols=1, figsize=(9,5))
-    #         ax1.plot(time, flux, lw=0.4);
-    #         ax1.axvline(x=epoch, lw='0.6', color='r', label='epoch');
-    #         ax1.fill_between(time, 0,1, where=intransit, transform=ax1.get_xaxis_transform(), color='r', alpha=0.15, label='in transit')
-
-    #         ax1.set_ylabel('Flux')
-    #         ax1.set_xlabel('Time '+time_offset_str)
-    #         if 'target' in tce:
-    #             ax1.set_title(tce['target']);
-
-    #         ax1.legend();
-    #         lightcurve_plot = plt.gcf()
-    #         plt.close()
-    #         diagnostic_plot.savefig(lightcurve_plot)
-
-    #         # run viz_transits plots
-    #         transit = VizTransits(transit_plot=True, folded_plot=False).run(tce, lc)
-    #         transit_plot = plt.gcf()
-    #         transit_plot.suptitle(tce['target']+' Transits')
-    #         transit_plot.tight_layout()
-    #         plt.close()
-    #         diagnostic_plot.savefig(transit_plot)
-
-    #         folded = VizTransits(transit_plot=False, folded_plot=True).run(tce, lc)
-    #         folded_plot = plt.gcf()
-    #         folded_plot.suptitle(tce['target']+' Folded Transits')
-    #         folded_plot.tight_layout()
-    #         plt.close()
-    #         diagnostic_plot.savefig(folded_plot)
-
-    #         # Save each diagnostic plot ran on that tce/lc
-    #         for plot in plot_figures:
-    #             diagnostic_plot.savefig(plot)
-
-    #         diagnostic_plot.close()
-        
-    #     # put all values from each results dictionary into a single dictionary
-    #     results_dict = {k: v for d in results_list for k, v in d.items()}
-        
-    #     # delete dictionary entries that are huge arrays to save space
-    #     if results_dict.get('plot_data'):
-    #         del results_dict['plot_data']
-        
-    #     # add the dictionary to the final list
-    #     results_dicts.append(results_dict)
-
-    # results_df = pd.DataFrame(results_dicts) # Put the values from each result dictionary into a dataframe
-    
-    # results_df.insert(loc=0, column='tce', value=tce_names)
-    # if verbose:
-    #     print('Execution time:', (py_time.time() - run_start), 's')
-
-    # return results_df
