@@ -12,6 +12,7 @@ import os
 # from matplotlib.backends.backend_pdf import PdfPages
 
 from exovetter.centroid import centroid as cent
+from exovetter.centroid import sector_centroid as sect
 from exovetter import transit_coverage
 from exovetter import modshift
 from exovetter import odd_even
@@ -689,9 +690,8 @@ class Centroid(BaseVetter):
         self.run(self.tce, self.tpf, plot=True)
 
 
-from exovetter.centroid import sector_centroid as sect
 class CentroidSectors(BaseVetter):
-    """Class to handle centroid vetting with multiple tpfs"""
+    """Class to handle centroid vetting with multiple tpfs- WARNING currently does not handle the rotation between sectors!"""
 
     def __init__(self, lc_name="flux", diff_plots=False, centroid_plots=False):
         """
@@ -782,6 +782,8 @@ class CentroidSectors(BaseVetter):
             #centroids, figs, kept_transits = cent.compute_diff_image_centroids(time, cube, period_days, epoch, duration_days, remove_transits, starloc_pix=self.starloc_pix, plot=self.diff_plots)
         
             # we basically want tpfs cent.compute_diff_image_centroids to spit out the cube vals for each transit in a sector:
+            
+            #CUBE NEEDS TO BE ROTATED
             avg_oot, avg_intrans, avg_diff = sect.get_tpf_avgs(time, cube, period_days, epoch, duration_days, sector, sigma=self.sigma)
 
             sectors_oot.append(avg_oot)
