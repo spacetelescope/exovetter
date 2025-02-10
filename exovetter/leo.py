@@ -12,16 +12,24 @@ def phasefold(t, per, epo):
     return phase
 
 def weighted_mean(y, dy):
+    if np.all(dy == 0):
+        return np.mean(y)
+
     w = 1 / dy**2
-    mean = np.sum(w * y) / np.sum(w)
-    return mean
+    return np.sum(w * y) / np.sum(w)
 
 def weighted_err(y, dy):
+    if np.all(dy == 0):
+        return np.std(y) / np.sqrt(len(y))
+    
     w = 1 / dy**2
     err = 1 / np.sqrt(np.sum(w))
     return err
 
 def weighted_std(y, dy):
+    if np.all(dy == 0):
+        return np.std(y)
+
     w = 1 / dy**2
     N = len(w)
     mean = np.sum(w * y) / np.sum(w)
@@ -111,11 +119,7 @@ def ses_mes(time, per, epo, dur, flux, flux_err):
     mask = ~np.isnan(bin_flux) & ~near_tran
     std = weighted_std(flux[mask], flux_err[mask])
     bin_std = weighted_std(bin_flux[mask], bin_flux_err[mask])
-    expected_bin_std = (
-        std
-        * np.sqrt(np.nanmean(bin_flux_err[mask] ** 2))
-        / np.sqrt(np.nanmean(flux_err[mask] ** 2))
-    )
+    expected_bin_std = (std* np.sqrt(np.nanmean(bin_flux_err[mask] ** 2))/ np.sqrt(np.nanmean(flux_err[mask] ** 2)))
     sig_w = std
     sig_r2 = bin_std**2 - expected_bin_std**2
     sig_r = np.sqrt(sig_r2) if sig_r2 > 0 else 0
