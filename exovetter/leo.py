@@ -1,4 +1,6 @@
-"""Implementation of Michelle Kunimoto's LEO vetter: https://github.com/mkunimoto/LEO-vetter"""
+"""Implementation of Michelle Kunimoto's LEO vetter: https://github.com/mkunimoto/LEO-vetter
+See equations 15 on of https://arxiv.org/pdf/1605.06811
+"""
 import numpy as np
 
 __all__ = ['ses_mes']
@@ -20,15 +22,15 @@ def weighted_mean(y, dy):
 
 def weighted_err(y, dy):
     if np.all(dy == 0):
-        return np.std(y) / np.sqrt(len(y))
-    
+        return 0.0
+
     w = 1 / dy**2
     err = 1 / np.sqrt(np.sum(w))
     return err
 
 def weighted_std(y, dy):
     if np.all(dy == 0):
-        return np.std(y)
+        return np.std(y, ddof=1)
 
     w = 1 / dy**2
     N = len(w)
@@ -74,11 +76,6 @@ def ses_mes(time, per, epo, dur, flux, flux_err):
     zpt = weighted_mean(flux[~near_tran], flux_err[~near_tran])
     dep = zpt - weighted_mean(flux[in_tran], flux_err[in_tran])
 
-
-    # print('CURRENTLY IN_TRAN:', in_tran)
-    # print('CURRENTLY EPOCHS:', epochs)
-    # print('CURRENTLY TRAN_EPOCHS:', tran_epochs)
-
     # Calculate SES and MES etc
     N = len(time)
     dep_SES = np.zeros(N)
@@ -93,7 +90,6 @@ def ses_mes(time, per, epo, dur, flux, flux_err):
     for i in np.arange(N):
         # Get individual transit depth at this cadence, i.e. only use datapoints close in time
         in_tran = abs(time - time[i]) < 0.5 * dur
-        #print('THIS SHOULD HAVE OVERRID IN_TRAN:', in_tran)
         n_SES[i] = np.sum(in_tran)
         dep_SES[i] = zpt - weighted_mean(
             flux[in_tran], flux_err[in_tran]
@@ -107,9 +103,7 @@ def ses_mes(time, per, epo, dur, flux, flux_err):
             flux[all_tran], flux_err[all_tran]
         )
         epochs = np.round((time - time[i]) / per)
-        #print('THIS SHOULD HAVE OVERRID EPOCHS:', epochs)
         tran_epochs = np.unique(epochs[all_tran])
-        #print('THIS SHOULD HAVE OVERRID TRAN_EPOCHS:', tran_epochs)
         N_transit_MES[i] = len(tran_epochs)
         # Get running mean and uncertainty of out-of-transit fluxes, binned over transit timescale
         in_bin = in_tran & ~near_tran
@@ -119,9 +113,12 @@ def ses_mes(time, per, epo, dur, flux, flux_err):
     mask = ~np.isnan(bin_flux) & ~near_tran
     std = weighted_std(flux[mask], flux_err[mask])
     bin_std = weighted_std(bin_flux[mask], bin_flux_err[mask])
-    expected_bin_std = (std* np.sqrt(np.nanmean(bin_flux_err[mask] ** 2))/ np.sqrt(np.nanmean(flux_err[mask] ** 2)))
+    expected_bin_std = ( std* np.sqrt(np.nanmean(bin_flux_err[mask] ** 2))/ np.sqrt(np.nanmean(flux_err[mask] ** 2)) ) # WE NEED THIS CORRECT FOR IF YOU HAVE NO FLUX ERROR! (the expected r.m.s. of the binned light curve if the noise were uncorrelated in time)
+    if np.all(flux_err == 0):
+        expected_bin_std = bin_std # If you have no errors the expected binned std is the same as the actual binned std
+
     sig_w = std
-    sig_r2 = bin_std**2 - expected_bin_std**2
+    sig_r2 = bin_std**2 - expected_bin_std**2 # Why when I plug in small values for the error are these not close to the the same?: Because bin_flux_err actually takes into account the length of flux_err[in_bin], that gets summed up so it can vary. flux_err will just be that small number since it's not the weighted error 
     sig_r = np.sqrt(sig_r2) if sig_r2 > 0 else 0
     # Estimate signal-to-pink-noise following Pont et al. (2006)
     err = np.sqrt((sig_w**2 / n_in) + (sig_r**2 / N_transit))
