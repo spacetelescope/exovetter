@@ -105,7 +105,7 @@ def diagnostic_plot(x, y, kept_transits, flag=None):
     plt.legend()
 
     offset, signif = compute_offset_and_signif(x[~idx], y[~idx])
-    msg = "Offset %i pixels\nProb Transit on Target: %.0e" % (offset, signif)
+    msg = "Offset %.2f pixels\nProb Transit on Target: %.2f" % (offset, signif)
     plt.title(msg)
     return plt.gcf()
 
