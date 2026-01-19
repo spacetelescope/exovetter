@@ -4,6 +4,7 @@ import exovetter.centroid.disp as disp
 import exovetter.utils as utils
 import matplotlib.pyplot as plt
 import numpy as np
+import warnings
 
 
 def compute_diff_image_centroids(
@@ -12,7 +13,7 @@ def compute_diff_image_centroids(
         period_days, 
         epoch, 
         duration_days,
-        remove_transits, 
+        remove_transits=None, 
         max_oot_shift_pix=1.5,
         starloc_pix = None,
         plot=False
@@ -71,6 +72,9 @@ def compute_diff_image_centroids(
     OOT from In-transit.
     """
 
+    if remove_transits is None:
+            remove_transits = []
+        
     isnan = np.isnan(time)
     time = time[~isnan]
     cube = cube[~isnan]
@@ -135,7 +139,18 @@ def measure_centroid_shift(centroids, kept_transits, plot=False):
     dcol = centroids[:, 4] - centroids[:, 0]
     drow = centroids[:, 5] - centroids[:, 1]
 
+    if centroids.size == 0:
+            raise RuntimeError("No difference-image centroids could be computed for this target.")
+            
     flags = centroids[:, -1].astype(bool)
+    N_use = np.sum(~flags) # Check if there are enough TPFs left to actually centroid
+        
+    if N_use < 2:
+            raise RuntimeError("TPF data quality flagged too many difference-image centroids "
+                               "(<2 usable transits); centroid significance cannot be computed.")
+    elif N_use == 2:
+            warnings.warn("Only 2 usable difference-image centroids available; "
+                          "centroid significance is not statistically reliable.", RuntimeWarning, stacklevel=2)
 
     offset_pix, signif = covar.compute_offset_and_signif(
         dcol[~flags], drow[~flags])
@@ -179,7 +194,18 @@ def measure_centroid_shift_cat(centroids, kept_transits, starloc_pix, plot=False
     dcol = centroids[:, 4] - starloc_pix[0]
     drow = centroids[:, 5] - starloc_pix[1]
 
+    if centroids.size == 0:
+            raise RuntimeError("No difference-image centroids could be computed for this target.")
+    
     flags = centroids[:, -1].astype(bool)
+    N_use = np.sum(~flags)
+
+    if N_use < 2:
+            raise RuntimeError("TPF data quality flagged too many difference-image centroids "
+                               "(<2 usable transits); centroid significance cannot be computed.")
+    elif N_use == 2:
+            warnings.warn("Only 2 usable difference-image centroids available; "
+                          "centroid significance is not statistically reliable.", RuntimeWarning, stacklevel=2)
 
     offset_pix, signif = covar.compute_offset_and_signif(
         dcol[~flags], drow[~flags])
