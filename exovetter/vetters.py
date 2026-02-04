@@ -710,7 +710,8 @@ class VizTransits(BaseVetter):
             Zoom in on the transit
 
         smooth : type
-            description
+            Number of points across 3 in-transit durations for a 1DBoxkernel. 
+            Default is 10. None will turn off smoothing.
 
         transit_plot : bool
             Whether or not to show the transit plot
