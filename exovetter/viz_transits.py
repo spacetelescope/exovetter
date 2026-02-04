@@ -177,7 +177,7 @@ def plot_fold_transit(time, flux, period, epoch, depth, dur, smooth=10,
                      lw=1.5, label="Box1DSmooth")
 
         plt.legend(loc="upper right")
-        plt.xlabel('Phased Times [%s]' % units)
+        plt.xlabel('Phased Time [%s]' % units)
 
         if transit_only:
             xmin = np.min(phases[intransit])
