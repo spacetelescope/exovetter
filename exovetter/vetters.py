@@ -676,11 +676,7 @@ class Centroid(BaseVetter):
         else:
             offset, signif, fig = cent.measure_centroid_shift(centroids, kept_transits, self.centroid_plots)
 
-        figs.append(fig)
-
-        # TODO: If plot=True, figs is a list of figure handles.
-        # Do I save those figures, put them in a single pdf,
-        # close them all?
+        figs.append(fig) # possible improvement could be to save these as 1 long figure instead of a bunch of individual ones. 
 
         self.metrics = dict(offset=offset, significance=signif)
         return self.metrics
@@ -800,12 +796,6 @@ class VizTransits(BaseVetter):
     def plot(self):  # pragma: no cover
         # This will always show both. If you want one or the other do run with whichever one initialized
         self.run(self.tce, self.lc, plot=True)
-    
-    # def plot(self, tce, lightcurve): # old plot method
-
-    #     _ = self.run(tce, lightcurve, max_transits=self.max_transits,
-    #                  transit_only=self.transit_only, smooth=self.smooth,
-    #                  plot=True)
 
 
 class LeoTransitEvents(BaseVetter):
@@ -856,7 +846,7 @@ class LeoTransitEvents(BaseVetter):
             lightkurve object with the time and flux of the data to use for vetting.
 
         plot: bool
-            Not yet implemented
+            No plots implemented
 
         Returns
         ------------
@@ -866,16 +856,16 @@ class LeoTransitEvents(BaseVetter):
                 sig_r : Red noise following Hartman & Bakos (2016)
                 err : Signal-to-pink-noise following Pont et al. (2006)
                 SES_series : Single Event Statistic series for every timestamp
-                dep_series : 
+                dep_series : box-model transit depths
                 err_series : Error of MES
                 MES_series : dep_series/err_series
                 MES : Multiple Event Statistic calculated from mean depth of in transit points
                 SHP : MES shape metric
-                CHI : 
+                CHI : CHI metric
                 med_chases : median of chases
                 mean_chases : mean of chases
                 max_SES : maximum of SES 
-                DMM : 
+                DMM : depth mean-to-median ratio
                 chases : chases statistic, range for chases metric is between 1.5 and max_chases_phase transit durations
                 rubble : rubble statistic
         """
