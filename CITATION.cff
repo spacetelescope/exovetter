@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Mullally
+    given-names: Susan
+    orcid: https://orcid.org/0000-0001-7106-4683
+- family-names: Mullally
+    given-names: Fergal
+    orcid: https://orcid.org/0009-0004-7656-2402
+- family-names: Dallas
+    given-names: Matthew
+    orcid: https://orcid.org/0000-0001-9692-9751
+- family-names: Lim 
+    given-names: Pey-Lian
+    orcid: https://orcid.org/0000-0003-0079-4114
+title: "exovetter"
+version: 
+identifiers:
+  - type: doi
+    value: 
+date-released: 
