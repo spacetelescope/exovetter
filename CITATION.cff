@@ -15,6 +15,6 @@ authors:
   orcid: https://orcid.org/0000-0003-0079-4114
 title: "exoVetter"
 version: 0.0.14
-doi: 
+doi: 10.5281/zenodo.19700727
 date-released: 2026-04-22
 url: "https://github.com/spacetelescope/exovetter"
