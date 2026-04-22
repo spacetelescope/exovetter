@@ -14,8 +14,9 @@ authors:
     given-names: Pey-Lian
     orcid: https://orcid.org/0000-0003-0079-4114
 title: "exovetter"
-version: 
+version: 0.0.14
 identifiers:
   - type: doi
     value: 
-date-released: 
+date-released: 2026-04-22
+url: "https://github.com/spacetelescope/exovetter"
