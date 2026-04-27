@@ -10,7 +10,7 @@ def plotTransit(fig, oot, during, diff, **kwargs):
 
     ax1 = fig.add_subplot(131)
     plotImage(oot, **kwargs)
-    plt.title("OOT")
+    plt.title("Out-of-Transit")
 
     ax2 = fig.add_subplot(132)
     plotImage(during, **kwargs)
